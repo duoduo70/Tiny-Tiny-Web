@@ -13,6 +13,7 @@
 !TTWebEasyStart/TTWebEasyStart.d
 
 !build.d
-!TTWEB_LICENSE
+!LICENSE
+!README.md
 
 !.gitignore
