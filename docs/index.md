@@ -2,9 +2,7 @@
 这是一个用以简单创建Web服务器的软件，使用 D 语言开发， GPLv3 开源，以下简称 TTWeb 。
 
 本文档所述内容可能不适合最新版本。
-当前文档基于版本 1 。
-
-[下载页](/tinytinyweb.html)
+当前文档基于版本 1.1 。
 
 配置文件：
 
@@ -20,8 +18,8 @@
 "HttpTimeout": 1,                       // 设置HTTP超时时间（秒计）
 "ListenerBacklog": 256,                 // 保存未完成的连接请求数量
 "MaxRequestSize": 10485760,             // 设置最大请求大小（字节计）
+"KeepAlive": true,                      // 设置链接是否会保持存活
 "KeepAliveTimeout": 3,                  // 设置最大存活时间（秒计）
-"KeepAlive": true,                      // 设置是否保持存活
 
 "WorkerUser": "",                       // 设置进程用户（仅Posix）
 "WorkerGroup": "",                      // 设置进程用户组（仅Posix）
@@ -63,6 +61,9 @@ Grimoire Github：https://github.com/Enalye/grimoire
 
 #### TTWeb 给出的 Grimoire 基本函数列表
 ``` javascript
+
+// TTWEB版本
+ttlib.addVariable("TTWEB_VERSION", grString, GrValue(VERSION));
 // 将内容输出到网页
 ttlib.addFunction(&router_write, "router_write", [grString]);
 // 传输文件
@@ -71,6 +72,8 @@ ttlib.addFunction(&router_serve, "router_serve", [grString]);
 ttlib.addFunction(&router_status, "router_status", [grInt]);
 // 读文件，输入文件名，输出内容
 ttlib.addFunction(&read_file, "read_file", [grString], [grString]);
+// 写文件
+ttlib.addFunction(&write_file, "write_file", [grString, grString], [grBool]);
 // 向控制台输出日志，第一个参数为代表报错等级的数字，分别是：
 // all = 1
 // trace = 32
@@ -88,6 +91,13 @@ ttlib.addFunction(&regex_, "regex", [grString, grString], [grList(grString)]);
 ttlib.addFunction(&dump_html, "dump_html", [], [grString]);
 // 输出调试信息（一般格式）
 ttlib.addFunction(&dump_string, "dump_string", [], [grString]);
+// 获得时间信息
+ttlib.addFunction(&get_sec, "get_sec", [], [grInt]);
+ttlib.addFunction(&get_min, "get_min", [], [grInt]);
+ttlib.addFunction(&get_hour, "get_hour", [], [grInt]);
+ttlib.addFunction(&get_day, "get_day", [], [grInt]);
+ttlib.addFunction(&get_month, "get_month", [], [grInt]);
+ttlib.addFunction(&get_year, "get_year", [], [grInt]);
 if (g_enableSpawnProcess) // 如果设置了 `EnableSpawnProcess`
 {
     // 调用程序 (命令形式) 例如: "ldc2.exe --help"， 也可以是任意命令，使用系统默认 Shell
@@ -96,7 +106,7 @@ if (g_enableSpawnProcess) // 如果设置了 `EnableSpawnProcess`
     ]); // 返回值：程序返回值， 程序的命令行输出
 }
 if (g_grhotreload)
-    //热重载
+    //热重载，有重大BUG，仅供测试
     ttlib.addFunction(&hotreload, "hotreload");
 ```
 
@@ -117,104 +127,6 @@ if (g_grhotreload)
 
 # 外部程序：
 
-### EasyTTWeb 程序捆绑的 Frp 程序
-并非我所开发，该分发符合开源协议。
-Frp 文档参考： https://gofrp.org/docs/
-
-### EasyTTWeb 程序捆绑的 TTWebEasyStart 程序
-该程序与 TTWeb 同属一个项目，使用 WTFPL 。
-
-### Build.d
-一个编译工具，我所编写。
-源代码：
-``` d
-module build;
-import std.conv;
-import std.stdio;
-import std.process;
-import std.regex;
-import std.file;
-import std.algorithm;
-
-static import core.exception;
-
-immutable srcDir = "src";
-
-immutable exeName = "ttweb.exe";
-
-immutable string[] defaultargs =
-    [
-        "--od=build",
-        "--extern-std=c++20",
-        "--of=" ~ exeName
-    ];
-
-immutable doc =
-    `USAGE: build.exe ldc2(DEFAULT)|ldmd2|rdmd [EXTRA_OPTIONS_FOR_COMMPILER]
-`;
-
-struct BuildArgs
-{
-    string compiler;
-    string[] supplementaryArgs;
-}
-
-void main(string[] argv)
-{
-    auto args = new BuildArgs;
-
-    if (argv.length >= 2 && (argv[1] == "-h" || argv[1] == "--help"))
-    {
-        writeln(doc);
-        return;
-    }
-
-    try
-    {
-        args.compiler = matchFirst(argv[1], "ldc2||ldmd2||rdmd2").front;
-        if (args.compiler == null)
-        {
-            args.compiler = "ldc2";
-        }
-        for (int i = 2; i < argv.length; i++)
-        {
-            args.supplementaryArgs ~= argv[i];
-        }
-    }
-    catch (core.exception.ArrayIndexError e)
-    {
-        args.compiler = "ldc2";
-        args.supplementaryArgs = [];
-    }
-
-    string[] srcfiles;
-
-    foreach (string name; dirEntries(srcDir, SpanMode.depth).filter!(f => f.name.endsWith(".d")))
-    {
-        srcfiles ~= name;
-    }
-
-    auto pid = spawnProcess([args.compiler] ~ defaultargs ~ args.supplementaryArgs ~ srcfiles);
-    int returnValue = wait(pid);
-    if (returnValue != 0)
-    {
-        writeln("\033[31mBuild Failed\033[0m (code: "~returnValue.to!string~")");
-        return;
-    }
-
-    writeln("\033[32mBuild Succed\033[0m");
-
-    writeln();
-
-    pid = spawnProcess("./" ~ exeName);
-    returnValue = wait(pid);
-    if (returnValue != 0)
-    {
-        writeln("\033[31mRun Failed\033[0m (code: "~returnValue.to!string~")");
-        return;
-    }
-
-}
-
-```
-需要配置exePath和srcDir替换成你自己的，然后编译。
+### Frp
+配合 TTWebEasyStart 使用
+https://gofrp.org/docs/
