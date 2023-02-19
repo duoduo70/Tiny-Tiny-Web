@@ -1,5 +1,5 @@
 # Tiny Tiny Web
-help you create a web server easily.
+A project for Dlang. It can help you create a web server easily.
 
 [docs(Chinese)](https://duoduo70.github.io/Tiny-Tiny-Web/)
 
@@ -71,3 +71,9 @@ D[Serverino] .- GR
 end
 end
 ```
+
+### Upstream
+
+[serverino](https://github.com/trikko/serverino)
+
+[grimoire](https://github.com/Enalye/grimoire)
