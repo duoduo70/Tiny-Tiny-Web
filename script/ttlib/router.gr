@@ -1,0 +1,55 @@
+import "ref.gr"
+
+public func defaultErrPage(hasDump: bool)(string) {
+    if (hasDump) return "Error: <gre>\n" ~ dump_html();
+    else return "Error: <gre>\n";
+}
+
+public func getErrPage(code: int, basePage: string)(string) {
+    if (code < 400 || code > 415) throw "Code over than tolerable";
+    loop (i, basePage:size) {
+        if (i > 4 && slice(basePage, i - 4, i) == "<gre>") {
+            remove(basePage, i - 4, i);
+            insert(basePage, i - 4, code as <string>);
+        }
+    }
+    return basePage;
+} 
+
+public func writeDefaultErrPage(code: int) {
+    router_write(getErrPage(code, defaultErrPage(true)));
+}
+
+public func autoRefresh(sec: float) {
+    router_write("<meta http-equiv=\"refresh\" content=\"" ~ sec as <string> ~ "\">");
+}
+
+public func build(basePage: string, n: list<string>)(string) {
+    var iforn = 0;
+    loop (i, basePage:size) {
+        if(i <= 3) continue;
+        if(
+            (
+                basePage.slice(i, i) == ">" &&
+                basePage.slice(i - 1, i - 1) == "r" &&
+                basePage.slice(i - 2, i - 2) == "g" &&
+                basePage.slice(i - 3, i - 3) == "<"
+            ) || (
+                basePage.slice(i, i) == "r" &&
+                basePage.slice(i - 1, i - 1) == "g" &&
+                basePage.slice(i - 2, i - 2) == "_" &&
+                basePage.slice(i - 3, i - 3) == "$"
+            )
+        ) {
+            remove(basePage, i - 3, i);
+            insert(basePage, i - 3, n[iforn]);
+            iforn += 1;
+            i += 4;
+        }
+    }
+    return basePage;
+}
+
+public func build(basePage: string, n: string)(string) {
+    return build(basePage, [n]);
+}

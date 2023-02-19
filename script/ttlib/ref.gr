@@ -1,0 +1,3 @@
+public var libpath = "../";
+public var ttwebpath = libpath ~ "../";
+public var templatepath = libpath ~ "public/";

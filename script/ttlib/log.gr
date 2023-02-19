@@ -1,0 +1,26 @@
+public enum LogLevel
+{
+    all;
+    trace;
+    info;
+    warning;
+    error;
+    critical;
+    fatal;
+}
+public func toInt(lv: LogLevel)(int) {
+    if (lv == LogLevel.all) return 1;
+    if (lv == LogLevel.trace) return 32;
+    if (lv == LogLevel.info) return 64;
+    if (lv == LogLevel.warning) return 96;
+    if (lv == LogLevel.error) return 128;
+    if (lv == LogLevel.critical) return 160;
+    if (lv == LogLevel.fatal) return 192;
+}
+
+public func speedtest(f: func()) {
+    var t = time();
+    f();
+    t = time() - t;
+    console_log(LogLevel.info.toInt, "[SpeedTest] " ~ t ~ " ms");
+}
