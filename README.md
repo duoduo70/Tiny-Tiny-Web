@@ -1,6 +1,8 @@
 # Tiny Tiny Web
 A project for Dlang. It can help you create a web server easily.
 
+Theoretically, it can run in POSIX. But we only publish Windows EXE .
+
 [docs(Chinese)](https://duoduo70.github.io/Tiny-Tiny-Web/)
 
 
