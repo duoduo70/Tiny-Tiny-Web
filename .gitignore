@@ -3,7 +3,8 @@
 !src/**
 
 !script
-!script/**
+!script/ttlib
+!script/ttlib/**
 
 !docs
 !docs/**

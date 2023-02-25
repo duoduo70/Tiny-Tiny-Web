@@ -121,6 +121,8 @@ if (g_grhotreload)
 - `page.gr` 一些对页面的处理操作
 - `stream.gr` “流”的定义
 
+#### 内容
+
 - `ref.gr`
 - `alias.gr`
     + 函数 `file(string)(string)` 输入：`ref.gr/templatepath` 文件夹中的文件名 输出：文件内容
@@ -143,17 +145,17 @@ if (g_grhotreload)
     + 函数 `build(string, string)(string)` 如果一个网页只有一处需要被 函数 `build` 替换的地方，这个重载可以不用让第二个参数使用数组
 - `stream.gr`
     + 类 `stringstream`
-成员：
-@stringstream(string)(stringstream) 通过字符串构造流
-@stringstream(string, bool)(stringstream) 通过字符串构造 CRLF 行尾序列的流（如果第二个输入为true）
-var str: string; 原始字符串
-var linenum: int; 当前行号
-var line: string; 当前行
-var index: int; 当前行首索引
-var size: int; 字符串大小
-var EOF: bool; 流是否已经执行到底
-var isCRLF: bool; 字符串是否是 CRLF 行尾序列的
-    + 函数`inc(stringstream)(stringstream)`将流递进一行，返回新流
+成员：<br>
+@stringstream(string)(stringstream) 通过字符串构造流<br>
+@stringstream(string, bool)(stringstream) 通过字符串构造 CRLF 行尾序列的流（如果第二个输入为true）<br>
+var str: string; 原始字符串<br>
+var linenum: int; 当前行号<br>
+var line: string; 当前行<br>
+var index: int; 当前行首索引<br>
+var size: int; 字符串大小<br>
+var EOF: bool; 流是否已经执行到底<br>
+var isCRLF: bool; 字符串是否是 CRLF 行尾序列的<br>
+    + 函数`inc(stringstream)(stringstream)`将流递进一行，返回新流<br>
 
 
 #### Events
