@@ -1,4 +1,4 @@
-public enum LogLevel
+export enum LogLevel
 {
     all;
     trace;
@@ -8,7 +8,7 @@ public enum LogLevel
     critical;
     fatal;
 }
-public func toInt(lv: LogLevel)(int) {
+export func toInt(lv: LogLevel)(int) {
     if (lv == LogLevel.all) return 1;
     if (lv == LogLevel.trace) return 32;
     if (lv == LogLevel.info) return 64;
@@ -18,7 +18,7 @@ public func toInt(lv: LogLevel)(int) {
     if (lv == LogLevel.fatal) return 192;
 }
 
-public func speedtest(f: func()) {
+export func speedtest(f: func()) {
     var t = time();
     f();
     t = time() - t;

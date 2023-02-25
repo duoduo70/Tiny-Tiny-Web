@@ -5,8 +5,10 @@
  */
 module grimoire.compiler.mangle;
 
+import std.exception : enforce;
 import std.conv : to;
 import std.string : indexOf;
+
 import grimoire.compiler.type;
 
 /**
@@ -16,7 +18,7 @@ Exemple:
 ---
 [int, string, func(bool, float)]
 ---
-Sera transformé en `$i$s$f($b$f)()`
+Sera transformé en `$i$s$p($b$f)()`
 
 Les types de retour ne sont pas conservé dans le forme décorée car ils ne font pas partie de la signature. \
 En revanche, les fonctions passées en paramètres ont le leur.
@@ -35,9 +37,9 @@ GrType[] grUnmangleSignature(const string mangledSignature) {
     int i;
     while (i < mangledSignature.length) {
         // Séparateur de type
-        if (mangledSignature[i] != '$') {
-            throw new Exception("invalid unmangle signature mangling format, missing $");
-        }
+        enforce(mangledSignature[i] == '$',
+            "invalid unmangle signature mangling format, missing `$`");
+
         i++;
 
         // Valeur
@@ -61,7 +63,13 @@ GrType[] grUnmangleSignature(const string mangledSignature) {
         case 'i':
             currentType.base = GrType.Base.int_;
             break;
-        case 'r':
+        case 'u':
+            currentType.base = GrType.Base.uint_;
+            break;
+        case 'g':
+            currentType.base = GrType.Base.char_;
+            break;
+        case 'f':
             currentType.base = GrType.Base.float_;
             break;
         case 'b':
@@ -75,7 +83,7 @@ GrType[] grUnmangleSignature(const string mangledSignature) {
             currentType.base = GrType.Base.optional;
             currentType.mangledType = grUnmangleBlock(mangledSignature, i);
             break;
-        case 'n':
+        case 'l':
             i++;
             currentType.base = GrType.Base.list;
             currentType.mangledType = grUnmangleBlock(mangledSignature, i);
@@ -85,21 +93,19 @@ GrType[] grUnmangleSignature(const string mangledSignature) {
             currentType.base = GrType.Base.enum_;
             currentType.mangledType = grUnmangleBlock(mangledSignature, i);
             break;
-        case 'p':
+        case 'k':
             currentType.base = GrType.Base.class_;
-            if ((i + 2) >= mangledSignature.length)
-                throw new Exception("invalid mangling format");
+            enforce((i + 2) < mangledSignature.length, "invalid mangling format");
             i++;
             currentType.mangledType = grUnmangleBlock(mangledSignature, i);
             break;
-        case 'u':
+        case 'n':
             currentType.base = GrType.Base.native;
-            if ((i + 2) >= mangledSignature.length)
-                throw new Exception("invalid mangling format");
+            enforce((i + 2) < mangledSignature.length, "invalid mangling format");
             i++;
             currentType.mangledType = grUnmangleBlock(mangledSignature, i);
             break;
-        case 'f':
+        case 'p':
             i++;
             currentType.base = GrType.Base.func;
             currentType.mangledType = grUnmangleBlock(mangledSignature, i);
@@ -132,9 +138,9 @@ Exemple:
 ---
 func test(int i, string s, func(bool, float)) (float) {}
 ---
-Sera transformé en `test$i$s$f($b$f)()`
+Sera transformé en `test$i$s$p($b$f)()`
 
-Les types de retour ne sont pas conservé dans le forme décorée car ils ne font pas partie de la signature. \
+Les types de retour ne sont pas conservé dans la forme décorée car ils ne font pas partie de la signature. \
 En revanche, les fonctions passées en paramètres ont le leur.
 */
 string grMangleComposite(string name, const GrType[] signature) {
@@ -164,8 +170,8 @@ auto grUnmangleComposite(const string mangledSignature) {
 string grUnmangleBlock(const string mangledSignature, ref int i) {
     string subString;
     int blockCount = 1;
-    if (i >= mangledSignature.length || mangledSignature[i] != '(')
-        throw new Exception("invalid subType mangling format, missing (");
+    enforce(i < mangledSignature.length && mangledSignature[i] == '(',
+        "invalid subType mangling format, missing `(`");
     i++;
 
     for (; i < mangledSignature.length; i++) {
@@ -184,7 +190,7 @@ string grUnmangleBlock(const string mangledSignature, ref int i) {
         }
         subString ~= mangledSignature[i];
     }
-    throw new Exception("invalid subType mangling format, missing )");
+    throw new Exception("invalid subType mangling format, missing `)`");
 }
 
 /// Opération de décoration pour un simple type
@@ -210,8 +216,14 @@ string grMangle(const GrType type) {
     case int_:
         mangledName ~= "i";
         break;
+    case uint_:
+        mangledName ~= "u";
+        break;
+    case char_:
+        mangledName ~= "g";
+        break;
     case float_:
-        mangledName ~= "r";
+        mangledName ~= "f";
         break;
     case bool_:
         mangledName ~= "b";
@@ -223,19 +235,19 @@ string grMangle(const GrType type) {
         mangledName ~= "?(" ~ type.mangledType ~ ")";
         break;
     case list:
-        mangledName ~= "n(" ~ type.mangledType ~ ")";
+        mangledName ~= "l(" ~ type.mangledType ~ ")";
         break;
     case class_:
-        mangledName ~= "p(" ~ type.mangledType ~ ")";
+        mangledName ~= "k(" ~ type.mangledType ~ ")";
         break;
     case enum_:
         mangledName ~= "e(" ~ type.mangledType ~ ")";
         break;
     case native:
-        mangledName ~= "u(" ~ type.mangledType ~ ")";
+        mangledName ~= "n(" ~ type.mangledType ~ ")";
         break;
     case func:
-        mangledName ~= "f(" ~ type.mangledType ~ ")(" ~ type.mangledReturnType ~ ")";
+        mangledName ~= "p(" ~ type.mangledType ~ ")(" ~ type.mangledReturnType ~ ")";
         break;
     case task:
         mangledName ~= "t(" ~ type.mangledType ~ ")";
@@ -262,8 +274,7 @@ GrType grUnmangle(const string mangledSignature) {
     int i;
     if (i < mangledSignature.length) {
         // Séparateur de type
-        if (mangledSignature[i] != '$')
-            throw new Exception("invalid unmangle mangling format, missing $");
+        enforce(mangledSignature[i] == '$', "invalid unmangle mangling format, missing `$`");
         i++;
 
         if (mangledSignature[i] == '@') {
@@ -286,7 +297,13 @@ GrType grUnmangle(const string mangledSignature) {
         case 'i':
             currentType.base = GrType.Base.int_;
             break;
-        case 'r':
+        case 'u':
+            currentType.base = GrType.Base.uint_;
+            break;
+        case 'g':
+            currentType.base = GrType.Base.char_;
+            break;
+        case 'f':
             currentType.base = GrType.Base.float_;
             break;
         case 'b':
@@ -301,7 +318,7 @@ GrType grUnmangle(const string mangledSignature) {
             currentType.mangledType = grUnmangleBlock(mangledSignature, i);
             i++;
             break;
-        case 'n':
+        case 'l':
             i++;
             currentType.base = GrType.Base.list;
             currentType.mangledType = grUnmangleBlock(mangledSignature, i);
@@ -313,19 +330,19 @@ GrType grUnmangle(const string mangledSignature) {
             currentType.mangledType = grUnmangleBlock(mangledSignature, i);
             i++;
             break;
-        case 'p':
+        case 'k':
             currentType.base = GrType.Base.class_;
             i++;
             currentType.mangledType = grUnmangleBlock(mangledSignature, i);
             i++;
             break;
-        case 'u':
+        case 'n':
             currentType.base = GrType.Base.native;
             i++;
             currentType.mangledType = grUnmangleBlock(mangledSignature, i);
             i++;
             break;
-        case 'f':
+        case 'p':
             i++;
             currentType.base = GrType.Base.func;
             currentType.mangledType = grUnmangleBlock(mangledSignature, i);

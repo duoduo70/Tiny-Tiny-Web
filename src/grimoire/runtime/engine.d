@@ -11,6 +11,7 @@ import std.conv;
 import std.math;
 import std.algorithm.mutation : swapAt;
 import std.typecons : Nullable;
+import std.exception : enforce;
 
 import grimoire.compiler, grimoire.assembly;
 
@@ -130,21 +131,25 @@ class GrEngine {
 
         // Prépare les primitives
         for (uint i; i < _bytecode.primitives.length; ++i) {
-            if (_bytecode.primitives[i].index > _callbacks.length)
-                throw new Exception("callback index out of bounds");
-            _calls ~= new GrCall(_callbacks[_bytecode.primitives[i].index], _bytecode.primitives[i].name, _bytecode.primitives[i]);
+            enforce(_bytecode.primitives[i].index < _callbacks.length,
+                "callback index out of bounds");
+
+            _calls ~= new GrCall(_callbacks[_bytecode.primitives[i].index],
+                _bytecode.primitives[i].name, _bytecode.primitives[i]);
         }
 
         foreach (ref globalRef; _bytecode.variables) {
             const uint typeMask = globalRef.typeMask;
             const uint index = globalRef.index;
-            if (typeMask & 0x1)
+            if (typeMask & GR_MASK_INT)
                 _globals[index]._ivalue = globalRef.ivalue;
-            else if (typeMask & 0x2)
-                _globals[index]._rvalue = globalRef.rvalue;
-            else if (typeMask & 0x4)
+            else if (typeMask & GR_MASK_UINT)
+                _globals[index]._uvalue = globalRef.uvalue;
+            else if (typeMask & GR_MASK_FLOAT)
+                _globals[index]._fvalue = globalRef.fvalue;
+            else if (typeMask & GR_MASK_STRING)
                 _globals[index]._ovalue = cast(GrPointer) new GrString(globalRef.svalue);
-            else if (typeMask & 0x8)
+            else if (typeMask & GR_MASK_POINTER)
                 _globals[index]._ovalue = null;
         }
 
@@ -206,12 +211,14 @@ class GrEngine {
 
         const string mangledName = grMangleComposite(name, signature);
         const auto event = mangledName in _bytecode.events;
+
         if (event is null)
             return null;
-        if (signature.length != parameters.length)
-            throw new Exception("the number of parameters (" ~ to!string(
-                    parameters.length) ~ ") of `" ~ grGetPrettyFunctionCall(
-                    mangledName) ~ "` mismatch its definition");
+
+        enforce(signature.length == parameters.length, "the number of parameters (" ~ to!string(
+                parameters.length) ~ ") of `" ~ grGetPrettyFunctionCall(
+                mangledName) ~ "` mismatch its definition");
+
         GrTask task = new GrTask(this);
         task.pc = *event;
 
@@ -239,10 +246,9 @@ class GrEngine {
         if (!isRunning || event is null)
             return null;
 
-        if (event.signature.length != parameters.length)
-            throw new Exception("the number of parameters (" ~ to!string(
-                    parameters.length) ~ ") of `" ~ grGetPrettyFunctionCall(event.name,
-                    event.signature) ~ "` mismatch its definition");
+        enforce(event.signature.length == parameters.length, "the number of parameters (" ~ to!string(
+                parameters.length) ~ ") of `" ~ grGetPrettyFunctionCall(event.name,
+                event.signature) ~ "` mismatch its definition");
 
         GrTask task = new GrTask(this);
         task.pc = event.address;
@@ -390,6 +396,8 @@ class GrEngine {
 
     alias getBoolVariable = getVariable!bool;
     alias getIntVariable = getVariable!GrInt;
+    alias getUIntVariable = getVariable!GrUInt;
+    alias getCharVariable = getVariable!GrChar;
     alias getFloatVariable = getVariable!GrFloat;
     alias getPointerVariable = getVariable!GrPointer;
 
@@ -420,16 +428,22 @@ class GrEngine {
 
     pragma(inline) private T getVariable(T)(string name) const {
         const auto variable = name in _bytecode.variables;
-        if (variable is null)
-            throw new Exception("no global variable `" ~ name ~ "` defined");
+        enforce(variable, "no global variable `" ~ name ~ "` defined");
+
         static if (is(T == GrInt)) {
             return _globals[variable.index]._ivalue;
+        }
+        else static if (is(T == GrUInt)) {
+            return _globals[variable.index]._uvalue;
+        }
+        else static if (is(T == GrChar)) {
+            return cast(GrChar) _globals[variable.index]._uvalue;
         }
         else static if (is(T == GrBool)) {
             return _globals[variable.index]._ivalue > 0;
         }
         else static if (is(T == GrFloat)) {
-            return _globals[variable.index]._rvalue;
+            return _globals[variable.index]._fvalue;
         }
         else static if (is(T == GrPointer)) {
             return cast(GrPointer) _globals[variable.index]._ovalue;
@@ -438,6 +452,8 @@ class GrEngine {
 
     alias setBoolVariable = setVariable!GrBool;
     alias setIntVariable = setVariable!GrInt;
+    alias setUIntVariable = setVariable!GrUInt;
+    alias setCharVariable = setVariable!GrChar;
     alias setFloatVariable = setVariable!GrFloat;
     alias setPointerVariable = setVariable!GrPointer;
 
@@ -471,13 +487,16 @@ class GrEngine {
 
     pragma(inline) private void setVariable(T)(string name, T value) {
         const auto variable = name in _bytecode.variables;
-        if (variable is null)
-            throw new Exception("no global variable `" ~ name ~ "` defined");
+        enforce(variable, "no global variable `" ~ name ~ "` defined");
+
         static if (is(T == GrInt) || is(T == GrBool)) {
             _globals[variable.index]._ivalue = value;
         }
+        else static if (is(T == GrUInt) || is(T == GrChar)) {
+            _globals[variable.index]._uvalue = value;
+        }
         else static if (is(T == GrFloat)) {
-            _globals[variable.index]._rvalue = value;
+            _globals[variable.index]._fvalue = value;
         }
         else static if (is(T == GrPointer)) {
             _globals[variable.index]._ovalue = value;
@@ -851,11 +870,19 @@ class GrEngine {
                             opcode)];
                     currentTask.pc++;
                     break;
+                case const_uint:
+                    currentTask.stackPos++;
+                    if (currentTask.stackPos == currentTask.stack.length)
+                        currentTask.stack.length *= 2;
+                    currentTask.stack[currentTask.stackPos]._uvalue = _bytecode.uconsts[grGetInstructionUnsignedValue(
+                            opcode)];
+                    currentTask.pc++;
+                    break;
                 case const_float:
                     currentTask.stackPos++;
                     if (currentTask.stackPos == currentTask.stack.length)
                         currentTask.stack.length *= 2;
-                    currentTask.stack[currentTask.stackPos]._rvalue = _bytecode.rconsts[grGetInstructionUnsignedValue(
+                    currentTask.stack[currentTask.stackPos]._fvalue = _bytecode.fconsts[grGetInstructionUnsignedValue(
                             opcode)];
                     currentTask.pc++;
                     break;
@@ -908,11 +935,18 @@ class GrEngine {
                         currentTask.stack[currentTask.stackPos + 1]._ivalue;
                     currentTask.pc++;
                     break;
+                case equal_uint:
+                    currentTask.stackPos--;
+                    currentTask.stack[currentTask.stackPos]._ivalue =
+                        currentTask.stack[currentTask.stackPos]._uvalue ==
+                        currentTask.stack[currentTask.stackPos + 1]._uvalue;
+                    currentTask.pc++;
+                    break;
                 case equal_float:
                     currentTask.stackPos--;
                     currentTask.stack[currentTask.stackPos]._ivalue =
-                        currentTask.stack[currentTask.stackPos]._rvalue ==
-                        currentTask.stack[currentTask.stackPos + 1]._rvalue;
+                        currentTask.stack[currentTask.stackPos]._fvalue ==
+                        currentTask.stack[currentTask.stackPos + 1]._fvalue;
                     currentTask.pc++;
                     break;
                 case equal_string:
@@ -929,11 +963,18 @@ class GrEngine {
                         currentTask.stack[currentTask.stackPos + 1]._ivalue;
                     currentTask.pc++;
                     break;
+                case notEqual_uint:
+                    currentTask.stackPos--;
+                    currentTask.stack[currentTask.stackPos]._ivalue =
+                        currentTask.stack[currentTask.stackPos]._uvalue !=
+                        currentTask.stack[currentTask.stackPos + 1]._uvalue;
+                    currentTask.pc++;
+                    break;
                 case notEqual_float:
                     currentTask.stackPos--;
                     currentTask.stack[currentTask.stackPos]._ivalue =
-                        currentTask.stack[currentTask.stackPos]._rvalue !=
-                        currentTask.stack[currentTask.stackPos + 1]._rvalue;
+                        currentTask.stack[currentTask.stackPos]._fvalue !=
+                        currentTask.stack[currentTask.stackPos + 1]._fvalue;
                     currentTask.pc++;
                     break;
                 case notEqual_string:
@@ -950,11 +991,18 @@ class GrEngine {
                         currentTask.stack[currentTask.stackPos + 1]._ivalue;
                     currentTask.pc++;
                     break;
+                case greaterOrEqual_uint:
+                    currentTask.stackPos--;
+                    currentTask.stack[currentTask.stackPos]._ivalue =
+                        currentTask.stack[currentTask.stackPos]._uvalue >=
+                        currentTask.stack[currentTask.stackPos + 1]._uvalue;
+                    currentTask.pc++;
+                    break;
                 case greaterOrEqual_float:
                     currentTask.stackPos--;
                     currentTask.stack[currentTask.stackPos]._ivalue =
-                        currentTask.stack[currentTask.stackPos]._rvalue >=
-                        currentTask.stack[currentTask.stackPos + 1]._rvalue;
+                        currentTask.stack[currentTask.stackPos]._fvalue >=
+                        currentTask.stack[currentTask.stackPos + 1]._fvalue;
                     currentTask.pc++;
                     break;
                 case lesserOrEqual_int:
@@ -964,11 +1012,18 @@ class GrEngine {
                         currentTask.stack[currentTask.stackPos + 1]._ivalue;
                     currentTask.pc++;
                     break;
+                case lesserOrEqual_uint:
+                    currentTask.stackPos--;
+                    currentTask.stack[currentTask.stackPos]._ivalue =
+                        currentTask.stack[currentTask.stackPos]._uvalue <=
+                        currentTask.stack[currentTask.stackPos + 1]._uvalue;
+                    currentTask.pc++;
+                    break;
                 case lesserOrEqual_float:
                     currentTask.stackPos--;
                     currentTask.stack[currentTask.stackPos]._ivalue =
-                        currentTask.stack[currentTask.stackPos]._rvalue <=
-                        currentTask.stack[currentTask.stackPos + 1]._rvalue;
+                        currentTask.stack[currentTask.stackPos]._fvalue <=
+                        currentTask.stack[currentTask.stackPos + 1]._fvalue;
                     currentTask.pc++;
                     break;
                 case greater_int:
@@ -978,11 +1033,18 @@ class GrEngine {
                         currentTask.stack[currentTask.stackPos + 1]._ivalue;
                     currentTask.pc++;
                     break;
+                case greater_uint:
+                    currentTask.stackPos--;
+                    currentTask.stack[currentTask.stackPos]._ivalue =
+                        currentTask.stack[currentTask.stackPos]._uvalue >
+                        currentTask.stack[currentTask.stackPos + 1]._uvalue;
+                    currentTask.pc++;
+                    break;
                 case greater_float:
                     currentTask.stackPos--;
                     currentTask.stack[currentTask.stackPos]._ivalue =
-                        currentTask.stack[currentTask.stackPos]._rvalue >
-                        currentTask.stack[currentTask.stackPos + 1]._rvalue;
+                        currentTask.stack[currentTask.stackPos]._fvalue >
+                        currentTask.stack[currentTask.stackPos + 1]._fvalue;
                     currentTask.pc++;
                     break;
                 case lesser_int:
@@ -992,11 +1054,18 @@ class GrEngine {
                         currentTask.stack[currentTask.stackPos + 1]._ivalue;
                     currentTask.pc++;
                     break;
+                case lesser_uint:
+                    currentTask.stackPos--;
+                    currentTask.stack[currentTask.stackPos]._ivalue =
+                        currentTask.stack[currentTask.stackPos]._uvalue <
+                        currentTask.stack[currentTask.stackPos + 1]._uvalue;
+                    currentTask.pc++;
+                    break;
                 case lesser_float:
                     currentTask.stackPos--;
                     currentTask.stack[currentTask.stackPos]._ivalue =
-                        currentTask.stack[currentTask.stackPos]._rvalue <
-                        currentTask.stack[currentTask.stackPos + 1]._rvalue;
+                        currentTask.stack[currentTask.stackPos]._fvalue <
+                        currentTask.stack[currentTask.stackPos + 1]._fvalue;
                     currentTask.pc++;
                     break;
                 case checkNull:
@@ -1051,14 +1120,29 @@ class GrEngine {
                     break;
                 case add_int:
                     currentTask.stackPos--;
-                    currentTask.stack[currentTask.stackPos]._ivalue +=
-                        currentTask.stack[currentTask.stackPos + 1]._ivalue;
+                    const long r = cast(long) currentTask.stack[currentTask.stackPos]._ivalue + cast(
+                        long) currentTask.stack[currentTask.stackPos + 1]._ivalue;
+                    if (r < int.min || r > int.max) {
+                        raise(currentTask, "OverflowError");
+                        break;
+                    }
+                    currentTask.stack[currentTask.stackPos]._ivalue = cast(int) r;
+                    currentTask.pc++;
+                    break;
+                case add_uint:
+                    currentTask.stackPos--;
+                    const GrUInt r = currentTask.stack[currentTask.stackPos + 1]._uvalue;
+                    const GrUInt r2 = currentTask.stack[currentTask.stackPos]._uvalue += r;
+                    if (r2 < r) {
+                        raise(currentTask, "OverflowError");
+                        break;
+                    }
                     currentTask.pc++;
                     break;
                 case add_float:
                     currentTask.stackPos--;
-                    currentTask.stack[currentTask.stackPos]._rvalue +=
-                        currentTask.stack[currentTask.stackPos + 1]._rvalue;
+                    currentTask.stack[currentTask.stackPos]._fvalue +=
+                        currentTask.stack[currentTask.stackPos + 1]._fvalue;
                     currentTask.pc++;
                     break;
                 case concatenate_string:
@@ -1069,26 +1153,58 @@ class GrEngine {
                     break;
                 case substract_int:
                     currentTask.stackPos--;
-                    currentTask.stack[currentTask.stackPos]._ivalue -=
-                        currentTask.stack[currentTask.stackPos + 1]._ivalue;
+                    const long r = cast(long) currentTask.stack[currentTask.stackPos]._ivalue - cast(
+                        long) currentTask.stack[currentTask.stackPos + 1]._ivalue;
+                    if (r < int.min || r > int.max) {
+                        raise(currentTask, "OverflowError");
+                        break;
+                    }
+                    currentTask.stack[currentTask.stackPos]._ivalue = cast(int) r;
                     currentTask.pc++;
                     break;
                 case substract_float:
                     currentTask.stackPos--;
-                    currentTask.stack[currentTask.stackPos]._rvalue -=
-                        currentTask.stack[currentTask.stackPos + 1]._rvalue;
+                    currentTask.stack[currentTask.stackPos]._fvalue -=
+                        currentTask.stack[currentTask.stackPos + 1]._fvalue;
+                    currentTask.pc++;
+                    break;
+                case substract_uint:
+                    currentTask.stackPos--;
+                    GrUInt* v1 = &currentTask.stack[currentTask.stackPos]._uvalue;
+                    const GrUInt v2 = currentTask.stack[currentTask.stackPos + 1]._uvalue;
+                    if (v2 > *v1) {
+                        raise(currentTask, "OverflowError");
+                        break;
+                    }
+                    *v1 -= v2;
                     currentTask.pc++;
                     break;
                 case multiply_int:
                     currentTask.stackPos--;
-                    currentTask.stack[currentTask.stackPos]._ivalue *=
-                        currentTask.stack[currentTask.stackPos + 1]._ivalue;
+                    const long r = cast(long) currentTask.stack[currentTask.stackPos]._ivalue * cast(
+                        long) currentTask.stack[currentTask.stackPos + 1]._ivalue;
+                    if (r < int.min || r > int.max) {
+                        raise(currentTask, "OverflowError");
+                        break;
+                    }
+                    currentTask.stack[currentTask.stackPos]._ivalue = cast(int) r;
+                    currentTask.pc++;
+                    break;
+                case multiply_uint:
+                    currentTask.stackPos--;
+                    const ulong r = ulong(currentTask.stack[currentTask.stackPos]._uvalue) * ulong(
+                        currentTask.stack[currentTask.stackPos + 1]._uvalue);
+                    if (r >> 32) {
+                        raise(currentTask, "OverflowError");
+                        break;
+                    }
+                    currentTask.stack[currentTask.stackPos]._uvalue = cast(GrUInt) r;
                     currentTask.pc++;
                     break;
                 case multiply_float:
                     currentTask.stackPos--;
-                    currentTask.stack[currentTask.stackPos]._rvalue *=
-                        currentTask.stack[currentTask.stackPos + 1]._rvalue;
+                    currentTask.stack[currentTask.stackPos]._fvalue *=
+                        currentTask.stack[currentTask.stackPos + 1]._fvalue;
                     currentTask.pc++;
                     break;
                 case divide_int:
@@ -1101,14 +1217,24 @@ class GrEngine {
                         currentTask.stack[currentTask.stackPos + 1]._ivalue;
                     currentTask.pc++;
                     break;
-                case divide_float:
-                    if (currentTask.stack[currentTask.stackPos]._rvalue == 0f) {
+                case divide_uint:
+                    if (currentTask.stack[currentTask.stackPos]._uvalue == 0) {
                         raise(currentTask, "ZeroDivisionError");
                         break;
                     }
                     currentTask.stackPos--;
-                    currentTask.stack[currentTask.stackPos]._rvalue /=
-                        currentTask.stack[currentTask.stackPos + 1]._rvalue;
+                    currentTask.stack[currentTask.stackPos]._uvalue /=
+                        currentTask.stack[currentTask.stackPos + 1]._uvalue;
+                    currentTask.pc++;
+                    break;
+                case divide_float:
+                    if (currentTask.stack[currentTask.stackPos]._fvalue == 0f) {
+                        raise(currentTask, "ZeroDivisionError");
+                        break;
+                    }
+                    currentTask.stackPos--;
+                    currentTask.stack[currentTask.stackPos]._fvalue /=
+                        currentTask.stack[currentTask.stackPos + 1]._fvalue;
                     currentTask.pc++;
                     break;
                 case remainder_int:
@@ -1121,14 +1247,24 @@ class GrEngine {
                         currentTask.stack[currentTask.stackPos + 1]._ivalue;
                     currentTask.pc++;
                     break;
-                case remainder_float:
-                    if (currentTask.stack[currentTask.stackPos]._rvalue == 0f) {
+                case remainder_uint:
+                    if (currentTask.stack[currentTask.stackPos]._uvalue == 0) {
                         raise(currentTask, "ZeroDivisionError");
                         break;
                     }
                     currentTask.stackPos--;
-                    currentTask.stack[currentTask.stackPos]._rvalue %=
-                        currentTask.stack[currentTask.stackPos + 1]._rvalue;
+                    currentTask.stack[currentTask.stackPos]._uvalue %=
+                        currentTask.stack[currentTask.stackPos + 1]._uvalue;
+                    currentTask.pc++;
+                    break;
+                case remainder_float:
+                    if (currentTask.stack[currentTask.stackPos]._fvalue == 0f) {
+                        raise(currentTask, "ZeroDivisionError");
+                        break;
+                    }
+                    currentTask.stackPos--;
+                    currentTask.stack[currentTask.stackPos]._fvalue %=
+                        currentTask.stack[currentTask.stackPos + 1]._fvalue;
                     currentTask.pc++;
                     break;
                 case negative_int:
@@ -1137,24 +1273,52 @@ class GrEngine {
                     currentTask.pc++;
                     break;
                 case negative_float:
-                    currentTask.stack[currentTask.stackPos]._rvalue = -currentTask
-                        .stack[currentTask.stackPos]._rvalue;
+                    currentTask.stack[currentTask.stackPos]._fvalue = -currentTask
+                        .stack[currentTask.stackPos]._fvalue;
                     currentTask.pc++;
                     break;
                 case increment_int:
-                    currentTask.stack[currentTask.stackPos]._ivalue++;
+                    auto r = &currentTask.stack[currentTask.stackPos]._ivalue;
+                    if (*r == int.max) {
+                        raise(currentTask, "OverflowError");
+                        break;
+                    }
+                    (*r)++;
+                    currentTask.pc++;
+                    break;
+                case increment_uint:
+                    auto r = &currentTask.stack[currentTask.stackPos]._uvalue;
+                    if (*r == uint.max) {
+                        raise(currentTask, "OverflowError");
+                        break;
+                    }
+                    (*r)++;
                     currentTask.pc++;
                     break;
                 case increment_float:
-                    currentTask.stack[currentTask.stackPos]._rvalue += 1f;
+                    currentTask.stack[currentTask.stackPos]._fvalue += 1f;
                     currentTask.pc++;
                     break;
                 case decrement_int:
-                    currentTask.stack[currentTask.stackPos]._ivalue--;
+                    auto r = &currentTask.stack[currentTask.stackPos]._ivalue;
+                    if (*r == int.min) {
+                        raise(currentTask, "OverflowError");
+                        break;
+                    }
+                    (*r)--;
+                    currentTask.pc++;
+                    break;
+                case decrement_uint:
+                    auto r = &currentTask.stack[currentTask.stackPos]._uvalue;
+                    if (*r == uint.min) {
+                        raise(currentTask, "OverflowError");
+                        break;
+                    }
+                    (*r)--;
                     currentTask.pc++;
                     break;
                 case decrement_float:
-                    currentTask.stack[currentTask.stackPos]._rvalue -= 1f;
+                    currentTask.stack[currentTask.stackPos]._fvalue -= 1f;
                     currentTask.pc++;
                     break;
                 case copy:
@@ -1465,6 +1629,40 @@ class GrEngine {
         if (builder)
             return new GrObject(*builder);
         return null;
+    }
+
+    /// Récupère le nom du champ de l’énumération correspondant à une valeur donnée
+    string getEnumFieldName(string enumName, int fieldValue) {
+        foreach (enum_; _bytecode.enums) {
+            if (enum_.name == enumName) {
+                foreach (ref field; enum_.fields) {
+                    if (field.value == fieldValue) {
+                        return field.name;
+                    }
+                }
+
+                return to!string(fieldValue);
+            }
+        }
+
+        return to!string(fieldValue);
+    }
+
+    /// Récupère la valeur du champ de l’énumération correspondant à un nom donné
+    int getEnumFieldValue(string enumName, string fieldName) {
+        foreach (enum_; _bytecode.enums) {
+            if (enum_.name == enumName) {
+                foreach (ref field; enum_.fields) {
+                    if (field.name == fieldName) {
+                        return field.value;
+                    }
+                }
+
+                return 0;
+            }
+        }
+
+        return 0;
     }
 
     import core.time : MonoTime, Duration;

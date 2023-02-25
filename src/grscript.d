@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; 
+ * along with this program;
  * if not, see <https://www.gnu.org/licenses/>.
  */
 module grscript;
@@ -64,16 +64,17 @@ void router_status(GrCall call)
 void read_file(GrCall call)
 {
     string f = call.getString(0).data;
-    foreach (st; g_fileStorages)
+    auto fs = g_fileStorages ~ ["."];
+    foreach (st; fs)
     {
         if ((st ~ f).exists && (st ~ f).isFile)
         {
-            call.setString(new GrString(readText(st ~ f)));
+            call.setString(readText(st ~ "/" ~  f));
             return;
         }
     }
 
-    call.setString(new GrString(""));
+    call.setString("");
 }
 
 void write_file(GrCall call)
@@ -109,12 +110,12 @@ void regex_(GrCall call)
 
 void dump_html(GrCall call)
 {
-    call.setString(new GrString((*reqCache).dump()));
+    call.setString((*reqCache).dump());
 }
 
 void dump_string(GrCall call)
 {
-    call.setString(new GrString((*reqCache).dump(false)));
+    call.setString((*reqCache).dump(false));
 }
 
 void execute_shell(GrCall call)
@@ -128,7 +129,7 @@ void execute_shell(GrCall call)
     catch (StdioException)
     {
         call.setInt(-int.max);
-        call.setString(null);
+        call.setString("");
     }
 }
 

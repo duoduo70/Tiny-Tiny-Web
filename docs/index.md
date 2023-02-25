@@ -2,7 +2,8 @@
 这是一个用以简单创建Web服务器的软件，使用 D 语言开发， GPLv3 开源，以下简称 TTWeb 。
 
 本文档所述内容可能不适合最新版本。
-当前文档基于版本 1.1 。
+当前文档基于版本 2023-2-26 (1.1 过渡到 1.2 之间的开发版本) 。
+Grimoire 版本：comment-5668692
 
 配置文件：
 
@@ -43,8 +44,8 @@
 ### 默认路由：
 会将
 - index.html
-- index.htm 
-- index 
+- index.htm
+- index
 路由到 index.html上
 
 如果开启了 `ExtraFileStorages`， 如遇同名文件，以默认的public文件夹下的文件为最高优先级。
@@ -60,7 +61,7 @@ Grimoire Github：https://github.com/Enalye/grimoire
 
 
 #### TTWeb 给出的 Grimoire 基本函数列表
-``` javascript
+```dlang
 
 // TTWEB版本
 ttlib.addVariable("TTWEB_VERSION", grString, GrValue(VERSION));
@@ -70,9 +71,9 @@ ttlib.addFunction(&router_write, "router_write", [grString]);
 ttlib.addFunction(&router_serve, "router_serve", [grString]);
 // 设置状态码 例如 404
 ttlib.addFunction(&router_status, "router_status", [grInt]);
-// 读文件，输入文件名，输出内容
+// 读文件，输入文件名，输出内容（由于架构问题，不可以在 event router 中调用）
 ttlib.addFunction(&read_file, "read_file", [grString], [grString]);
-// 写文件
+// 写文件（实验性）
 ttlib.addFunction(&write_file, "write_file", [grString, grString], [grBool]);
 // 向控制台输出日志，第一个参数为代表报错等级的数字，分别是：
 // all = 1
@@ -109,6 +110,51 @@ if (g_grhotreload)
     //热重载，有重大BUG，仅供测试
     ttlib.addFunction(&hotreload, "hotreload");
 ```
+
+## Grimoire-TTLib （Grimoire脚本的TinyTinyWeb库）
+
+- `ref.gr` 配置文件
+- `alias.gr` 一些底层方法的再封装
+- `log.gr` 输出日志
+- `markdown.gr` 极为简易的html内嵌markdown支持
+- `process.gr` 进程相关的操作
+- `page.gr` 一些对页面的处理操作
+- `stream.gr` “流”的定义
+
+- `ref.gr`
+- `alias.gr`
+    + 函数 `file(string)(string)` 输入：`ref.gr/templatepath` 文件夹中的文件名 输出：文件内容
+    + 输出流 `out` 用法：`out << "hello";`或`(out << "hello,")<<"world;"`
+- `log.gr`
+    + 枚举 `LogLevel` 定义了日志级别，值：`all`、`trace`、`info`、`warning`、`error`、`critical`、`fatal`
+    + 函数 `toInt(LogLevel)(int)` 将 枚举 `LogLevel` 的枚举值转换成 `console_log` 函数可识别的格式
+    + 函数 `speedtest(f: func())` 接受传入一个函数，测试函数的运行时间并以日志形式输出至控制台
+- `markdown.gr`
+    + 函数 `compile(string)(stringstream)` 传入一个字符串，编译后以`stringstream`的形式输出编译结果
+- `process.gr`
+    + 函数 `runShell(string)(string)` 输入 Shell 命令，返回 该 Shell 命令的返回内容
+    + 函数 `printShell(string)()` 输入 Shell 命令，返回内容直接通过日志输入至控制台
+- `page.gr`
+    + 函数 `defaultErrPage(bool)(string)` 以字符串形式返回默认错误页，参数为是否包含 Dump 信息
+    + 函数 `getErrPage(int, string)(string)` 获得一个字符串形式的错误页，第一个输入为错误码，第二个输入为错误页模板（编译时会自动替换模板内的`<gre>`标签为错误码）
+    + 函数 `writeDefaultErrPage(int)(string)` 输入错误码，输出默认错误页
+    + 函数 `autoRefresh(float)` 让网页定时自动刷新，参数为自动刷新间隔时间，单位秒
+    + 函数 `build(string, list<string>)(string)` 自动替换指定字符串中的`<gr>`与`$_gr`标签为第二个参数的对应值，必须严格遵从前者字符串内的顺序
+    + 函数 `build(string, string)(string)` 如果一个网页只有一处需要被 函数 `build` 替换的地方，这个重载可以不用让第二个参数使用数组
+- `stream.gr`
+    + 类 `stringstream`
+成员：
+@stringstream(string)(stringstream) 通过字符串构造流
+@stringstream(string, bool)(stringstream) 通过字符串构造 CRLF 行尾序列的流（如果第二个输入为true）
+var str: string; 原始字符串
+var linenum: int; 当前行号
+var line: string; 当前行
+var index: int; 当前行首索引
+var size: int; 字符串大小
+var EOF: bool; 流是否已经执行到底
+var isCRLF: bool; 字符串是否是 CRLF 行尾序列的
+    + 函数`inc(stringstream)(stringstream)`将流递进一行，返回新流
+
 
 #### Events
 目前开放了四个Events，分别是 `router`（每次请求都会调用，必须传入string）、`start`（进程初始化时调用）、`init`（随配置文件加载启动）、`stop`（进程结束时调用）。

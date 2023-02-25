@@ -5,6 +5,8 @@
  */
 module grimoire.runtime.channel;
 
+import std.exception : enforce;
+
 import grimoire.assembly;
 import grimoire.runtime.value;
 
@@ -52,6 +54,11 @@ final class GrChannel {
         bool isFull() const {
             return _size == _capacity;
         }
+
+        /// Le contenu du buffer
+        GrValue[] data() {
+            return _buffer;
+        }
     }
 
     this(uint buffSize = 1u) {
@@ -60,16 +67,17 @@ final class GrChannel {
 
     /// À appeler après avoir vérifié `canSend()` avant.
     void send()(auto ref GrValue value) {
-        if (_size == _capacity /* || (_capacity == 1u && !_isReceiverReady)*/ )
-            throw new Exception("Attempt to write on a full channel");
+        enforce(_size != _capacity /* || (_capacity == 1u && !_isReceiverReady)*/ ,
+            "attempting to write on a full channel");
+
         _buffer ~= value;
         _size++;
     }
 
     /// À appeler après avoir vérifié `canReceive()` avant.
     GrValue receive() {
-        if (_size == 0)
-            throw new Exception("Attempt to read an empty channel");
+        enforce(_size != 0, "attempting to read on an empty channel");
+
         GrValue value = _buffer[0];
         _buffer = _buffer[1 .. $];
         _size--;

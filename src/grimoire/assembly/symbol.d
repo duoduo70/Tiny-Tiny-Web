@@ -10,6 +10,8 @@ import std.conv : to;
 
 alias GrBool = bool;
 alias GrInt = int;
+alias GrUInt = uint;
+alias GrChar = dchar;
 alias GrFloat = double;
 alias GrStringValue = string;
 alias GrPointer = void*;

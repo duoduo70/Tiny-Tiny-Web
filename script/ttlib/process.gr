@@ -1,13 +1,13 @@
 import "log.gr"
 
-public func runShell(command: string)(string) {
+export func runShell(command: string)(string) {
     var status,retstr = execute_shell(command);
     if(status == 0) return retstr;
     else throw "Return code of shell command is not `0`";
     return "";
 }
 
-public func printShell(command: string)() {
+export func printShell(command: string)() {
     try console_print("Shell Output:\n" ~ runShell(command));
     catch (e) console_log(LogLevel.warning.toInt, "Can not print `" ~ command ~ "`");
 }

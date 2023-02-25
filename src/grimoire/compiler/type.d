@@ -6,6 +6,7 @@
 module grimoire.compiler.type;
 
 import std.conv : to;
+import std.exception : enforce;
 
 import grimoire.runtime;
 import grimoire.assembly;
@@ -21,6 +22,8 @@ struct GrType {
         void_,
         null_,
         int_,
+        uint_,
+        char_,
         float_,
         bool_,
         string_,
@@ -97,10 +100,14 @@ struct GrType {
 const GrType grVoid = GrType(GrType.Base.void_);
 /// Nombre entier
 const GrType grInt = GrType(GrType.Base.int_);
+/// Nombre entier non-signé
+const GrType grUInt = GrType(GrType.Base.uint_);
 /// Nombre flottant
 const GrType grFloat = GrType(GrType.Base.float_);
 /// Type booléen
 const GrType grBool = GrType(GrType.Base.bool_);
+/// Type caractère
+const GrType grChar = GrType(GrType.Base.char_);
 /// Chaîne de caractères
 const GrType grString = GrType(GrType.Base.string_);
 
@@ -210,8 +217,7 @@ package GrType grPackTuple(const GrType[] types) {
 
 /// Déballe plusieurs types depuis un seul
 package GrType[] grUnpackTuple(GrType type) {
-    if (type.base != GrType.Base.internalTuple)
-        throw new Exception("Cannot unpack a not tuple type.");
+    enforce(type.base == GrType.Base.internalTuple, "the packed value is not a tuple");
     return grUnmangleSignature(type.mangledType);
 }
 
@@ -234,7 +240,7 @@ package class GrVariable {
     /// Son nom unique dans la portée
     string name;
     /// Est-elle visible depuis les autres fichiers ?
-    bool isPublic;
+    bool isExport;
     /// Le fichier d’où elle est déclarée
     uint fileId;
     /// Sa position en cas d’erreurs
@@ -284,7 +290,7 @@ final class GrTypeAliasDefinition {
     /// The type aliased.
     GrType type;
     /// Is the type visible from other files ?
-    bool isPublic;
+    bool isExport;
     /// The file where the type is declared.
     uint fileId;
 }
@@ -313,7 +319,7 @@ final class GrEnumDefinition {
     /// L’id de l’énumération
     size_t index;
     /// Est-il visible depuis les autres fichiers ?
-    bool isPublic;
+    bool isExport;
     /// Le fichier d’où il a été déclaré
     uint fileId;
 
@@ -373,7 +379,7 @@ final class GrClassDefinition {
 
     package {
         struct FieldInfo {
-            bool isPublic;
+            bool isExport;
             uint fileId;
             uint position;
         }
@@ -386,7 +392,7 @@ final class GrClassDefinition {
     /// L’id de la classe
     size_t index;
     /// Est-elle visible depuis d’autres fichiers ?
-    bool isPublic;
+    bool isExport;
     /// Le fichier dans lequel elle est déclarée
     uint fileId;
     /// A-t’elle déjà été analysé ?
@@ -412,8 +418,10 @@ final class GrVariableDefinition {
     bool isInitialized;
     /// Valeur entière d’initialisation
     GrInt ivalue;
+    /// Valeur entière non-signée d’initialisation
+    GrInt uvalue;
     /// Valeur flottante d’initialisation
-    GrFloat rvalue;
+    GrFloat fvalue;
     /// Valeur textuelle d’initialisation
     GrStringValue svalue;
     /// Registre
@@ -467,7 +475,7 @@ package class GrFunction {
     bool[] isDeferrableSectionLocked = [false];
 
     /// Est-elle visible depuis d’autres fichiers ?
-    bool isPublic;
+    bool isExport;
     /// Le fichier d’où cette fonction est déclarée
     uint fileId;
 
@@ -515,6 +523,8 @@ package class GrFunction {
     private void freeRegister(const GrVariable variable) {
         final switch (variable.type.base) with (GrType.Base) {
         case int_:
+        case uint_:
+        case char_:
         case bool_:
         case func:
         case task:
@@ -557,7 +567,7 @@ package class GrTemplateFunction {
     bool isTask;
     bool isConversion;
     /// Is the function visible from other files ?
-    bool isPublic;
+    bool isExport;
     /// The file where the template is declared.
     uint fileId;
 

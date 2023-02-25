@@ -1,0 +1,65 @@
+export class stringstream {
+    export var str: string;
+    export var linenum: int;
+    export var line: string;
+    export var index: int;
+    export var size: int;
+    export var EOF: bool;
+    export var isCRLF: bool;
+}
+
+export func @stringstream(s: string)(stringstream) {
+    return @stringstream {
+        str = s ~ "\n";
+        linenum = 0;
+        line = 0;
+        index = 0;
+        size = s:size + 1;
+        EOF = false;
+        isCRLF = false;
+    };
+}
+
+export func @stringstream(s: string, crlf: bool)(stringstream) {
+    if(!crlf) return @stringstream(s);
+    return @stringstream {
+        str = s ~ "\n";
+        linenum = 0;
+        line = 0;
+        index = 0;
+        size = s:size + 1;
+        EOF = false;
+        isCRLF = true;
+    };
+}
+
+export func inc(stream: stringstream)(stringstream) {
+    var add_index_ok: bool = false;
+    loop (i, stream.size - stream.index) {
+        if(!add_index_ok) {
+            i += stream.index;
+            add_index_ok = true;
+        }
+        if(stream.str.slice(i, i) == "\n") {
+            var end: bool = false;
+            if(i == (stream.size - 2)) end = true;
+            if(stream.isCRLF) return @stringstream {
+                str = stream.str;
+                linenum = stream.linenum + 1;
+                line = stream.str.slice(stream.index, i - 2);
+                index = i + 1;
+                size = stream.size;
+                EOF = end;
+            };
+            return @stringstream {
+                str = stream.str;
+                linenum = stream.linenum + 1;
+                line = stream.str.slice(stream.index, i - 1);
+                index = i + 1;
+                size = stream.size;
+                EOF = end;
+            };
+        }
+    }
+    return stream;
+}

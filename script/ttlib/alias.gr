@@ -1,9 +1,11 @@
-public func file(n: string)(string) {
+import "ref.gr"
+
+export func file(n: string)(string) {
     return read_file(templatepath ~ n);
 }
 
-public var out = "TTLIB-52B55F41-0B0E-EBD1-3F99-26D9585918EF";
-public func operator<<(_out: string, str: string)(string) {
+export var out = "TTLIB-52B55F41-0B0E-EBD1-3F99-26D9585918EF";
+export func operator"<<"(_out: string, str: string)(string) {
     if(_out != out) return;
     router_write(str);
     return out;

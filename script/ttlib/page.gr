@@ -1,11 +1,11 @@
 import "ref.gr"
 
-public func defaultErrPage(hasDump: bool)(string) {
+export func defaultErrPage(hasDump: bool)(string) {
     if (hasDump) return "Error: <gre>\n" ~ dump_html();
     else return "Error: <gre>\n";
 }
 
-public func getErrPage(code: int, basePage: string)(string) {
+export func getErrPage(code: int, basePage: string)(string) {
     if (code < 400 || code > 415) throw "Code over than tolerable";
     loop (i, basePage:size) {
         if (i > 4 && slice(basePage, i - 4, i) == "<gre>") {
@@ -14,17 +14,17 @@ public func getErrPage(code: int, basePage: string)(string) {
         }
     }
     return basePage;
-} 
+}
 
-public func writeDefaultErrPage(code: int) {
+export func writeDefaultErrPage(code: int) {
     router_write(getErrPage(code, defaultErrPage(true)));
 }
 
-public func autoRefresh(sec: float) {
+export func autoRefresh(sec: float) {
     router_write("<meta http-equiv=\"refresh\" content=\"" ~ sec as <string> ~ "\">");
 }
 
-public func build(basePage: string, n: list<string>)(string) {
+export func build(basePage: string, n: list<string>)(string) {
     var iforn = 0;
     loop (i, basePage:size) {
         if(i <= 3) continue;
@@ -50,6 +50,6 @@ public func build(basePage: string, n: list<string>)(string) {
     return basePage;
 }
 
-public func build(basePage: string, n: string)(string) {
+export func build(basePage: string, n: string)(string) {
     return build(basePage, [n]);
 }

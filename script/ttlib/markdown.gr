@@ -1,0 +1,69 @@
+export func compile(mdstr: string)(stringstream) {
+    var inStr = @stringstream(mdstr, false);
+    var outStr: string = "";
+    loop {
+        if(inStr.EOF) break;
+        inStr = inStr.inc;
+        outStr ~= style(inStr.line) ~ "\n";
+    }
+    return @stringstream(outStr, false);
+}
+
+var list_end: bool = true;
+var list_end_2: bool = true;
+func style(str: string)(string) {
+    if(str.slice(0,0) == "#") {
+        if(str.slice(1,1) == "#") {
+            if(str.slice(2,2) == "#") {
+                if(str.slice(3,3) == "#") {
+                    if(str.slice(4,4) == "#") {
+                        str.remove(0,5);
+                        str.insert(0,"</p>\n<h5>");
+                        str ~= "</h5>\n<p>";
+                        return str;
+                    } else {
+                        str.remove(0,4);
+                        str.insert(0,"</p>\n<h4>");
+                        str ~= "</h4>\n<p>";
+                        return str;
+                    }
+                } else {
+                    str.remove(0,3);
+                    str.insert(0,"</p>\n<h3>");
+                    str ~= "</h3>\n<p>";
+                    return str;
+                }
+            } else {
+                str.remove(0,2);
+                str.insert(0,"</p>\n<h2>");
+                str ~= "</h2>\n<p>";
+                return str;
+            }
+        } else {
+            str.remove(0,1);
+            str ~= "</p>\n</h1>";
+            str.insert(0,"<h1>\n<p>");
+            return str;
+        }
+    }
+    if(str.slice(str:size - 3, str:size - 2) == "  ") {
+        str.insert(str:size,"<br>");
+        return str;
+    }
+    if(str.slice(0,0) == "-" || str.slice(0,0) == "*" || str.slice(0,0) == "+") {
+        str.remove(0,0);
+        if(list_end) {
+            str.insert(0,"<ul><li>");
+            list_end = false;
+        } else {
+            str.insert(0,"<li>");
+        }
+        str ~= "</li>";
+        return str;
+    }
+    if(!list_end && (str.slice(0,0) != "-" || str.slice(0,0) != "*" || str.slice(0,0) != "+")) {
+        str.insert(0,"</ul>");
+        list_end = true;
+    }
+    return str;
+}

@@ -17,7 +17,7 @@ public {
     import grimoire.stdlib.range;
     import grimoire.stdlib.string;
     import grimoire.stdlib.channel;
-    import grimoire.stdlib.log;
+    import grimoire.stdlib.io;
     import grimoire.stdlib.math;
     import grimoire.stdlib.error;
     import grimoire.stdlib.time;
@@ -31,7 +31,6 @@ public {
 /// Charge la bibliothèque standard
 GrLibrary grLoadStdLibrary() {
     GrLibrary library = new GrLibrary;
-    grLoadStdLibConstraint();
 
     foreach (loader; grGetStdLibraryLoaders()) {
         loader(library);
@@ -43,11 +42,11 @@ GrLibrary grLoadStdLibrary() {
 /// Retourne les fonctions de chargement de la bibliothèque standard
 GrLibLoader[] grGetStdLibraryLoaders() {
     return [
-        &grLoadStdLibSystem, &grLoadStdLibOptional, &grLoadStdLibLog,
-        &grLoadStdLibList, &grLoadStdLibRange, &grLoadStdLibString,
-        &grLoadStdLibChannel, &grLoadStdLibMath, &grLoadStdLibError,
-        &grLoadStdLibTime, &grLoadStdLibTypecast, &grLoadStdLibPair,
-        &grLoadStdLibBitmanip, &grLoadStdLibHashMap, &grLoadStdLibQueue,
-        &grLoadStdLibCircularBuffer
+        &grLoadStdLibConstraint, &grLoadStdLibSystem, &grLoadStdLibOptional,
+        &grLoadStdLibIo, &grLoadStdLibList, &grLoadStdLibRange,
+        &grLoadStdLibString, &grLoadStdLibChannel, &grLoadStdLibMath,
+        &grLoadStdLibError, &grLoadStdLibTime, &grLoadStdLibTypecast,
+        &grLoadStdLibPair, &grLoadStdLibBitmanip, &grLoadStdLibHashMap,
+        &grLoadStdLibQueue, &grLoadStdLibCircularBuffer
     ];
 }

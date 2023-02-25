@@ -6,6 +6,8 @@
 module grimoire.compiler.data;
 
 import std.conv : to;
+import std.exception : enforce;
+
 import grimoire.runtime;
 import grimoire.compiler.primitive;
 import grimoire.compiler.type;
@@ -50,6 +52,9 @@ final class GrData {
 
         /// Alias de noms.
         string[string] _aliases;
+
+        /// Restriction de modèle de fonction
+        GrConstraint.Data[string] _constraints;
     }
 
     /// Ajoute une nouvelle bibliothèque contenant ses définitions de type et de primitives
@@ -73,15 +78,19 @@ final class GrData {
         foreach (string name, string alias_; library._aliases) {
             _aliases[name] = alias_;
         }
+
+        foreach (string name, GrConstraint.Data constraint; library._constraints) {
+            _constraints[name] = new GrConstraint.Data(constraint);
+        }
     }
 
     /// Ce type est-il déjà déclaré dans ce fichier ?
-    package bool isTypeDeclared(const string name, uint fileId, bool isPublic) const {
-        if (isEnum(name, fileId, isPublic))
+    package bool isTypeDeclared(const string name, uint fileId, bool isExport) const {
+        if (isEnum(name, fileId, isExport))
             return true;
-        if (isClass(name, fileId, isPublic))
+        if (isClass(name, fileId, isExport))
             return true;
-        if (isTypeAlias(name, fileId, isPublic))
+        if (isTypeAlias(name, fileId, isExport))
             return true;
         if (isNative(name))
             return true;
@@ -103,7 +112,7 @@ final class GrData {
 
     /// Définit une énumération
     package GrType addEnum(const string name, const string[] fieldNames,
-        const int[] values, uint fileId, bool isPublic) {
+        const int[] values, uint fileId, bool isExport) {
         GrEnumDefinition enumDef = new GrEnumDefinition;
         enumDef.name = name;
 
@@ -120,7 +129,7 @@ final class GrData {
 
         enumDef.index = _enumDefinitions.length;
         enumDef.fileId = fileId;
-        enumDef.isPublic = isPublic;
+        enumDef.isExport = isExport;
         _enumDefinitions ~= enumDef;
 
         GrType stType = GrType.Base.enum_;
@@ -129,35 +138,35 @@ final class GrData {
     }
 
     /// Définit une classe
-    package void registerClass(const string name, uint fileId, bool isPublic,
+    package void registerClass(const string name, uint fileId, bool isExport,
         string[] templateVariables, uint position) {
         GrClassDefinition class_ = new GrClassDefinition;
         class_.name = name;
         class_.position = position;
         class_.fileId = fileId;
-        class_.isPublic = isPublic;
+        class_.isExport = isExport;
         class_.templateVariables = templateVariables;
         _abstractClassDefinitions ~= class_;
     }
 
     /// Definit un alias de type
-    package GrType addAlias(const string name, const GrType type, uint fileId, bool isPublic) {
+    package GrType addAlias(const string name, const GrType type, uint fileId, bool isExport) {
         GrTypeAliasDefinition typeAlias = new GrTypeAliasDefinition;
         typeAlias.name = name;
         typeAlias.type = type;
         typeAlias.fileId = fileId;
-        typeAlias.isPublic = isPublic;
+        typeAlias.isExport = isExport;
         _aliasDefinitions ~= typeAlias;
         return type;
     }
 
     /// Definit un alias temporaire pour la généricité
-    package GrType addTemplateAlias(const string name, const GrType type, uint fileId, bool isPublic) {
+    package GrType addTemplateAlias(const string name, const GrType type, uint fileId, bool isExport) {
         GrTypeAliasDefinition typeAlias = new GrTypeAliasDefinition;
         typeAlias.name = name;
         typeAlias.type = type;
         typeAlias.fileId = fileId;
-        typeAlias.isPublic = isPublic;
+        typeAlias.isExport = isExport;
         _templateAliasDefinitions ~= typeAlias;
         return type;
     }
@@ -168,9 +177,9 @@ final class GrData {
     }
 
     /// L’énumération existe-elle ?
-    package bool isEnum(const string name, uint fileId, bool isPublic) const {
+    package bool isEnum(const string name, uint fileId, bool isExport) const {
         foreach (enumType; _enumDefinitions) {
-            if (enumType.name == name && (enumType.fileId == fileId || enumType.isPublic || isPublic))
+            if (enumType.name == name && (enumType.fileId == fileId || enumType.isExport || isExport))
                 return true;
         }
         return false;
@@ -186,9 +195,9 @@ final class GrData {
     }
 
     /// La classe existe-elle ?
-    package bool isClass(const string name, uint fileId, bool isPublic) const {
+    package bool isClass(const string name, uint fileId, bool isExport) const {
         foreach (class_; _abstractClassDefinitions) {
-            if (class_.name == name && (class_.fileId == fileId || class_.isPublic || isPublic))
+            if (class_.name == name && (class_.fileId == fileId || class_.isExport || isExport))
                 return true;
         }
         return false;
@@ -204,15 +213,15 @@ final class GrData {
     }
 
     /// L’alias existe-il ?
-    package bool isTypeAlias(const string name, uint fileId, bool isPublic) const {
+    package bool isTypeAlias(const string name, uint fileId, bool isExport) const {
         foreach (typeAlias; _templateAliasDefinitions) {
             if (typeAlias.name == name && (typeAlias.fileId == fileId ||
-                    typeAlias.isPublic || isPublic))
+                    typeAlias.isExport || isExport))
                 return true;
         }
         foreach (typeAlias; _aliasDefinitions) {
             if (typeAlias.name == name && (typeAlias.fileId == fileId ||
-                    typeAlias.isPublic || isPublic))
+                    typeAlias.isExport || isExport))
                 return true;
         }
         return false;
@@ -281,19 +290,19 @@ final class GrData {
         import std.conv : to;
 
         foreach (enumType; _enumDefinitions) {
-            if (enumType.name == name && (enumType.fileId == fileId || enumType.isPublic))
+            if (enumType.name == name && (enumType.fileId == fileId || enumType.isExport))
                 return enumType;
         }
         return null;
     }
 
     /// Renvoie la définition de la classe
-    GrClassDefinition getClass(const string mangledName, uint fileId, bool isPublic = false) {
+    GrClassDefinition getClass(const string mangledName, uint fileId, bool isExport = false) {
         import std.algorithm.searching : findSplitBefore;
 
         foreach (class_; _classDefinitions) {
-            if (class_.name == mangledName && (class_.fileId == fileId || class_.isPublic ||
-                    isPublic))
+            if (class_.name == mangledName && (class_.fileId == fileId || class_.isExport ||
+                    isExport))
                 return class_;
         }
         const mangledTuple = findSplitBefore(mangledName, "$");
@@ -301,7 +310,7 @@ final class GrData {
         GrType[] templateTypes = grUnmangleSignature(mangledTuple[1]);
         foreach (class_; _abstractClassDefinitions) {
             if (class_.name == name && class_.templateVariables.length == templateTypes.length &&
-                (class_.fileId == fileId || class_.isPublic || isPublic)) {
+                (class_.fileId == fileId || class_.isExport || isExport)) {
                 GrClassDefinition generatedClass = new GrClassDefinition;
                 generatedClass.name = mangledName;
                 generatedClass.parent = class_.parent;
@@ -311,7 +320,7 @@ final class GrData {
                 generatedClass.templateTypes = templateTypes;
                 generatedClass.position = class_.position;
                 generatedClass.isParsed = class_.isParsed;
-                generatedClass.isPublic = class_.isPublic;
+                generatedClass.isExport = class_.isExport;
                 generatedClass.fileId = class_.fileId;
                 generatedClass.fieldsInfo = class_.fieldsInfo;
                 generatedClass.fieldConsts = class_.fieldConsts;
@@ -352,11 +361,11 @@ final class GrData {
     /// Renvoie la définition de l’alias de type
     GrTypeAliasDefinition getTypeAlias(const string name, uint fileId) {
         foreach (typeAlias; _templateAliasDefinitions) {
-            if (typeAlias.name == name && (typeAlias.fileId == fileId || typeAlias.isPublic))
+            if (typeAlias.name == name && (typeAlias.fileId == fileId || typeAlias.isExport))
                 return typeAlias;
         }
         foreach (typeAlias; _aliasDefinitions) {
-            if (typeAlias.name == name && (typeAlias.fileId == fileId || typeAlias.isPublic))
+            if (typeAlias.name == name && (typeAlias.fileId == fileId || typeAlias.isExport))
                 return typeAlias;
         }
         return null;
@@ -410,7 +419,7 @@ final class GrData {
             if (primitive.name == name) {
                 _anyData = new GrAnyData;
                 if (isSignatureCompatible(signature, primitive.inSignature, true, 0, true)) {
-                    foreach (GrConstraint constraint; primitive.constraints) {
+                    foreach (ref GrConstraint constraint; primitive.constraints) {
                         if (!constraint.evaluate(this, _anyData))
                             continue __primitiveLoop;
                     }
@@ -444,7 +453,7 @@ final class GrData {
                 _anyData = new GrAnyData;
                 if (isSignatureCompatible(signature, primitive.inSignature, true, 0, true)) {
                     assert(name.length == 0);
-                    foreach (GrConstraint constraint; primitive.constraints) {
+                    foreach (ref GrConstraint constraint; primitive.constraints) {
                         if (!constraint.evaluate(this, _anyData))
                             continue __primitiveLoop;
                     }
@@ -494,6 +503,8 @@ final class GrData {
         }
         final switch (type.base) with (GrType.Base) {
         case int_:
+        case uint_:
+        case char_:
         case float_:
         case bool_:
         case string_:
@@ -561,8 +572,8 @@ final class GrData {
         switch (type.base) with (GrType.Base) {
         case class_:
             GrClassDefinition classDef = getClass(type.mangledType, 0, true);
-            if (!classDef)
-                throw new Exception("undefined class `" ~ type.mangledType ~ "`");
+            enforce(classDef, "undefined class `" ~ type.mangledType ~ "`");
+
             foreach (GrType fieldType; classDef.signature) {
                 if (fieldType == type)
                     continue;
@@ -591,7 +602,7 @@ final class GrData {
 
     /// Vérifie si la première signature correspond ou peut être promu (par héritage) à la seconde
     bool isSignatureCompatible(const GrType[] first, const GrType[] second,
-        bool isAbstract, uint fileId, bool isPublic = false) {
+        bool isAbstract, uint fileId, bool isExport = false) {
         if (first.length != second.length)
             return false;
         __signatureLoop: for (int i; i < first.length; ++i) {
@@ -611,6 +622,8 @@ final class GrData {
             }
             final switch (second[i].base) with (GrType.Base) {
             case int_:
+            case uint_:
+            case char_:
             case float_:
             case bool_:
             case string_:
@@ -623,32 +636,32 @@ final class GrData {
                 if (first[i].base != second[i].base)
                     return false;
                 if (isSignatureCompatible([grUnmangle(first[i].mangledType)],
-                        [grUnmangle(second[i].mangledType)], isAbstract, fileId, isPublic))
+                        [grUnmangle(second[i].mangledType)], isAbstract, fileId, isExport))
                     continue;
                 return false;
             case func:
                 if (first[i].base != second[i].base)
                     return false;
                 if (!isSignatureCompatible(grUnmangleSignature(first[i].mangledType),
-                        grUnmangleSignature(second[i].mangledType), isAbstract, fileId, isPublic))
+                        grUnmangleSignature(second[i].mangledType), isAbstract, fileId, isExport))
                     return false;
                 if (!isSignatureCompatible(grUnmangleSignature(first[i].mangledReturnType),
                         grUnmangleSignature(second[i].mangledReturnType),
-                        isAbstract, fileId, isPublic))
+                        isAbstract, fileId, isExport))
                     return false;
                 continue;
             case task:
                 if (first[i].base != second[i].base)
                     return false;
                 if (isSignatureCompatible(grUnmangleSignature(first[i].mangledType),
-                        grUnmangleSignature(second[i].mangledType), isAbstract, fileId, isPublic))
+                        grUnmangleSignature(second[i].mangledType), isAbstract, fileId, isExport))
                     continue;
                 return false;
             case event:
                 if (first[i].base != second[i].base)
                     return false;
                 if (isSignatureCompatible(grUnmangleSignature(first[i].mangledType),
-                        grUnmangleSignature(second[i].mangledType), isAbstract, fileId, isPublic))
+                        grUnmangleSignature(second[i].mangledType), isAbstract, fileId, isExport))
                     continue;
                 return false;
             case class_:
@@ -657,7 +670,7 @@ final class GrData {
 
                 if (!isSignatureCompatible(grUnmangleComposite(first[i].mangledType).signature,
                         grUnmangleComposite(second[i].mangledType).signature,
-                        isAbstract, fileId, isPublic))
+                        isAbstract, fileId, isExport))
                     return false;
 
                 string className = first[i].mangledType;
@@ -666,7 +679,7 @@ final class GrData {
                         .name == grUnmangleComposite(second[i].mangledType).name) {
                         continue __signatureLoop;
                     }
-                    const GrClassDefinition classType = getClass(className, fileId, isPublic);
+                    const GrClassDefinition classType = getClass(className, fileId, isExport);
                     if (!classType.parent.length)
                         return false;
                     className = classType.parent;
@@ -678,7 +691,7 @@ final class GrData {
 
                 if (!isSignatureCompatible(grUnmangleComposite(first[i].mangledType).signature,
                         grUnmangleComposite(second[i].mangledType).signature,
-                        isAbstract, fileId, isPublic))
+                        isAbstract, fileId, isExport))
                     return false;
 
                 string nativeName = first[i].mangledType;
@@ -711,10 +724,20 @@ final class GrData {
         _anyData = anyData;
     }
 
+    /// Récupère les données d’une contrainte enregistrée
+    package GrConstraint.Data getConstraintData(string name) {
+        GrConstraint.Data* constraint = name in _constraints;
+        return constraint ? *constraint : null;
+    }
+
+    /// Récupère tous les noms des constraintes enregistrées
+    package const(string[]) getAllConstraintsName() {
+        return _constraints.keys;
+    }
+
     /// Formate une primitive pour être affichable
     private string getPrimitiveDisplayById(uint id) {
-        if (id >= _primitives.length)
-            throw new Exception("invalid primitive id");
+        enforce(id < _primitives.length, "invalid primitive id");
         return getPrettyPrimitive(_primitives[id]);
     }
 

@@ -1,13 +1,12 @@
 import "ttlib/alias.gr"
-import "ttlib/router.gr"
+import "ttlib/page.gr"
 import "ttlib/log.gr"
-
+import "ttlib/stream.gr"
+import "ttlib/markdown.gr"
+var f: string;
 event router(uri:string) {
-    
+    router_write(f);
 }
-event init() { 
-    speedtest(func(){
-        write_file("public/temp.html",file("test2.html").build("测试"));
-        console_print("Build Succed");
-    });
+event init() {
+    f = read_file("/index.html").build(compile(read_file("/test.md")).str);
 }

@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; 
+ * along with this program;
  * if not, see <https://www.gnu.org/licenses/>.
  */
 module config;
@@ -33,14 +33,13 @@ auto readjson()
     if ("config.json".exists && "config.json".isFile)
         return parseJSON(cast(string) "config.json".read());
     else
-        return parseJSON(`{ "Listen": ["127.0.0.1"] 
+        return parseJSON(`{ "Listen": ["127.0.0.1"]
 
 }`);
 }
 
 @onServerInit ServerinoConfig setup()
 {
-
     ServerinoConfig sc = ServerinoConfig.create();
     JSONValue json;
 

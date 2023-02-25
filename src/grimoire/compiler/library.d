@@ -7,6 +7,7 @@ module grimoire.compiler.library;
 
 import std.traits;
 import std.conv : to;
+import std.exception : enforce;
 import grimoire.runtime;
 import grimoire.compiler.primitive;
 import grimoire.compiler.type;
@@ -79,6 +80,8 @@ interface GrLibDefinition {
         GrType[] = [], GrConstraint[] = []);
     GrPrimitive[] addProperty(GrCallback, GrCallback, string, GrType, GrType, GrConstraint[] = [
         ]);
+    /// Enregistre une nouvelle contrainte
+    void addConstraint(GrConstraint.Predicate predicate, const string name, uint arity = 0);
 }
 
 /// Fonction renseignant une bibliothèque
@@ -107,6 +110,9 @@ final class GrLibrary : GrLibDefinition {
 
         /// Alias de noms.
         string[string] _aliases;
+
+        /// Restriction de modèle de fonction
+        GrConstraint.Data[string] _constraints;
     }
 
     override void setModule(string[]) {
@@ -148,8 +154,14 @@ final class GrLibrary : GrLibDefinition {
         case enum_:
             variable.ivalue = defaultValue.getInt();
             break;
+        case uint_:
+            variable.uvalue = defaultValue.getUInt();
+            break;
+        case char_:
+            variable.uvalue = defaultValue.getChar();
+            break;
         case float_:
-            variable.rvalue = defaultValue.getFloat();
+            variable.fvalue = defaultValue.getFloat();
             break;
         case string_:
             variable.svalue = defaultValue.getString();
@@ -192,7 +204,7 @@ final class GrLibrary : GrLibDefinition {
             enum_.fields ~= field;
         }
 
-        enum_.isPublic = true;
+        enum_.isExport = true;
         _enumDefinitions ~= enum_;
 
         GrType type = GrType.Base.enum_;
@@ -204,8 +216,8 @@ final class GrLibrary : GrLibDefinition {
     override GrType addClass(string name, string[] fields, GrType[] signature,
         string[] templateVariables = [], string parent = "", GrType[] parentTemplateSignature = [
         ]) {
-        if (fields.length != signature.length)
-            throw new Exception("class signature mismatch");
+        enforce(fields.length == signature.length, "class signature mismatch");
+
         GrClassDefinition class_ = new GrClassDefinition;
         class_.name = name;
         class_.parent = parent;
@@ -213,7 +225,7 @@ final class GrLibrary : GrLibDefinition {
         class_.fields = fields;
         class_.templateVariables = templateVariables;
         class_.parentTemplateSignature = parentTemplateSignature;
-        class_.isPublic = true;
+        class_.isExport = true;
         class_.isParsed = true;
         _abstractClassDefinitions ~= class_;
 
@@ -221,7 +233,7 @@ final class GrLibrary : GrLibDefinition {
         class_.fieldConsts.length = fields.length;
         for (int i; i < class_.fieldsInfo.length; ++i) {
             class_.fieldsInfo[i].fileId = 0;
-            class_.fieldsInfo[i].isPublic = true;
+            class_.fieldsInfo[i].isExport = true;
             class_.fieldsInfo[i].position = 0;
             class_.fieldConsts[i] = false;
         }
@@ -240,7 +252,7 @@ final class GrLibrary : GrLibDefinition {
         GrTypeAliasDefinition typeAlias = new GrTypeAliasDefinition;
         typeAlias.name = name;
         typeAlias.type = type;
-        typeAlias.isPublic = true;
+        typeAlias.isExport = true;
         _aliasDefinitions ~= typeAlias;
         return type;
     }
@@ -248,8 +260,8 @@ final class GrLibrary : GrLibDefinition {
     /// Definit un type natif
     override GrType addNative(string name, string[] templateVariables = [],
         string parent = "", GrType[] parentTemplateSignature = []) {
-        if (name == parent)
-            throw new Exception("`" ~ name ~ "` can't be its own parent");
+        enforce(name != parent, "`" ~ name ~ "` can't be its own parent");
+
         GrAbstractNativeDefinition native = new GrAbstractNativeDefinition;
         native.name = name;
         native.templateVariables = templateVariables;
@@ -272,20 +284,19 @@ final class GrLibrary : GrLibDefinition {
         ]) {
         bool isAbstract;
         foreach (GrType type; inSignature) {
-            if (type.isAbstract)
-                throw new Exception("`" ~ grGetPrettyFunction(name, inSignature,
-                        outSignature) ~ "` can't use type `" ~ grGetPrettyType(
-                        type) ~ "` as it is abstract");
+            enforce(!type.isAbstract, "`" ~ grGetPrettyFunction(name, inSignature,
+                    outSignature) ~ "` can't use type `" ~ grGetPrettyType(
+                    type) ~ "` as it is abstract");
+
             if (type.isAny) {
                 isAbstract = true;
                 break;
             }
         }
         foreach (GrType type; outSignature) {
-            if (type.isAbstract)
-                throw new Exception("`" ~ grGetPrettyFunction(name, inSignature,
-                        outSignature) ~ "` can't use type `" ~ grGetPrettyType(
-                        type) ~ "` as it is abstract");
+            enforce(!type.isAbstract, "`" ~ grGetPrettyFunction(name, inSignature,
+                    outSignature) ~ "` can't use type `" ~ grGetPrettyType(
+                    type) ~ "` as it is abstract");
         }
 
         GrPrimitive primitive = new GrPrimitive;
@@ -396,20 +407,37 @@ final class GrLibrary : GrLibDefinition {
             signatureSize = 1;
             break;
         }
-        if (inSignature.length != signatureSize)
-            throw new Exception("The operator `" ~ name ~ "` must take " ~ to!string(
-                    signatureSize) ~ " parameter" ~ (signatureSize > 1 ?
-                    "s" : "") ~ ": " ~ grGetPrettyFunctionCall("", inSignature));
+
+        enforce(inSignature.length == signatureSize,
+            "The operator `" ~ name ~ "` must take " ~ to!string(
+                signatureSize) ~ " parameter" ~ (signatureSize > 1 ?
+                "s" : "") ~ ": " ~ grGetPrettyFunctionCall("", inSignature));
+
         return addOperator(callback, name, inSignature, outType, constraints);
     }
 
     /// Ditto
     override GrPrimitive addOperator(GrCallback callback, string name,
         GrType[] inSignature, GrType outType, GrConstraint[] constraints = []) {
-        if (inSignature.length > 2uL)
-            throw new Exception(
-                "The operator `" ~ name ~ "` cannot take more than 2 parameters: " ~ grGetPrettyFunctionCall("",
-                    inSignature));
+
+        enforce(isOverridableOperator(name),
+            "The operator `" ~ name ~ "` is not overridable: " ~ grGetPrettyFunctionCall("",
+                inSignature));
+
+        enforce(inSignature.length <= 2,
+            "The operator `" ~ name ~ "` cannot take more than 2 parameters: " ~ grGetPrettyFunctionCall("",
+                inSignature));
+
+        enforce(inSignature.length > 0,
+            "The operator `" ~ name ~ "` is missing parameters: " ~ grGetPrettyFunctionCall("",
+                inSignature));
+
+        enforce(isOperatorUnary(name) || inSignature.length != 1,
+            "The operator `" ~ name ~ "` is not unary: " ~ grGetPrettyFunctionCall("", inSignature));
+
+        enforce(isOperatorBinary(name) || inSignature.length != 2,
+            "The operator `" ~ name ~ "` is not binary: " ~ grGetPrettyFunctionCall("", inSignature));
+
         return addFunction(callback, "@operator_" ~ name, inSignature, [outType], constraints);
     }
 
@@ -447,21 +475,23 @@ final class GrLibrary : GrLibDefinition {
     override GrPrimitive[] addProperty(GrCallback getCallback, GrCallback setCallback,
         string name, GrType nativeType, GrType propertyType, GrConstraint[] constraints = [
         ]) {
-        GrPrimitive[] primitives;
+        enforce(getCallback, "the property `@" ~ grGetPrettyType(
+                nativeType) ~ "." ~ name ~ "`must define at least a getter");
 
-        if (getCallback) {
-            primitives ~= addFunction(getCallback, "@property_" ~ name,
-                [nativeType], [propertyType], constraints);
-        }
-        else {
-            throw new Exception("the property `@" ~ grGetPrettyType(
-                    nativeType) ~ "." ~ name ~ "`must define at least a getter");
-        }
+        GrPrimitive[] primitives;
+        primitives ~= addFunction(getCallback, "@property_" ~ name,
+            [nativeType], [propertyType], constraints);
+
         if (setCallback) {
             primitives ~= addFunction(setCallback, "@property_" ~ name,
                 [nativeType, propertyType], [propertyType], constraints);
         }
         return primitives;
+    }
+
+    /// Enregistre une nouvelle contrainte
+    override void addConstraint(GrConstraint.Predicate predicate, const string name, uint arity = 0) {
+        _constraints[name] = new GrConstraint.Data(predicate, arity);
     }
 
     /// Enjolive la primitive

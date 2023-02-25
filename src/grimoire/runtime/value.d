@@ -16,7 +16,8 @@ package(grimoire) enum GR_NULL = 0xffffUL << 48;
 struct GrValue {
     package(grimoire) union {
         GrInt _ivalue;
-        GrFloat _rvalue;
+        GrUInt _uvalue;
+        GrFloat _fvalue;
         GrPointer _ovalue;
         ulong _bytes;
     }
@@ -26,7 +27,15 @@ struct GrValue {
     }
 
     this(GrFloat value) {
-        _rvalue = value;
+        _fvalue = value;
+    }
+
+    this(GrBool value) {
+        _ivalue = cast(GrInt) value;
+    }
+
+    this(GrChar value) {
+        _uvalue = cast(GrUInt) value;
     }
 
     this(GrList value) {
@@ -79,12 +88,20 @@ struct GrValue {
         return _ivalue;
     }
 
+    pragma(inline) GrUInt getUInt() const {
+        return _uvalue;
+    }
+
+    pragma(inline) GrChar getChar() const {
+        return cast(GrChar) _uvalue;
+    }
+
     pragma(inline) T getEnum(T)() const {
         return cast(T) _ivalue;
     }
 
     pragma(inline) GrFloat getFloat() const {
-        return _rvalue;
+        return _fvalue;
     }
 
     pragma(inline) GrPointer getPointer() const {
@@ -119,12 +136,20 @@ struct GrValue {
         _ivalue = value;
     }
 
+    pragma(inline) void setUInt(GrUInt value) {
+        _uvalue = value;
+    }
+
+    pragma(inline) void setChar(GrChar value) {
+        _uvalue = cast(GrUInt) value;
+    }
+
     pragma(inline) void setEnum(T)(T value) {
         _ivalue = cast(GrInt) value;
     }
 
     pragma(inline) void setFloat(GrFloat value) {
-        _rvalue = value;
+        _fvalue = value;
     }
 
     pragma(inline) void setPointer(GrPointer value) {
