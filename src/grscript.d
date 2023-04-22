@@ -20,7 +20,7 @@ module grscript;
 import serverino;
 import grimoire;
 
-import std.experimental.logger;
+import std.logger;
 import std.stdio;
 import std.file;
 import std.regex;
@@ -29,6 +29,7 @@ import std.process;
 import std.exception;
 import std.datetime;
 import std.conv;
+import std.path;
 
 GrLibrary ttlib;
 
@@ -42,17 +43,17 @@ string uri;
 
 void router_write(GrCall call)
 {
-    if (call.getString(0).data != "")
+    if (call.getString(0).str != "")
     {
-        *routerCache ~= call.getString(0).data;
+        *routerCache ~= call.getString(0).str;
     }
 }
 
 void router_serve(GrCall call)
 {
-    if (call.getString(0).data != "")
+    if (call.getString(0).str != "")
     {
-        (*routerCache).serveFile(call.getString(0).data);
+        (*routerCache).serveFile(call.getString(0).str);
     }
 }
 
@@ -63,11 +64,11 @@ void router_status(GrCall call)
 
 void read_file(GrCall call)
 {
-    string f = call.getString(0).data;
+    string f = call.getString(0).str;
     auto fs = g_fileStorages ~ ["."];
     foreach (st; fs)
     {
-        if ((st ~ f).exists && (st ~ f).isFile)
+        if ((st ~  "/" ~f).exists && (st ~ "/" ~ f).isFile)
         {
             call.setString(readText(st ~ "/" ~  f));
             return;
@@ -81,7 +82,7 @@ void write_file(GrCall call)
 {
     try
     {
-        std.file.write(call.getString(0).data, call.getString(1).data);
+        std.file.write(call.getString(0).str, call.getString(1).str);
         call.setBool(true);
     }
     catch (FileException)
@@ -90,18 +91,18 @@ void write_file(GrCall call)
 
 void console_log(GrCall call)
 {
-    log(cast(LogLevel) call.getInt(0), "[GrRouterLog] " ~ call.getString(1).data);
+    log(cast(LogLevel) call.getInt(0), "[GrRouterLog] " ~ call.getString(1).str);
 }
 
 void console_print(GrCall call)
 {
-    log(LogLevel.all, "[GrRouter] " ~ call.getString(0).data);
+    log(LogLevel.all, "[GrRouter] " ~ call.getString(0).str);
 }
 
 void regex_(GrCall call)
 {
     GrValue[] grstrcache;
-    foreach (key; call.getString(0).data.matchAll(call.getString(1).data).front)
+    foreach (key; call.getString(0).str.matchAll(call.getString(1).str).front)
     {
         grstrcache ~= GrValue(key);
     }
@@ -122,7 +123,7 @@ void execute_shell(GrCall call)
 {
     try
     {
-        auto o = executeShell(call.getString(0).data);
+        auto o = executeShell(call.getString(0).str);
         call.setInt(o.status);
         call.setString(o.output);
     }
@@ -181,7 +182,7 @@ void get_year(GrCall call)
 void cast_stoi(GrCall call)
 {
     try
-        call.setInt(call.getString(0).data.to!int);
+        call.setInt(call.getString(0).str.to!int);
     catch (Exception)
         call.setInt(-int.max);
 }
@@ -226,7 +227,8 @@ void grscript_initialize()
     GrCompiler compiler = new GrCompiler;
     compiler.addLibrary(stdlib);
     compiler.addLibrary(ttlib);
-    GrBytecode bytecode = compiler.compileFile(g_grMain);
+    compiler.addFile(g_grMain);
+    GrBytecode bytecode = compiler.compile();
     if (bytecode)
     {
         engine = new GrEngine;
@@ -235,7 +237,6 @@ void grscript_initialize()
         engine.addLibrary(ttlib);
 
         engine.load(bytecode);
-
         if (engine.hasEvent("start"))
         {
             GrTask task = engine.callEvent("start");
@@ -244,14 +245,12 @@ void grscript_initialize()
             engine.process();
         if (engine.isPanicking)
             log(LogLevel.fatal, "[GRScript] ERROR: " ~ engine.panicMessage);
-
     }
     else
     {
         writeln(compiler.getError().prettify(GrLocale.en_US));
     }
-
-    log("[GRScript] Initialize OK");
+    log(LogLevel.info, "[GRScript] Initialize OK");
 }
 
 void grscript_router(Request req, ref Output output)

@@ -123,7 +123,7 @@ string xml_isExists(string uri)
         {
             try
             {
-                output ~= "<a href=\"..\">back</a><br><br><br>" ~ createStaticStorageHTML(uri, path);
+                output ~= "<a href=\"/"~uri~"/../\">back</a><br><br><br>" ~ createStaticStorageHTML(uri, path);
                 return;
             }
             catch (Exception)
@@ -143,7 +143,7 @@ string xml_isExists(string uri)
     if (g_enable404code)
         return;
 
-    log("[USER] " ~ req.uri ~ " Not Found");
+    log(LogLevel.info,"[USER] " ~ req.uri ~ " Not Found");
 
     output.status = 404;
     output ~= "public/404.html".read();

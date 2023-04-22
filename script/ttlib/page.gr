@@ -1,5 +1,3 @@
-import "ref.gr"
-
 export func defaultErrPage(hasDump: bool)(string) {
     if (hasDump) return "Error: <gre>\n" ~ dump_html();
     else return "Error: <gre>\n";

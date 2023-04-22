@@ -10,11 +10,15 @@ static import core.exception;
 
 immutable srcDir = "src";
 
+version(Windows) {
 immutable exeName = "ttweb.exe";
+} else {
+immutable exeName = "ttweb";
+}
 
 immutable string[] defaultargs =
     [
-        "--od=build",
+        "--od=temp",
         "--extern-std=c++20",
         "--of=" ~ exeName
     ];
@@ -45,8 +49,11 @@ void main(string[] argv)
         if (args.compiler == null)
         {
             args.compiler = "ldc2";
+            for (int i = 1; i < argv.length; i++)
+        {
+            args.supplementaryArgs ~= argv[i];
         }
-        for (int i = 2; i < argv.length; i++)
+        } else for (int i = 2; i < argv.length; i++)
         {
             args.supplementaryArgs ~= argv[i];
         }

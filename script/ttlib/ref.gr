@@ -1,3 +1,9 @@
-export var libpath = "../";
-export var ttwebpath = libpath ~ "../";
-export var templatepath = libpath ~ "export/";
+export func getLibPath()(string) {
+    return "script/ttlib";
+}
+export func getTTWebPath()(string) {
+    return "./";
+}
+export func getTemplatePath()(string) {
+    return "export/";
+}

@@ -12,9 +12,9 @@ export func @stringstream(s: string)(stringstream) {
     return @stringstream {
         str = s ~ "\n";
         linenum = 0;
-        line = 0;
+        line = "";
         index = 0;
-        size = s:size + 1;
+        size = s:size as <int> + 1;
         EOF = false;
         isCRLF = false;
     };
@@ -25,9 +25,9 @@ export func @stringstream(s: string, crlf: bool)(stringstream) {
     return @stringstream {
         str = s ~ "\n";
         linenum = 0;
-        line = 0;
+        line = "";
         index = 0;
-        size = s:size + 1;
+        size = s:size as <int> + 1;
         EOF = false;
         isCRLF = true;
     };
@@ -43,18 +43,38 @@ export func inc(stream: stringstream)(stringstream) {
         if(stream.str.slice(i, i) == "\n") {
             var end: bool = false;
             if(i == (stream.size - 2)) end = true;
-            if(stream.isCRLF) return @stringstream {
-                str = stream.str;
-                linenum = stream.linenum + 1;
-                line = stream.str.slice(stream.index, i - 2);
-                index = i + 1;
-                size = stream.size;
-                EOF = end;
-            };
+            if(stream.isCRLF) {
+                if(stream.str.slice(i - 2, i - 2) != "\n")
+                return @stringstream {
+                    str = stream.str;
+                    linenum = stream.linenum + 1;
+                    line = stream.str.slice(stream.index, i - 2);
+                    index = i + 1;
+                    size = stream.size;
+                    EOF = end;
+                };
+                else return @stringstream {
+                    str = stream.str;
+                    linenum = stream.linenum + 1;
+                    line = "";
+                    index = i + 1;
+                    size = stream.size;
+                    EOF = end;
+                };
+            }
+            if(stream.str.slice(i - 1, i - 1) != "\n")
             return @stringstream {
                 str = stream.str;
                 linenum = stream.linenum + 1;
                 line = stream.str.slice(stream.index, i - 1);
+                index = i + 1;
+                size = stream.size;
+                EOF = end;
+            };
+            else return @stringstream {
+                str = stream.str;
+                linenum = stream.linenum + 1;
+                line = "";
                 index = i + 1;
                 size = stream.size;
                 EOF = end;

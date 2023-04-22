@@ -1,7 +1,7 @@
 import "ref.gr"
 
 export func file(n: string)(string) {
-    return read_file(templatepath ~ n);
+    return read_file(getTemplatePath() ~ n);
 }
 
 export var out = "TTLIB-52B55F41-0B0E-EBD1-3F99-26D9585918EF";
