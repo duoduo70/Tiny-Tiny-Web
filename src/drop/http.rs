@@ -5,7 +5,7 @@
  * along with this program;
  * if not, see <https://www.gnu.org/licenses/>.
  */
-use std::collections::HashMap;
+use std::{collections::HashMap, time::SystemTimeError};
 pub struct HttpRequestError;
 pub struct HttpRequest<'a, T> {
     request_method: String,
@@ -126,8 +126,10 @@ impl HttpResponse {
     });
         res
     }
-    pub fn set_default_headers(&mut self, server: &str) {
-        //TODO: Date
+    pub fn set_default_headers(&mut self, server: &str) -> Result<(), SystemTimeError> {
+        let time = super::time::Time::new();
+        self.headers.insert("Date".to_string(), format!("{}, {} {} {} {:0>2}:{:0>2}:{:0>2} GMT", time.wday_name()?, time.day()?, time.month_name()?, time.year()?, time.hour()?, time.min()?, time.sec()?));
         self.headers.insert("Server".to_string(), server.to_string());
+        Ok(())
     }
 }

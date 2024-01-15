@@ -6,21 +6,21 @@
  * if not, see <https://www.gnu.org/licenses/>.
  */
 mod config;
+mod counter;
 mod drop;
 mod marco;
 mod router;
-mod counter;
 
 use config::*;
+use counter::*;
 use drop::http::*;
 use drop::log::LogLevel::*;
 use drop::thread::*;
 use marco::*;
+use std::collections::VecDeque;
 use std::net::TcpListener;
 use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
-use counter::*;
-use std::collections::VecDeque;
 
 use crate::drop::time::Time;
 
@@ -64,16 +64,59 @@ fn main() {
 
     let mut req_counter = ReqCounter::new();
     let mut old_stamp = Time::msec().unwrap(); //TODO: fix it. if cant get time, dont use box-mode to result requests
-    let mut new_stamp: i16;
+    let mut new_stamp: i16 = old_stamp;
     let mut tmp_counter: u32 = 0;
-    let mut box_num_per_thread: u32 = 0;
+    let mut box_num_per_thread: u32 = 6 * 3;
+    let mut flag_new_box_num = false;
+    let mut old_stamp_timeout = old_stamp;
+    let mut new_stamp_timeout = old_stamp;
     unsafe { THREADS_BOX = Some(Arc::new(Mutex::new(VecDeque::new()))) };
+    // TODO:This algorithm is still unstable, and there is a chance that the request will be stuck.
     for stream in res.incoming() {
         match stream {
             Ok(stream) => {
                 tmp_counter += 1;
                 new_stamp = Time::msec().unwrap();
-                let mut flag_new_box_num = false;
+                flag_new_box_num = false;
+
+                unsafe {
+                    THREADS_BOX
+                        .clone()
+                        .unwrap()
+                        .clone()
+                        .lock()
+                        .unwrap()
+                        .push_back(stream.try_clone().unwrap());
+                } // TODO: fix it
+
+                log!(Debug, format!("{}{:#?}\n", LOG[3], stream));
+                if is_nst_gt_ost_timeout(&old_stamp_timeout, &new_stamp_timeout) {
+                    if is_nst_gt_ost_helfsec(&old_stamp, &new_stamp) {
+                        old_stamp = new_stamp;
+                        req_counter.change(tmp_counter);
+                        tmp_counter = 0;
+                        box_num_per_thread = (req_counter.get_rps() as f32 * 1.1) as u32;
+                        flag_new_box_num = true;
+                    }
+                    if is_nst_gt_ost_timeout(&old_stamp, &new_stamp) {
+                        let func = move || {
+                            let mut i = 0;
+                            while i != box_num_per_thread {
+                                handle_connection(
+                                    unsafe { &THREADS_BOX.clone().unwrap() },
+                                    &Arc::clone(unsafe { &GLOBAL_CONFIG.clone().unwrap() }),
+                                );
+                                i += 1;
+                            }
+                        };
+                        threadpool.add(6, func);
+                        box_num_per_thread = 6 * 3;
+                    }
+                    old_stamp_timeout = new_stamp_timeout;
+                }
+            }
+            Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                new_stamp_timeout = Time::msec().unwrap();
                 if is_nst_gt_ost_helfsec(&old_stamp, &new_stamp) {
                     old_stamp = new_stamp;
                     req_counter.change(tmp_counter);
@@ -81,26 +124,20 @@ fn main() {
                     box_num_per_thread = (req_counter.get_rps() as f32 * 1.1) as u32;
                     flag_new_box_num = true;
                 }
-
-                log!(Debug, format!("{}{:#?}\n", LOG[3], stream));
-                    unsafe {
-                        THREADS_BOX.clone().unwrap().clone().lock().unwrap().push_back(stream.try_clone().unwrap());
-                        } // TODO: fix it
-                    
-                
-                if flag_new_box_num || is_nst_gt_ost_timeout(&old_stamp, &new_stamp){
+                if flag_new_box_num || is_nst_gt_ost_timeout(&old_stamp, &new_stamp) {
                     let func = move || {
                         let mut i = 0;
                         while i != box_num_per_thread {
-                        handle_connection(unsafe { &THREADS_BOX.clone().unwrap() }, &Arc::clone(unsafe { &GLOBAL_CONFIG.clone().unwrap() }));
-                        i+=1;
+                            handle_connection(
+                                unsafe { &THREADS_BOX.clone().unwrap() },
+                                &Arc::clone(unsafe { &GLOBAL_CONFIG.clone().unwrap() }),
+                            );
+                            i += 1;
                         }
                     };
                     threadpool.add(6, func);
                     box_num_per_thread = 6 * 3;
                 }
-            }
-            Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
                 continue;
             }
             _ => log!(Fatal, LOG[2]),
@@ -135,7 +172,7 @@ fn handle_connection(streams: &Mutex<VecDeque<std::net::TcpStream>>, config: &Mu
 
     let mut stream = match streams.lock().unwrap().pop_front() {
         Some(a) => a,
-        _ => return
+        _ => return,
     };
 
     let buf_reader = BufReader::new(&mut stream);
@@ -192,7 +229,7 @@ fn handle_connection(streams: &Mutex<VecDeque<std::net::TcpStream>>, config: &Mu
     };
 
     let mut response = HttpResponse::new();
-    response.set_default_headers("Tiny-Tiny-Web/2");
+    let _ = response.set_default_headers("Tiny-Tiny-Web/2"); // TODO: fix it
     if !crate::router::router(request, &mut response, &config.lock().unwrap()) {
         return;
     }

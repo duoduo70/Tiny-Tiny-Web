@@ -6,6 +6,9 @@
  * if not, see <https://www.gnu.org/licenses/>.
  */
 use crate::{config::*, drop::http::*, drop::log::LogLevel::*, marco::*};
+use std::sync::{Arc, RwLock};
+
+static mut FILE_CACHE: Option<Arc<RwLock<(String, String)>>> = None;
 
 pub fn router<'a>(
     req: HttpRequest<std::net::TcpStream>,
@@ -16,14 +19,44 @@ pub fn router<'a>(
     .serve_files_custom;
     if serve_args.contains_key(&req.get_url().to_owned())
     {
-        let str = std::fs::read_to_string(
-            "export".to_owned()
-                + &config
-                    .serve_files_custom
-                    .get(&req.get_url().to_owned())
-                    .unwrap()
-                    .0,
-        ).unwrap();
+        let str: String = unsafe { match &FILE_CACHE {
+            Some(a) => {
+                let str: String = if &req.get_url().to_owned() == &FILE_CACHE.clone().unwrap().read().unwrap().0 {
+                    FILE_CACHE.clone().unwrap().read().unwrap().1.clone()
+                } else {
+                    let _str = match std::fs::read_to_string(
+                        "export".to_owned()
+                            + &config
+                                .serve_files_custom
+                                .get(&req.get_url().to_owned())
+                                .unwrap()
+                                .0,
+                    ) {
+                        Ok(a) => a,
+                        _=>return false
+                    };
+                    
+                    let mut lock = a.write().unwrap();
+                    *lock = ("export".to_owned(), _str.clone());
+                    _str
+                };
+                
+                str.to_string()
+            }
+            None => {
+                let _str = std::fs::read_to_string(
+                    "export".to_owned()
+                        + &config
+                            .serve_files_custom
+                            .get(&req.get_url().to_owned())
+                            .unwrap()
+                            .0,
+                ).unwrap();
+                 FILE_CACHE = Some(Arc::new(RwLock::new(("export".to_owned(), _str.clone()))));
+                _str
+            }
+        }};
+        
 
         if let Some(k) = serve_args.get(&req.get_url().to_owned()) {
             if let Some(extra_args) = &k.1 {
@@ -43,7 +76,7 @@ pub fn router<'a>(
             format!("{}{}", LOG[14], "export".to_owned() + req.get_url())
         );
         return true;
-    }
+    };
 
     if let Some(res404) = &config.response_404 {
         //TODO: fix/change it
