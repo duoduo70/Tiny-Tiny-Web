@@ -1,3 +1,10 @@
+/* Tiny-Tiny-Web/Drop
+ * Copyright (C) 2024 Plasma (https://github.com/duoduo70/Tiny-Tiny-Web/).
+ *
+ * You should have received a copy of the GNU General Public License Version 3
+ * along with this program;
+ * if not, see <https://www.gnu.org/licenses/>.
+ */
 use super::time::get_formatted_time;
 
 pub fn log(lv: LogLevel, str: String, enable_debug: bool, fn_line_col_lctime:(&str, u32, u32, bool)) {

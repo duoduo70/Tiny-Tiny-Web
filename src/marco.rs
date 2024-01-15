@@ -1,3 +1,10 @@
+/* Tiny Tiny Web
+ * Copyright (C) 2024 Plasma (https://github.com/duoduo70/Tiny-Tiny-Web/).
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program;
+ * if not, see <https://www.gnu.org/licenses/>.
+ */
 macro_rules! lgconf {
     () => {
         (&std::file!()[4..], std::line!(), std::column!(), crate::config::USE_LOCALTIME.load(std::sync::atomic::Ordering::Relaxed))
