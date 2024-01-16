@@ -7,7 +7,8 @@
  */
 use crate::drop::{http::HttpResponse, log::LogLevel::*};
 use crate::marco::*;
-use std::sync::{Mutex,Arc};
+use std::sync::atomic::AtomicU32;
+use std::sync::{Arc, Mutex};
 use std::{
     collections::HashMap,
     fs::File,
@@ -18,6 +19,11 @@ use std::{
 
 pub static USE_LOCALTIME: AtomicBool = AtomicBool::new(true);
 pub static ENABLE_DEBUG: AtomicBool = AtomicBool::new(true);
+pub static THREADS_NUM: AtomicU32 = AtomicU32::new(2);
+pub static XRPS_COUNTER_CACHE_SIZE: AtomicU32 = AtomicU32::new(8);
+pub static BOX_NUM_PER_THREAD_MAG: AtomicU32 = AtomicU32::new(1000);
+pub static BOX_NUM_PER_THREAD_INIT_MAG: AtomicU32 = AtomicU32::new(1000);
+pub static XRPS_PREDICT_MAG: AtomicU32 = AtomicU32::new(1100);
 pub static mut GLOBAL_CONFIG: Option<Arc<Mutex<Config>>> = None;
 #[derive(Clone)]
 pub struct ServeFilesCustomExtra {
@@ -179,6 +185,81 @@ fn method_set(args: MethodArgs) {
             } else if head2 == "+addr" {
                 args.config.addr_bind.push(head3.to_owned());
                 return;
+            } else if head2 == "threads" {
+                THREADS_NUM.store(
+                    if let Ok(a) = head3.parse() {
+                        a
+                    } else {
+                        syntax_error(
+                            args.file,
+                            args.line_number,
+                            &format!("{}{}", LOG[17], head3),
+                        );
+                        THREADS_NUM.load(Ordering::Relaxed)
+                    },
+                    Ordering::Relaxed,
+                );
+                return;
+            } else if head2 == "xrps-counter-cache-size" {
+                XRPS_COUNTER_CACHE_SIZE.store(
+                    if let Ok(a) = head3.parse() {
+                        a
+                    } else {
+                        syntax_error(
+                            args.file,
+                            args.line_number,
+                            &format!("{}{}", LOG[17], head3),
+                        );
+                        XRPS_COUNTER_CACHE_SIZE.load(Ordering::Relaxed)
+                    },
+                    Ordering::Relaxed,
+                );
+                return;
+            } else if head2 == "box-num-per-thread-mag" {
+                BOX_NUM_PER_THREAD_MAG.store(
+                    if let Ok(a) = head3.parse::<f32>() {
+                        (a * 1000.0) as u32
+                    } else {
+                        syntax_error(
+                            args.file,
+                            args.line_number,
+                            &format!("{}{}", LOG[17], head3),
+                        );
+                        BOX_NUM_PER_THREAD_MAG.load(Ordering::Relaxed)
+                    },
+                    Ordering::Relaxed,
+                );
+                return;
+            } else if head2 == "box-num-per-thread-init-mag" {
+                BOX_NUM_PER_THREAD_INIT_MAG.store(
+                    if let Ok(a) = head3.parse::<f32>() {
+                        (a * 1000.0) as u32
+                    } else {
+                        syntax_error(
+                            args.file,
+                            args.line_number,
+                            &format!("{}{}", LOG[17], head3),
+                        );
+                        BOX_NUM_PER_THREAD_INIT_MAG.load(Ordering::Relaxed)
+                    },
+                    Ordering::Relaxed,
+                );
+                return;
+            } else if head2 == "xrps-predict-mag" {
+                XRPS_PREDICT_MAG.store(
+                    if let Ok(a) = head3.parse::<f32>() {
+                        (a * 1000.0) as u32
+                    } else {
+                        syntax_error(
+                            args.file,
+                            args.line_number,
+                            &format!("{}{}", LOG[17], head3),
+                        );
+                        XRPS_PREDICT_MAG.load(Ordering::Relaxed)
+                    },
+                    Ordering::Relaxed,
+                );
+                return;
             } else {
                 syntax_error(
                     args.file,
@@ -249,9 +330,9 @@ fn compile(args: MethodArgs, head2: &str) {
         }
 
         if let Some(pos) = l.unwrap().find("$_gcflag") {
-            flags.push((linenumber,pos));
+            flags.push((linenumber, pos));
         }
-        linenumber+=1;
+        linenumber += 1;
     }
 
     if flags.is_empty() {
@@ -262,7 +343,7 @@ fn compile(args: MethodArgs, head2: &str) {
         "temp/".to_owned() + head2,
         flags
             .into_iter()
-            .map(|x| x.0.to_string()+" "+&x.1.to_string())
+            .map(|x| x.0.to_string() + " " + &x.1.to_string())
             .collect::<Vec<_>>()
             .join("\n")
             .as_bytes(),
@@ -292,7 +373,11 @@ fn method_import_haserr(args: &mut MethodArgs) -> Result<(), ()> {
     } else {
         return Err(());
     };
-    let conf_serve_value = if let Some(a) = args.config.serve_files_custom.get_mut(&("/".to_owned()+pathname)) {
+    let conf_serve_value = if let Some(a) = args
+        .config
+        .serve_files_custom
+        .get_mut(&("/".to_owned() + pathname))
+    {
         a
     } else {
         return Err(());
@@ -310,28 +395,27 @@ fn method_import_haserr(args: &mut MethodArgs) -> Result<(), ()> {
     let mut linenumbers: Vec<(usize, usize)> = vec![];
     for e in lines {
         if let Ok(line) = e {
-            linenumbers.push(match line.split_once(' '){
-                Some((a, b))=> match (a.parse(), b.parse()) {
-                    (Ok(a), Ok(b)) => (a,b),
-                    _ => return Err(())
+            linenumbers.push(match line.split_once(' ') {
+                Some((a, b)) => match (a.parse(), b.parse()) {
+                    (Ok(a), Ok(b)) => (a, b),
+                    _ => return Err(()),
                 },
-                None => return Err(())
+                None => return Err(()),
             });
         } else {
             return Err(());
         };
     }
-    
+
     let mut linenumber = 0;
     loop {
         if let Some(a) = &mut conf_serve_value.1 {
-            // TODO: fix it.
             if let Some(ori_tur) = &mut a.replace {
                 ori_tur.push((
                     if let Some(f) = args.line_splitted.next() {
-                        match std::fs::read_to_string("export/".to_owned()+f) {
+                        match std::fs::read_to_string("export/".to_owned() + f) {
                             Ok(a) => a,
-                            _ => return Err(())
+                            _ => return Err(()),
                         }
                     } else {
                         return Err(());
@@ -341,14 +425,13 @@ fn method_import_haserr(args: &mut MethodArgs) -> Result<(), ()> {
                     } else {
                         return Err(());
                     },
-
                 ));
             } else {
                 a.replace = Some(vec![(
                     if let Some(f) = args.line_splitted.next() {
-                        match std::fs::read_to_string("export/".to_owned()+f) {
+                        match std::fs::read_to_string("export/".to_owned() + f) {
                             Ok(a) => a,
-                            _ => return Err(())
+                            _ => return Err(()),
                         }
                     } else {
                         return Err(());
@@ -475,5 +558,6 @@ crate::marco::create_static_string_list!(
     "Can not write to ",
     "Compiled successfully: ",
     "Can not import.", //25
-    "Can not select TCP listener to non-blocking mode"
+    "Can not select TCP listener to non-blocking mode",
+    "Can not read a TCP Stream, the server may be about to crash."
 );

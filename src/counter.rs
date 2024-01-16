@@ -5,21 +5,28 @@
  * along with this program;
  * if not, see <https://www.gnu.org/licenses/>.
  */
-use std::collections::VecDeque;
+use std::{collections::VecDeque, sync::atomic::Ordering};
+
+use crate::XRPS_COUNTER_CACHE_SIZE;
 
 pub struct ReqCounter {
-    req_num_per_sec: VecDeque<u32>
+    req_num_per_sec: VecDeque<u32>,
+    cache_size: u32,
 }
-impl ReqCounter{
+impl ReqCounter {
     pub fn new() -> Self {
-        ReqCounter{req_num_per_sec: VecDeque::from([0;8])}
+        let size = XRPS_COUNTER_CACHE_SIZE.load(Ordering::Relaxed);
+        ReqCounter {
+            req_num_per_sec: VecDeque::with_capacity(size.try_into().unwrap()),
+            cache_size: size,
+        }
     }
-    pub fn get_rps(&self) -> u32 {
+    pub fn get_xrps(&self) -> u32 {
         let mut num_full: u32 = 0;
         for e in self.req_num_per_sec.iter().collect::<Vec<_>>() {
             num_full += e;
         }
-        num_full / 8
+        num_full / self.cache_size
     }
     pub fn change(&mut self, new_num: u32) {
         self.req_num_per_sec.pop_front();
