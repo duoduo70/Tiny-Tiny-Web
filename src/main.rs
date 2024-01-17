@@ -69,7 +69,7 @@ fn main() {
     let threads_num = THREADS_NUM.load(Ordering::Relaxed);
     let mut req_counter = ReqCounter::new();
     let mut old_stamp = Time::msec().unwrap();
-    let mut new_stamp: i16 = old_stamp;
+    let mut new_stamp: i16;
     let mut tmp_counter: u32 = 0;
     let mut box_num_per_thread: u32 = threads_num * 3;
     let mut flag_new_box_num = false;
