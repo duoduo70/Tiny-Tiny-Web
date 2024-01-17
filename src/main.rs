@@ -10,6 +10,7 @@ mod counter;
 mod drop;
 mod marco;
 mod router;
+mod tool;
 
 use config::*;
 use counter::*;
@@ -18,6 +19,7 @@ use drop::log::LogLevel::*;
 use drop::thread::*;
 use drop::tool::*;
 use marco::*;
+use tool::*;
 
 use std::collections::VecDeque;
 use std::net::TcpListener;
@@ -63,13 +65,13 @@ fn main() {
     let threads_num = THREADS_NUM.load(Ordering::Relaxed);
     let mut counters = StreamResultCounters {
         req_counter: ReqCounter::new(),
-        old_stamp: Time::msec().unwrap(),
-        new_stamp: Time::msec().unwrap(),
+        old_stamp: Time::msec().result_timeerr_default(),
+        new_stamp: Time::msec().result_timeerr_default(),
         tmp_counter: 0,
         box_num_per_thread: threads_num * 3,
         flag_new_box_num: false,
-        old_stamp_timeout: Time::msec().unwrap(),
-        new_stamp_timeout: Time::msec().unwrap(),
+        old_stamp_timeout: Time::msec().result_timeerr_default(),
+        new_stamp_timeout: Time::msec().result_timeerr_default(),
     };
     unsafe { THREADS_BOX = Some(Arc::new(Mutex::new(VecDeque::new()))) };
     // TODO:The thread factory is not aligned based on the timeline, and the efficiency is not the highest
@@ -164,13 +166,13 @@ fn listener_init(config: Config) -> TcpListener {
 }
 
 fn err_vars_init(counters: &mut StreamResultCounters) {
-    counters.new_stamp_timeout = Time::msec().unwrap();
+    counters.new_stamp_timeout = Time::msec().result_timeerr_default();
     counters.new_stamp = counters.new_stamp_timeout;
 }
 
 fn ok_vars_init(counters: &mut StreamResultCounters) {
     counters.tmp_counter += 1;
-    counters.new_stamp = Time::msec().unwrap();
+    counters.new_stamp = Time::msec().result_timeerr_default();
     counters.flag_new_box_num = false;
 }
 
@@ -287,7 +289,7 @@ fn handle_connection(streams: &Mutex<VecDeque<std::net::TcpStream>>, config: &Mu
     };
 
     let mut response = HttpResponse::new();
-    let _ = response.set_default_headers("Tiny-Tiny-Web/2"); // TODO: fix it
+    response.set_default_headers("Tiny-Tiny-Web/2").result_timeerr_default();
     if !crate::router::router(request, &mut response, &config.lock().unwrap()) {
         return;
     }

@@ -30,3 +30,7 @@ impl<T, E> ShouldResult<T> for Result<T, E> {
         }
     }
 }
+
+pub fn result_timeerr<T>(v: Result<T, std::time::SystemTimeError>, ret_code: i32, func: impl FnOnce() -> () + std::marker::Send) -> T {
+    v.result_shldfatal(ret_code, func)
+}
