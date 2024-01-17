@@ -7,24 +7,37 @@
  */
 macro_rules! lgconf {
     () => {
-        (&std::file!()[4..], std::line!(), std::column!(), crate::config::USE_LOCALTIME.load(std::sync::atomic::Ordering::Relaxed))
+        (
+            &std::file!()[4..],
+            std::line!(),
+            std::column!(),
+            crate::config::USE_LOCALTIME.load(std::sync::atomic::Ordering::Relaxed),
+        )
     };
 }
 pub(crate) use lgconf;
 
 macro_rules! log {
     ($lv:ident, $str:expr) => {
-        crate::drop::log::log($lv, ($str).to_string(),crate::config::ENABLE_DEBUG.load(std::sync::atomic::Ordering::Relaxed), lgconf!())
-    }
+        crate::drop::log::log(
+            $lv,
+            ($str).to_string(),
+            crate::config::ENABLE_DEBUG.load(std::sync::atomic::Ordering::Relaxed),
+            lgconf!(),
+        )
+    };
 }
 pub(crate) use log;
 
 macro_rules! process_result {
     ($result:ident, $type:ident, $message:expr) => {{
         let res: $type;
-        match $result{
+        match $result {
             Ok(res_) => res = res_,
-            Err(_) => {log!(Fatal, $message);panic!();}
+            Err(_) => {
+                log!(Fatal, $message);
+                panic!();
+            }
         }
         res
     }};
