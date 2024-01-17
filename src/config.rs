@@ -559,5 +559,6 @@ crate::marco::create_static_string_list!(
     "Compiled successfully: ",
     "Can not import.", //25
     "Can not select TCP listener to non-blocking mode",
-    "Can not read a TCP Stream, the server may be about to crash."
+    "Can not read a TCP Stream, the server may be about to crash.", // 27
+    "Can not parse your address setting: "
 );

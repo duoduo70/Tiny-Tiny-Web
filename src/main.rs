@@ -16,7 +16,9 @@ use counter::*;
 use drop::http::*;
 use drop::log::LogLevel::*;
 use drop::thread::*;
+use drop::tool::*;
 use marco::*;
+
 use std::collections::VecDeque;
 use std::net::TcpListener;
 use std::sync::atomic::Ordering;
@@ -41,10 +43,10 @@ fn main() {
         .iter()
         .map(|address| {
             std::net::ToSocketAddrs::to_socket_addrs(&address)
-                .unwrap()
+                .result_shldfatal(-1, || log!(Fatal, format!("{}{}", LOG[28], address)))
                 .next()
                 .unwrap()
-        }) //TODO: fix it
+        })
         .collect();
 
     let socket_addresses_array: &[std::net::SocketAddr] = socket_addresses.as_slice();
@@ -125,7 +127,7 @@ fn main() {
                 if flag_new_box_num || is_nst_gt_ost_timeout(&old_stamp, &new_stamp) {
                     let func = move || {
                         let mut i = 0;
-                        while i != (box_num_per_thread as f32 * box_num_per_thread_mag) as u32{
+                        while i != (box_num_per_thread as f32 * box_num_per_thread_mag) as u32 {
                             handle_connection(
                                 unsafe { &THREADS_BOX.clone().unwrap() },
                                 &Arc::clone(unsafe { &GLOBAL_CONFIG.clone().unwrap() }),
