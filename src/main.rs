@@ -12,7 +12,6 @@ mod marco;
 mod router;
 
 use config::*;
-use core::time;
 use counter::*;
 use drop::http::*;
 use drop::log::LogLevel::*;
@@ -22,7 +21,6 @@ use std::collections::VecDeque;
 use std::net::TcpListener;
 use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
-use std::thread::sleep;
 
 use crate::drop::time::Time;
 
@@ -70,7 +68,7 @@ fn main() {
     let xrps_predict_mag = XRPS_PREDICT_MAG.load(Ordering::Relaxed) as f32 / 1000.0;
     let threads_num = THREADS_NUM.load(Ordering::Relaxed);
     let mut req_counter = ReqCounter::new();
-    let mut old_stamp = Time::msec().unwrap(); //TODO: fix it. if cant get time, dont use box-mode to result requests
+    let mut old_stamp = Time::msec().unwrap();
     let mut new_stamp: i16 = old_stamp;
     let mut tmp_counter: u32 = 0;
     let mut box_num_per_thread: u32 = threads_num * 3;
@@ -78,7 +76,7 @@ fn main() {
     let mut old_stamp_timeout = old_stamp;
     let mut new_stamp_timeout = old_stamp;
     unsafe { THREADS_BOX = Some(Arc::new(Mutex::new(VecDeque::new()))) };
-    // TODO:This algorithm is still unstable, and there is a chance that the request will be stuck.
+    // TODO:The thread factory is not aligned based on the timeline, and the efficiency is not the highest
     for stream in res.incoming() {
         match stream {
             Ok(stream) => {
@@ -97,9 +95,7 @@ fn main() {
                             a
                         } else {
                             log!(Warn, LOG[27]);
-                            sleep(time::Duration::from_millis(100));
                             continue;
-                            // TODO: Emergency treatment
                         });
                 }
 
@@ -113,26 +109,12 @@ fn main() {
                             (req_counter.get_xrps() as f32 * xrps_predict_mag) as u32;
                         flag_new_box_num = true;
                     }
-                    if is_nst_gt_ost_timeout(&old_stamp, &new_stamp) {
-                        let func = move || {
-                            let mut i = 0;
-                            while i != (box_num_per_thread as f32 * box_num_per_thread_mag) as u32 {
-                                handle_connection(
-                                    unsafe { &THREADS_BOX.clone().unwrap() },
-                                    &Arc::clone(unsafe { &GLOBAL_CONFIG.clone().unwrap() }),
-                                );
-                                i += 1;
-                            }
-                        };
-                        threadpool.add(threads_num.try_into().unwrap(), func);
-                        box_num_per_thread =
-                            (threads_num as f32 * box_num_per_thread_init_mag) as u32;
-                    }
                     old_stamp_timeout = new_stamp_timeout;
                 }
             }
             Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
                 new_stamp_timeout = Time::msec().unwrap();
+                new_stamp = new_stamp_timeout;
                 if is_nst_gt_ost_helfsec(&old_stamp, &new_stamp) {
                     old_stamp = new_stamp;
                     req_counter.change(tmp_counter);
@@ -143,7 +125,7 @@ fn main() {
                 if flag_new_box_num || is_nst_gt_ost_timeout(&old_stamp, &new_stamp) {
                     let func = move || {
                         let mut i = 0;
-                        while i != (box_num_per_thread as f32 * box_num_per_thread_mag) as u32 {
+                        while i != (box_num_per_thread as f32 * box_num_per_thread_mag) as u32{
                             handle_connection(
                                 unsafe { &THREADS_BOX.clone().unwrap() },
                                 &Arc::clone(unsafe { &GLOBAL_CONFIG.clone().unwrap() }),
@@ -156,7 +138,7 @@ fn main() {
                 }
                 continue;
             }
-            _ => log!(Fatal, LOG[2]),
+            _ => log!(Error, LOG[2]),
         }
     }
 }
