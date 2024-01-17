@@ -1,3 +1,10 @@
+/* Tiny Tiny Web
+ * Copyright (C) 2024 Plasma (https://github.com/duoduo70/Tiny-Tiny-Web/).
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program;
+ * if not, see <https://www.gnu.org/licenses/>.
+ */
 use std::time::{SystemTime, SystemTimeError};
 
 // DONT USE crate::log in this module
@@ -23,13 +30,16 @@ impl Time {
             if (y % 4 == 0 && y % 100 != 0) || y & 400 == 0 {
                 _timestamp -= 31622400;
                 if _timestamp <= 31536000 {
-                    y+=1;
+                    y += 1;
                     break;
                 }
             } else {
                 _timestamp -= 31536000;
-                if _timestamp <= 31536000 || ((((y + 1) % 4 == 0 && (y + 1) % 100 != 0) || (y + 1) % 400 == 0) && timestamp <= 31622400){
-                    y+=1;
+                if _timestamp <= 31536000
+                    || ((((y + 1) % 4 == 0 && (y + 1) % 100 != 0) || (y + 1) % 400 == 0)
+                        && timestamp <= 31622400)
+                {
+                    y += 1;
                     break;
                 }
             }
@@ -159,7 +169,7 @@ impl Time {
                     5 => "Fri",
                     6 => "Sat",
                     7 => "Sun",
-                    _ => ""
+                    _ => "",
                 }
             }),
             Err(error) => Err(error.clone()),
@@ -181,7 +191,7 @@ impl Time {
                     10 => "Oct",
                     11 => "Nov",
                     12 => "Dec",
-                    _ => ""
+                    _ => "",
                 }
             }),
             Err(error) => Err(error.clone()),
