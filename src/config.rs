@@ -159,13 +159,13 @@ fn method_add_head3_ext(args: MethodArgs, head2: &str, head3: &str) {
 }
 fn method_remove(args: MethodArgs) {
     if let Some(head2) = args.line_splitted.next() {
-        method_remove_head3_ext(args, head2);
+        method_remove_head2_ext(args, head2);
     } else {
         syntax_error(args.file, args.line_number, LOG[18]);
         return;
     }
 }
-fn method_remove_head3_ext(args: MethodArgs, head2: &str) {
+fn method_remove_head2_ext(args: MethodArgs, head2: &str) {
     if head2 == "/" {
         if let Some(_) = args.config.serve_files_custom.remove("/") {
         } else {
@@ -311,7 +311,7 @@ fn page_404_option(args: MethodArgs, head3: &str) {
     args.config.response_404 = Some(res);
 }
 fn pas_bool_option(option: &mut bool, opt_str: &str, file: &str, line_number: i32) {
-    if opt_str == "yes" || opt_str == "auto" {
+    if opt_str == "yes" {
         *option = true;
     } else if opt_str == "no" {
         *option = false;

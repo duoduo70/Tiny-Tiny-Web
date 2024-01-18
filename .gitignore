@@ -5,3 +5,5 @@
 !Cargo.toml
 !README.md
 !LICENSE
+!docs
+!docs/**
