@@ -11,6 +11,7 @@ mod drop;
 mod marco;
 mod router;
 mod tool;
+mod i18n;
 
 use config::*;
 use counter::*;
@@ -20,6 +21,7 @@ use drop::thread::*;
 use drop::tool::*;
 use marco::*;
 use tool::*;
+use i18n::LOG;
 
 use std::collections::VecDeque;
 use std::net::TcpListener;
@@ -133,8 +135,8 @@ fn main() {
 }
 
 fn config_init() -> Config {
-    let config: Config = match read_config() {
-        Ok(config) => config,
+    let config: Config = match read_config("main.gc".to_owned(), &mut Config::new()) {
+        Ok(config) => config.clone(),
         Err(_) => Config::new(),
     };
     config.check();

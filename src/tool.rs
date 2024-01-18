@@ -13,6 +13,6 @@ pub trait TimeErr<T> {
 }
 impl<T> TimeErr<T> for Result<T, std::time::SystemTimeError> {
     fn result_timeerr_default(self) -> T {
-        crate::drop::tool::result_timeerr(self, -1, ||log!(Fatal, LOG[29]))
+        crate::drop::tool::result_timeerr(self, -1, || log!(Fatal, LOG[29]))
     }
 }

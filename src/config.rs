@@ -6,7 +6,10 @@
  * if not, see <https://www.gnu.org/licenses/>.
  */
 use crate::drop::{http::HttpResponse, log::LogLevel::*};
-use crate::marco::*;
+use crate::{marco::*, ShouldResult};
+use crate::i18n::LOG;
+
+use std::process::exit;
 use std::sync::atomic::AtomicU32;
 use std::sync::{Arc, Mutex};
 use std::{
@@ -60,24 +63,23 @@ impl Config {
     }
 }
 
-pub fn read_config() -> Result<Config, ()> {
-    let lines = if let Ok(lines) = read_lines("config/main.gc") {
+pub fn read_config(filename: String, mut config: &mut Config) -> Result<&mut Config, ()> {
+    let lines = if let Ok(lines) = read_lines("config/".to_owned()+&filename) {
         lines
     } else {
-        log!(Error, format!("{}{}", LOG[9], "config/main.gc"));
+        log!(Error, format!("{}{}", LOG[9], "config/".to_owned()+&filename));
         return Err(());
     };
-    let mut config = Config::new();
 
     let mut line_number = 1;
     for line in lines {
         match line {
-            Ok(str) => parse_line(str, &mut config, "config/main.gc", line_number),
+            Ok(str) => parse_line(str, &mut config, &("config/".to_owned()+&filename), line_number),
             Err(_) => log!(
                 Error,
                 format!(
                     "{}{}{} {}{}",
-                    LOG[10], LOG[11], "config/main.gc", LOG[12], line_number
+                    LOG[10], LOG[11], "config/".to_owned()+&filename, LOG[12], line_number
                 )
             ),
         }
@@ -85,6 +87,15 @@ pub fn read_config() -> Result<Config, ()> {
     }
 
     Ok(config)
+}
+fn method_import(args: MethodArgs) -> &mut Config {
+    if let Some(head2) = args.line_splitted.next() {
+        read_config(head2.to_owned(), args.config).result_shldfatal(-1, ||{})
+    }
+    else {
+        log!(Fatal, LOG[18]);
+        exit(-1);
+    }
 }
 struct MethodArgs<'a> {
     config: &'a mut Config,
@@ -361,13 +372,13 @@ fn compile(args: MethodArgs, head2: &str) {
         }
     }
 }
-fn method_import(mut args: MethodArgs) {
-    if method_import_haserr(&mut args) == Err(()) {
+fn method_inject(mut args: MethodArgs) {
+    if method_inject_haserr(&mut args) == Err(()) {
         syntax_error(args.file, args.line_number, LOG[25]);
         return;
     }
 }
-fn method_import_haserr(args: &mut MethodArgs) -> Result<(), ()> {
+fn method_inject_haserr(args: &mut MethodArgs) -> Result<(), ()> {
     let pathname = if let Some(a) = args.line_splitted.next() {
         a
     } else {
@@ -497,6 +508,15 @@ fn parse_line(line: String, config: &mut Config, file: &str, line_number: i32) {
             return;
         }
         if head == "inject" {
+            method_inject(MethodArgs {
+                config,
+                line_splitted: &mut line_splitted,
+                file,
+                line_number,
+            });
+            return;
+        }
+        if head == "@" {
             method_import(MethodArgs {
                 config,
                 line_splitted: &mut line_splitted,
@@ -529,37 +549,3 @@ where
     let file = File::open(filename)?;
     Ok(io::BufReader::new(file).lines())
 }
-
-crate::marco::create_static_string_list!(
-    LOG,
-    "Tiny-Tiny-Web Started (Ver.",
-    "Can not listen: ",
-    "Can not open TCP Steam.",
-    "Connection established: \n",
-    "Connection handle: Can not read a buffer, was skipped.",
-    "Malformed or unsupported request: ",
-    "Connection handle: Can not write a buffer to the stream, was skipped.",
-    "Connection request header: \n",
-    "Connection response: \n",
-    "Can not read configure file: ",
-    "Can not parse configure: Syntax Error: ", //10
-    "file:",
-    "line:",
-    "No routes are set.",
-    "Router: Pushed a file: ",
-    "Loading configure finished. ",
-    "Void command. ",
-    "Void item: ", //17
-    "Not enough items. ",
-    "This mapping does not exist. ",
-    "This is not a file. ",
-    "config-loader",
-    "Can not read file: ", //22
-    "Can not write to ",
-    "Compiled successfully: ",
-    "Can not import.", //25
-    "Can not select TCP listener to non-blocking mode",
-    "Can not read a TCP Stream, the server may be about to crash.", // 27
-    "Can not parse your address setting: ",
-    "Unable to get time, There may be a serious failure within the OS."
-);
