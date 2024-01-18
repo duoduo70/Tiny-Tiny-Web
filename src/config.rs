@@ -6,8 +6,8 @@
  * if not, see <https://www.gnu.org/licenses/>.
  */
 use crate::drop::{http::HttpResponse, log::LogLevel::*};
-use crate::{marco::*, ShouldResult};
 use crate::i18n::LOG;
+use crate::{marco::*, ShouldResult};
 
 use std::process::exit;
 use std::sync::atomic::AtomicU32;
@@ -64,22 +64,34 @@ impl Config {
 }
 
 pub fn read_config(filename: String, mut config: &mut Config) -> Result<&mut Config, ()> {
-    let lines = if let Ok(lines) = read_lines("config/".to_owned()+&filename) {
+    let lines = if let Ok(lines) = read_lines("config/".to_owned() + &filename) {
         lines
     } else {
-        log!(Error, format!("{}{}", LOG[9], "config/".to_owned()+&filename));
+        log!(
+            Error,
+            format!("{}{}", LOG[9], "config/".to_owned() + &filename)
+        );
         return Err(());
     };
 
     let mut line_number = 1;
     for line in lines {
         match line {
-            Ok(str) => parse_line(str, &mut config, &("config/".to_owned()+&filename), line_number),
+            Ok(str) => parse_line(
+                str,
+                &mut config,
+                &("config/".to_owned() + &filename),
+                line_number,
+            ),
             Err(_) => log!(
                 Error,
                 format!(
                     "{}{}{} {}{}",
-                    LOG[10], LOG[11], "config/".to_owned()+&filename, LOG[12], line_number
+                    LOG[10],
+                    LOG[11],
+                    "config/".to_owned() + &filename,
+                    LOG[12],
+                    line_number
                 )
             ),
         }
@@ -90,9 +102,8 @@ pub fn read_config(filename: String, mut config: &mut Config) -> Result<&mut Con
 }
 fn method_import(args: MethodArgs) -> &mut Config {
     if let Some(head2) = args.line_splitted.next() {
-        read_config(head2.to_owned(), args.config).result_shldfatal(-1, ||{})
-    }
-    else {
+        read_config(head2.to_owned(), args.config).result_shldfatal(-1, || {})
+    } else {
         log!(Fatal, LOG[18]);
         exit(-1);
     }

@@ -5,7 +5,7 @@
  * along with this program;
  * if not, see <https://www.gnu.org/licenses/>.
  */
-use crate::{config::*, drop::http::*, drop::log::LogLevel::*, marco::*, i18n::LOG};
+use crate::{config::*, drop::http::*, drop::log::LogLevel::*, i18n::LOG, marco::*};
 use std::sync::{Arc, RwLock};
 
 static mut FILE_CACHE: Option<Arc<RwLock<(String, String)>>> = None;
@@ -93,7 +93,8 @@ pub fn router<'a>(
 
     false
 }
-fn router_iftype_replace<'a>( //TODO: optimize it
+fn router_iftype_replace<'a>(
+    //TODO: optimize it
     _req: HttpRequest<std::net::TcpStream>,
     res: &'a mut HttpResponse,
     _config: &'a Config,

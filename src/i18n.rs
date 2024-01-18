@@ -1,3 +1,10 @@
+/* Tiny Tiny Web
+ * Copyright (C) 2024 Plasma (https://github.com/duoduo70/Tiny-Tiny-Web/).
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program;
+ * if not, see <https://www.gnu.org/licenses/>.
+ */
 crate::marco::create_static_string_list!(
     LOG,
     "Tiny-Tiny-Web Started (Ver.",

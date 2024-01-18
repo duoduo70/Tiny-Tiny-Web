@@ -8,10 +8,10 @@
 mod config;
 mod counter;
 mod drop;
+mod i18n;
 mod marco;
 mod router;
 mod tool;
-mod i18n;
 
 use config::*;
 use counter::*;
@@ -19,9 +19,9 @@ use drop::http::*;
 use drop::log::LogLevel::*;
 use drop::thread::*;
 use drop::tool::*;
+use i18n::LOG;
 use marco::*;
 use tool::*;
-use i18n::LOG;
 
 use std::collections::VecDeque;
 use std::net::TcpListener;
@@ -291,7 +291,9 @@ fn handle_connection(streams: &Mutex<VecDeque<std::net::TcpStream>>, config: &Mu
     };
 
     let mut response = HttpResponse::new();
-    response.set_default_headers("Tiny-Tiny-Web/2").result_timeerr_default();
+    response
+        .set_default_headers("Tiny-Tiny-Web/2")
+        .result_timeerr_default();
     if !crate::router::router(request, &mut response, &config.lock().unwrap()) {
         return;
     }
