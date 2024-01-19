@@ -36,7 +36,7 @@ impl Display for Expression {
                 a.iter().map(|e| { format!("{}", e) }).collect::<Vec<_>>()
             ),
             Expression::Bool(a) => write!(f, "{}", a),
-            Expression::Lambda(_) => write!(f, "Lambda()"),
+            Expression::Lambda(a) => write!(f, "lambda: {{ params: {} , body: {} }}", &a.params, &a.body),
             Expression::Func(_) => write!(f, "function()"), // TODO: Display function sign
         }
     }
