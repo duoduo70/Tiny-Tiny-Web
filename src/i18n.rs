@@ -37,5 +37,6 @@ crate::marco::create_static_string_list!(
     "Can not read a TCP Stream, the server may be about to crash.", // 27
     "Can not parse your address setting: ",
     "Unable to get time, There may be a serious failure within the OS.",
-    "Unknown command"
+    "Unknown command", // 30
+    "Invalid UTF-8 sequence"
 );

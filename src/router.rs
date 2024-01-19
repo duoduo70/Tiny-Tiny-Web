@@ -69,7 +69,7 @@ pub fn router<'a>(
                 if let Some(replaces) = &extra_args.replace {
                     return router_iftype_replace(req, res, config, replaces, match std::str::from_utf8(&str) {
                         Ok(v) => v.to_owned(),
-                        Err(e) => panic!("Invalid UTF-8 sequence: {}", e), // TODO: i18n
+                        Err(_) => {log!(Debug, LOG[31]); return false;}
                     });
                 }
             }
