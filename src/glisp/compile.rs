@@ -7,6 +7,7 @@
  */
 use std::{collections::HashMap, fmt::Display, io::Write, rc::Rc};
 
+//TODO: Standardize error reporting
 //TODO: i18n support
 
 #[derive(Clone)]
@@ -17,6 +18,7 @@ enum Expression {
     Func(fn(&[Expression]) -> Result<Expression, GError>),
     Bool(bool),
     Lambda(Lambda),
+    String(String),
 }
 
 #[derive(Clone)]
@@ -36,7 +38,10 @@ impl Display for Expression {
                 a.iter().map(|e| { format!("{}", e) }).collect::<Vec<_>>()
             ),
             Expression::Bool(a) => write!(f, "{}", a),
-            Expression::Lambda(a) => write!(f, "lambda: {{ params: {} , body: {} }}", &a.params, &a.body),
+            Expression::Lambda(a) => {
+                write!(f, "lambda: {{ params: {} , body: {} }}", &a.params, &a.body)
+            }
+            Expression::String(a) => write!(f, "\"{}\"", a),
             Expression::Func(_) => write!(f, "function()"), // TODO: Display function sign
         }
     }
@@ -103,6 +108,12 @@ fn read_seq<'a>(tokens: &'a [String]) -> Result<(Expression, &'a [String]), GErr
 }
 
 fn parse_atom(token: &str) -> Expression {
+    if token.len() >= 2
+        && token.bytes().nth(0).unwrap() == b'\"'
+        && token.bytes().nth(token.len() - 1).unwrap() == b'\"'
+    {
+        return Expression::String(token[1..token.len() - 1].to_string());
+    }
     match token {
         "true" => Expression::Bool(true),
         "false" => Expression::Bool(false),
@@ -300,23 +311,8 @@ fn eval(exp: &Expression, env: &mut Environment) -> Result<Expression, GError> {
             }
         }
         Expression::Func(_) => Err(GError::Reason("unexpected form".to_string())),
+        Expression::String(_) => Ok(exp.clone()),
         _ => Err(GError::Reason("not supported type.".to_string())),
-    }
-}
-
-fn eval_built_in_form(
-    exp: &Expression,
-    other_args: &[Expression],
-    env: &mut Environment,
-) -> Option<Result<Expression, GError>> {
-    match exp {
-        Expression::Symbol(symbol) => match symbol.as_ref() {
-            "if" => Some(eval_if_args(other_args, env)),
-            "def" => Some(eval_def_args(other_args, env)),
-            "lambda" => Some(eval_lambda_args(other_args)),
-            _ => None,
-        },
-        _ => None,
     }
 }
 
@@ -386,5 +382,188 @@ pub fn run_repl() {
                 GError::Reason(msg) => println!("// => {}", msg),
             },
         }
+    }
+}
+
+fn eval_quote_args(args: &[Expression]) -> Result<Expression, GError> {
+    let _fst = args
+        .first()
+        .ok_or(GError::Reason(format!("unexpected args form")))?;
+    let mut retfst = vec![Expression::Symbol("quote".to_owned())];
+    retfst.extend_from_slice(args);
+    Ok(Expression::List(retfst))
+}
+
+fn eval_atom_args(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
+    let fst = eval(
+        args.first()
+            .ok_or(GError::Reason(format!("unexpected args form")))?,
+        env,
+    )?;
+    match fst {
+        Expression::Symbol(_) => Ok(Expression::Bool(true)),
+        Expression::Number(_) => Ok(Expression::Bool(true)),
+        Expression::Func(_) => Ok(Expression::Bool(true)),
+        Expression::Bool(_) => Ok(Expression::Bool(true)),
+        Expression::String(_) => Ok(Expression::Bool(true)),
+        Expression::List(a) => {
+            let _fst = if let Some(e) = a.get(0) {
+                e
+            } else {
+                return Ok(Expression::Bool(true));
+            }
+            .to_string();
+            if _fst == *"quote" {
+                Ok(Expression::Bool(false))
+            } else {
+                Ok(Expression::Bool(true))
+            }
+        }
+        _ => Ok(Expression::Bool(false)),
+    }
+}
+
+//TODO: Parameter limit macro
+fn eval_eq_args(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
+    let (fst, snd) = (
+        args.first()
+            .ok_or(GError::Reason(format!("eq can only have 2 args")))?,
+        args.get(1)
+            .ok_or(GError::Reason(format!("eq can only have 2 args")))?,
+    );
+
+    if eval(fst, env)?.to_string() == eval(snd, env)?.to_string() {
+        Ok(Expression::Bool(true))
+    } else {
+        Ok(Expression::Bool(false))
+    }
+}
+
+fn eval_car_args(args: &[Expression]) -> Result<Expression, GError> {
+    let fst = args.first().ok_or(GError::Reason(format!("car: Error")))?;
+    let lst = match fst {
+        Expression::List(a) => a,
+        _ => return Err(GError::Reason(format!("car can only result a static list"))),
+    };
+    let lstfst = lst.get(0);
+    if let Some(a) = lstfst {
+        if a.to_string() == "quote" {
+            return Ok(if let Some(_a) = lst.get(1) {
+                _a.clone()
+            } else {
+                return Err(GError::Reason(format!("car can only result a static list")));
+            });
+        } else {
+            return Err(GError::Reason(format!("car can only result a static list")));
+        }
+    };
+    return Err(GError::Reason(format!("car can only result a static list")));
+}
+
+fn eval_cdr_args(args: &[Expression]) -> Result<Expression, GError> {
+    let fst = args.first().ok_or(GError::Reason(format!("car: Error")))?;
+    let lst = match fst {
+        Expression::List(a) => a,
+        _ => return Err(GError::Reason(format!("cdr can only result a static list"))),
+    };
+    if lst.len() < 4 {
+        return Err(GError::Reason(format!("cdr: the len of list must >= 4")));
+    }
+    let lstfst = lst.get(0);
+    if let Some(a) = lstfst {
+        if a.to_string() == "quote" {
+            let mut retfst = vec![Expression::Symbol("quote".to_owned())];
+            retfst.extend_from_slice(&lst[2..]);
+            return Ok(Expression::List(retfst));
+        } else {
+            return Err(GError::Reason(format!("cdr can only result a static list")));
+        }
+    };
+    return Err(GError::Reason(format!("cdr can only result a static list")));
+}
+
+fn eval_cons_args(args: &[Expression]) -> Result<Expression, GError> {
+    if args.len() < 2 {
+        return Err(GError::Reason(format!("cons: Error")));
+    }
+
+    let mut lst1 = match args[0].clone() {
+        Expression::List(a) => a,
+        _ => {
+            return Err(GError::Reason(format!(
+                "cons can only result a static list"
+            )))
+        }
+    };
+
+    if lst1.remove(0).to_string() != "quote" {
+        return Err(GError::Reason(format!(
+            "cons can only result a static list"
+        )));
+    }
+
+    let mut lst2 = match args[1].clone() {
+        Expression::List(a) => a,
+        _ => {
+            return Err(GError::Reason(format!(
+                "cons can only result a static list"
+            )))
+        }
+    };
+
+    if lst2.remove(0).to_string() != "quote" {
+        return Err(GError::Reason(format!(
+            "cons can only result a static list"
+        )));
+    }
+
+    lst1.extend(lst2);
+
+    Ok(Expression::List(lst1))
+}
+
+fn eval_cond_args(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
+    if args.len() < 2 {
+        return Err(GError::Reason(format!("cond: Error1")));
+    }
+
+    let mut i = 0;
+    loop {
+        if i >= args.len() {
+            return Err(GError::Reason(format!("cond: Error2")));
+        }
+
+        let v = match eval(&args[i * 2].clone(), env) {
+            Ok(a) => a,
+            _ => return Err(GError::Reason(format!("cond: Error3"))),
+        };
+        match v {
+            Expression::Bool(true) => return eval(&args[i * 2 + 1].clone(), env),
+            _ => (),
+        }
+        i += 1;
+    }
+}
+
+fn eval_built_in_form(
+    exp: &Expression,
+    other_args: &[Expression],
+    env: &mut Environment,
+) -> Option<Result<Expression, GError>> {
+    match exp {
+        Expression::Symbol(symbol) => match symbol.as_ref() {
+            "if" => Some(eval_if_args(other_args, env)),
+            "def" => Some(eval_def_args(other_args, env)),
+            "lambda" => Some(eval_lambda_args(other_args)),
+            "quote" => Some(eval_quote_args(other_args)),
+            "atom" => Some(eval_atom_args(other_args, env)),
+            "eq" => Some(eval_eq_args(other_args, env)),
+            "car" => Some(eval_car_args(other_args)),
+            "cdr" => Some(eval_cdr_args(other_args)),
+            "cons" => Some(eval_cons_args(other_args)),
+            "cond" => Some(eval_cond_args(other_args, env)),
+            _ => None,
+        },
+        _ => None,
     }
 }
