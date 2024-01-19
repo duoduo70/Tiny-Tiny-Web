@@ -16,7 +16,7 @@
 
 在 main.gc 文件中写入如下内容：
 ```
-set +addr 127.0.0.1:22397
+$ +addr 127.0.0.1:22397
 + index.html /
 ```
 然后，在 export 文件下创建 index.html 文件

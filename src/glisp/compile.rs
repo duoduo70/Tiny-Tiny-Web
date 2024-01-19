@@ -11,12 +11,12 @@ use std::{collections::HashMap, fmt::Display, io::Write, rc::Rc};
 
 #[derive(Clone)]
 enum Expression {
-  Symbol(String),
-  Number(f64),
-  List(Vec<Expression>),
-  Func(fn(&[Expression]) -> Result<Expression, GError>),
-  Bool(bool),
-  Lambda(Lambda)
+    Symbol(String),
+    Number(f64),
+    List(Vec<Expression>),
+    Func(fn(&[Expression]) -> Result<Expression, GError>),
+    Bool(bool),
+    Lambda(Lambda),
 }
 
 #[derive(Clone)]
@@ -30,22 +30,25 @@ impl Display for Expression {
         match self {
             Expression::Symbol(a) => write!(f, "{}", a),
             Expression::Number(a) => write!(f, "{}", a),
-            Expression::List(a) => write!(f, "{:?}", a.iter().map(|e| {format!("{}",e)}).collect::<Vec<_>>()),
+            Expression::List(a) => write!(
+                f,
+                "{:?}",
+                a.iter().map(|e| { format!("{}", e) }).collect::<Vec<_>>()
+            ),
             Expression::Bool(a) => write!(f, "{}", a),
             Expression::Lambda(_) => write!(f, "Lambda()"),
-            Expression::Func(_) => write!(f, "function()")   // TODO: Display function sign
+            Expression::Func(_) => write!(f, "function()"), // TODO: Display function sign
         }
-        
     }
 }
 
 enum GError {
-    Reason(String)
+    Reason(String),
 }
 
 struct Environment<'a> {
     data: HashMap<String, Expression>,
-    outer: Option<&'a Environment<'a>>
+    outer: Option<&'a Environment<'a>>,
 }
 
 fn eval_lambda_args(args: &[Expression]) -> Result<Expression, GError> {
@@ -101,18 +104,16 @@ fn read_seq<'a>(tokens: &'a [String]) -> Result<(Expression, &'a [String]), GErr
 
 fn parse_atom(token: &str) -> Expression {
     match token {
-        "true" => {
-            Expression::Bool(true)
-        },
-        "false" => {
-            Expression::Bool(false)
-        },
+        "true" => Expression::Bool(true),
+        "false" => Expression::Bool(false),
         _ => {
-    let potential_float = token.parse();
-    match potential_float {
-        Ok(v) => Expression::Number(v),
-        Err(_) => Expression::Symbol(token.to_string().clone()),
-    }}}
+            let potential_float = token.parse();
+            match potential_float {
+                Ok(v) => Expression::Number(v),
+                Err(_) => Expression::Symbol(token.to_string().clone()),
+            }
+        }
+    }
 }
 
 fn default_env<'a>() -> Environment<'a> {
@@ -179,17 +180,17 @@ fn default_env<'a>() -> Environment<'a> {
         ">".to_string(),
         Expression::Func(ensure_tonicity!(|a, b| a > b)),
     );
-    
+
     data.insert(
         "<".to_string(),
         Expression::Func(ensure_tonicity!(|a, b| a < b)),
     );
-    
+
     data.insert(
         "<=".to_string(),
         Expression::Func(ensure_tonicity!(|a, b| a <= b)),
     );
-    
+
     data.insert(
         ">=".to_string(),
         Expression::Func(ensure_tonicity!(|a, b| a >= b)),
@@ -267,8 +268,8 @@ fn eval(exp: &Expression, env: &mut Environment) -> Result<Expression, GError> {
     match exp {
         Expression::Bool(_) => Ok(exp.clone()),
         Expression::Symbol(k) => env_get(&k, env)
-        .ok_or(GError::Reason(format!("unexpected symbol k={}", k)))
-        .map(|x| x.clone()),
+            .ok_or(GError::Reason(format!("unexpected symbol k={}", k)))
+            .map(|x| x.clone()),
         Expression::Number(_a) => Ok(exp.clone()),
         Expression::List(list) => {
             let first_form = list
@@ -288,19 +289,18 @@ fn eval(exp: &Expression, env: &mut Environment) -> Result<Expression, GError> {
                                 .collect::<Result<Vec<Expression>, GError>>();
                             f(&args_eval?)
                         }
-                        Expression::Lambda(lambda) => {    // ->  New
+                        Expression::Lambda(lambda) => {
+                            // ->  New
                             let new_env = &mut env_for_lambda(lambda.params, arg_forms, env)?;
                             eval(&lambda.body, new_env)
-                        },
+                        }
                         _ => Err(GError::Reason("first form must be a function".to_string())),
                     }
                 }
             }
         }
         Expression::Func(_) => Err(GError::Reason("unexpected form".to_string())),
-        _ => {
-            Err(GError::Reason("not supported type.".to_string()))
-        }
+        _ => Err(GError::Reason("not supported type.".to_string())),
     }
 }
 
@@ -342,17 +342,21 @@ fn eval_if_args(args: &[Expression], env: &mut Environment) -> Result<Expression
 }
 
 fn eval_def_args(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
-    let var_exp = args.first().ok_or(GError::Reason(format!("unexepceted string for var")))?;
+    let var_exp = args
+        .first()
+        .ok_or(GError::Reason(format!("unexepceted string for var")))?;
 
-    let val_res = args.get(1).ok_or(GError::Reason(format!("expected second param.")))?;
+    let val_res = args
+        .get(1)
+        .ok_or(GError::Reason(format!("expected second param.")))?;
     let evaled_val = eval(val_res, env)?;
 
     match var_exp {
         Expression::Symbol(ref var_name) => {
             env.data.insert(var_name.clone(), evaled_val);
             Ok(var_exp.clone())
-        },
-        _ => Err(GError::Reason(format!("unexpected var name")))
+        }
+        _ => Err(GError::Reason(format!("unexpected var name"))),
     }
 }
 
