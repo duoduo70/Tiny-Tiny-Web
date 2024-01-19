@@ -12,6 +12,8 @@ mod i18n;
 mod marco;
 mod router;
 mod tool;
+#[cfg(not(feature = "stable"))]
+mod glisp;
 
 use config::*;
 use counter::*;
@@ -45,6 +47,7 @@ struct StreamResultCounters {
 }
 
 fn main() {
+
     log!(Info, format!("{}{}).", LOG[0], env!("CARGO_PKG_VERSION")));
 
     let config = config_init();

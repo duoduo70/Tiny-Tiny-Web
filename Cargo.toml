@@ -7,3 +7,6 @@ edition = "2021"
 
 [profile.release]
 lto = true
+
+[features]
+stable = []
