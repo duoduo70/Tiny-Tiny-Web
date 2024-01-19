@@ -8,7 +8,7 @@
 use crate::{config::*, drop::http::*, drop::log::LogLevel::*, i18n::LOG, marco::*};
 use std::sync::{Arc, RwLock};
 
-static mut FILE_CACHE: Option<Arc<RwLock<(String, String)>>> = None;
+static mut FILE_CACHE: Option<Arc<RwLock<(String, Vec<u8>)>>> = None;
 
 pub fn router<'a>(
     req: HttpRequest<std::net::TcpStream>,
@@ -17,15 +17,19 @@ pub fn router<'a>(
 ) -> bool {
     let serve_args = &config.serve_files_custom;
     if serve_args.contains_key(&req.get_url().to_owned()) {
-        let str: String = unsafe {
+        res.set_header("Content-Type", match &config.serve_files_custom.get(&req.get_url().to_owned()).unwrap().1 {
+            Some(a) => a.content_type.clone(),
+            _ => "text/html; charset=utf-8".to_owned()
+        });
+        let str = unsafe {
             match &FILE_CACHE {
                 Some(a) => {
-                    let str: String = if &req.get_url().to_owned()
+                    let str = if &req.get_url().to_owned()
                         == &FILE_CACHE.clone().unwrap().read().unwrap().0
                     {
                         FILE_CACHE.clone().unwrap().read().unwrap().1.clone()
                     } else {
-                        let _str = match std::fs::read_to_string(
+                        let _stream = match std::fs::read(
                             "export".to_owned()
                                 + &config
                                     .serve_files_custom
@@ -38,14 +42,14 @@ pub fn router<'a>(
                         };
 
                         let mut lock = a.write().unwrap();
-                        *lock = ("export".to_owned(), _str.clone());
-                        _str
+                        *lock = ("export".to_owned(), _stream.clone());
+                        _stream
                     };
 
-                    str.to_string()
+                    str
                 }
                 None => {
-                    let _str = std::fs::read_to_string(
+                    let _stream = std::fs::read(
                         "export".to_owned()
                             + &config
                                 .serve_files_custom
@@ -54,8 +58,8 @@ pub fn router<'a>(
                                 .0,
                     )
                     .unwrap();
-                    FILE_CACHE = Some(Arc::new(RwLock::new(("export".to_owned(), _str.clone()))));
-                    _str
+                    FILE_CACHE = Some(Arc::new(RwLock::new(("export".to_owned(), _stream.clone()))));
+                    _stream
                 }
             }
         };
@@ -63,16 +67,18 @@ pub fn router<'a>(
         if let Some(k) = serve_args.get(&req.get_url().to_owned()) {
             if let Some(extra_args) = &k.1 {
                 if let Some(replaces) = &extra_args.replace {
-                    return router_iftype_replace(req, res, config, replaces, str);
+                    return router_iftype_replace(req, res, config, replaces, match std::str::from_utf8(&str) {
+                        Ok(v) => v.to_owned(),
+                        Err(e) => panic!("Invalid UTF-8 sequence: {}", e), // TODO: i18n
+                    });
                 }
             }
         }
 
         res.set_version("HTTP/1.1");
         res.set_state("200 OK");
-        res.set_header("Content-Type", "text/html;charset=utf-8");
-        res.set_header("Content-Length", &str.len().to_string());
-        res.set_content(str.to_string());
+        res.set_header("Content-Length", str.len().to_string());
+        res.set_content(str);
         log!(
             Debug,
             format!("{}{}", LOG[14], "export".to_owned() + req.get_url())
@@ -86,7 +92,7 @@ pub fn router<'a>(
         res.set_state("404 NOT FOUND");
         res.set_header(
             "Content-Length",
-            &res.get_content().clone().unwrap().len().to_string(),
+            res.get_content().clone().unwrap().len().to_string(),
         );
         return true;
     }
@@ -103,12 +109,12 @@ fn router_iftype_replace<'a>(
 ) -> bool {
     res.set_version("HTTP/1.1");
     res.set_state("200 OK");
-    res.set_header("Content-Type", "text/html;charset=utf-8");
+    res.set_header("Content-Type", "text/html;charset=utf-8".to_owned());
     let mut final_str = String::new();
     for e in replaces {
         final_str = _str.replace("$_gcflag", &e.0);
     }
-    res.set_header("Content-Length", &final_str.len().to_string());
-    res.set_content(final_str);
+    res.set_header("Content-Length", final_str.len().to_string());
+    res.set_content(final_str.into());
     true
 }

@@ -87,7 +87,7 @@ pub struct HttpResponse {
     version: String,
     state: String,
     headers: HashMap<String, String>,
-    content: Option<String>,
+    content: Option<Vec<u8>>,
 }
 impl HttpResponse {
     pub fn new() -> Self {
@@ -104,26 +104,26 @@ impl HttpResponse {
     pub fn set_state(&mut self, str: &str) {
         self.state = str.to_string()
     }
-    pub fn set_header(&mut self, k: &str, v: &str) -> Option<String> {
-        self.headers.insert(k.to_string(), v.to_string())
+    pub fn set_header(&mut self, k: &str, v: String) -> Option<String> {
+        self.headers.insert(k.to_string(), v)
     }
-    pub fn set_content(&mut self, str: String) {
-        self.content = Some(str)
+    pub fn set_content(&mut self, str: Vec<u8>) {
+        self.content = Some(str.into())
     }
-    pub fn get_content(&self) -> &Option<String> {
+    pub fn get_content(&self) -> &Option<Vec<u8>> {
         &self.content
     }
-    pub fn get_str(&self) -> String {
-        let mut res = format!("{} {}\r\n",self.version, self.state);
+    pub fn get_stream(&self) -> Vec<u8> {
+        let mut res: Vec<u8> = format!("{} {}\r\n",self.version, self.state).as_bytes().to_vec();
         for k in self.headers.keys() {
-            res += &format!("{}: {}\r\n", k, self.headers.get(k).unwrap())
+            res.extend(format!("{}: {}\r\n", k, self.headers.get(k).unwrap()).as_bytes().to_vec())
         }
-        res += &format!("\r\n{}", {
-            match &self.content{
-                Some(a) => a,
-                _ => ""
+        res.push(b'\r');
+        res.push(b'\n');
+        match &self.content {
+            Some(a) => res.extend(a),
+            _ => ()
         }
-    });
         res
     }
     pub fn set_default_headers(&mut self, server: &str) -> Result<(), SystemTimeError> {

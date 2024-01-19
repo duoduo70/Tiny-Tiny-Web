@@ -302,7 +302,7 @@ fn page_404_option(args: MethodArgs, head3: &str) {
     let mut res = HttpResponse::new();
     res.set_content(
         if let Ok(a) = std::fs::read_to_string("export/".to_owned() + head3) {
-            a
+            a.into()
         } else {
             log!(Error, format!("{}{}", LOG[22], head3));
             return;

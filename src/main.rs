@@ -49,7 +49,6 @@ struct StreamResultCounters {
 }
 
 fn main() {
-
     toolmode::tool_mode_try_start();
 
     log!(Info, format!("{}{}).", LOG[0], env!("CARGO_PKG_VERSION")));
@@ -304,10 +303,14 @@ fn handle_connection(streams: &Mutex<VecDeque<std::net::TcpStream>>, config: &Mu
     if !crate::router::router(request, &mut response, &config.lock().unwrap()) {
         return;
     }
+    let content_stream = response.get_stream();
     if ENABLE_DEBUG.load(Ordering::Relaxed) {
-        log!(Debug, format!("{}{}\n", LOG[8], response.get_str()));
+        match std::str::from_utf8(&content_stream) {
+            Ok(v) => log!(Debug, format!("{}{}\n", LOG[8], v)),
+            Err(_) => log!(Debug, format!("{}{:?}\n", LOG[8], content_stream)),
+        }
     }
-    match stream.write_all(response.get_str().as_bytes()) {
+    match stream.write_all(&response.get_stream()) {
         Err(_) => log!(Debug, LOG[6]),
         _ => (),
     }
