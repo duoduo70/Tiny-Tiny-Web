@@ -12,6 +12,8 @@ mod i18n;
 mod marco;
 mod router;
 mod tool;
+mod toolmode;
+
 #[cfg(not(feature = "stable"))]
 mod glisp;
 
@@ -47,6 +49,8 @@ struct StreamResultCounters {
 }
 
 fn main() {
+
+    toolmode::tool_mode_try_start();
 
     log!(Info, format!("{}{}).", LOG[0], env!("CARGO_PKG_VERSION")));
 
