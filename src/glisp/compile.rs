@@ -10,8 +10,8 @@ use std::{collections::HashMap, fmt::Display, io::Write, rc::Rc};
 //TODO: Standardize error reporting
 //TODO: i18n support
 
-#[derive(Clone)]
-enum Expression {
+#[derive(Clone, PartialEq)]
+pub enum Expression {
     Symbol(String),
     Number(f64),
     List(Vec<Expression>),
@@ -21,8 +21,8 @@ enum Expression {
     String(String),
 }
 
-#[derive(Clone)]
-struct Lambda {
+#[derive(Clone, PartialEq)]
+pub struct Lambda {
     params: Rc<Expression>,
     body: Rc<Expression>,
 }
@@ -47,11 +47,11 @@ impl Display for Expression {
     }
 }
 
-enum GError {
+pub enum GError {
     Reason(String),
 }
 
-struct Environment<'a> {
+pub struct Environment<'a> {
     data: HashMap<String, Expression>,
     outer: Option<&'a Environment<'a>>,
 }
@@ -72,7 +72,24 @@ fn eval_lambda_args(args: &[Expression]) -> Result<Expression, GError> {
     }))
 }
 
-fn tokenize(expr: String) -> Vec<String> {
+fn tokenize(mut expr: String) -> Vec<String> {
+    let mut rem_start = false;
+    let mut index = 0;
+    for e in expr.clone().chars() {
+        if e == ';' {
+            rem_start = true;
+            expr.remove(index);
+            index -= 1;
+        }
+        if e == '\n' || e == '\r' {
+            rem_start = false;
+        }
+        if rem_start {
+            expr.remove(index);
+            index -= 1;
+        }
+        index += 1;
+    }
     expr.replace("(", " ( ")
         .replace(")", " ) ")
         .split_whitespace()
@@ -127,7 +144,7 @@ fn parse_atom(token: &str) -> Expression {
     }
 }
 
-fn default_env<'a>() -> Environment<'a> {
+pub fn default_env<'a>() -> Environment<'a> {
     let mut data: HashMap<String, Expression> = HashMap::new();
     data.insert(
         "+".to_string(),
@@ -356,7 +373,7 @@ fn eval_def_args(args: &[Expression], env: &mut Environment) -> Result<Expressio
     }
 }
 
-fn parse_eval(expr: String, env: &mut Environment) -> Result<Expression, GError> {
+pub fn parse_eval(expr: String, env: &mut Environment) -> Result<Expression, GError> {
     let (parsed_exp, _) = parse(&tokenize(expr))?;
     let evaled_exp = eval(&parsed_exp, env)?;
     Ok(evaled_exp)
@@ -377,9 +394,9 @@ pub fn run_repl() {
         let _ = std::io::stdout().flush();
         let expr = slurp_expr();
         match parse_eval(expr, env) {
-            Ok(res) => println!("// => {}", res),
+            Ok(res) => println!("; => {}", res),
             Err(e) => match e {
-                GError::Reason(msg) => println!("// => {}", msg),
+                GError::Reason(msg) => println!("; => {}", msg),
             },
         }
     }
@@ -423,7 +440,7 @@ fn eval_atom_args(args: &[Expression], env: &mut Environment) -> Result<Expressi
     }
 }
 
-//TODO: Parameter limit macro
+//TODO: Need to use args_len_xxx macro reconstruction
 fn eval_eq_args(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
     let (fst, snd) = (
         args.first()
@@ -482,10 +499,33 @@ fn eval_cdr_args(args: &[Expression]) -> Result<Expression, GError> {
     return Err(GError::Reason(format!("cdr can only result a static list")));
 }
 
+macro_rules! args_len_max {
+    ($fnname:expr, $args:expr, $ident:expr) => {
+        if $args.len() > $ident {
+            return Err(GError::Reason(format!(
+                "{}: There are more parameters than the maximum {} allowed",
+                std::stringify!($fnname),
+                $ident
+            )));
+        }
+    };
+}
+
+macro_rules! args_len_min {
+    ($fnname:expr, $args:expr, $ident:expr) => {
+        if $args.len() < $ident {
+            return Err(GError::Reason(format!(
+                "{}: There are more parameters than the minimum {} allowed",
+                std::stringify!($fnname),
+                $ident
+            )));
+        }
+    };
+}
+
 fn eval_cons_args(args: &[Expression]) -> Result<Expression, GError> {
-    if args.len() < 2 {
-        return Err(GError::Reason(format!("cons: Error")));
-    }
+    args_len_min!("coud", args, 2);
+    args_len_max!("coud", args, 2);
 
     let mut lst1 = match args[0].clone() {
         Expression::List(a) => a,
@@ -523,9 +563,7 @@ fn eval_cons_args(args: &[Expression]) -> Result<Expression, GError> {
 }
 
 fn eval_cond_args(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
-    if args.len() < 2 {
-        return Err(GError::Reason(format!("cond: Error1")));
-    }
+    args_len_min!("coud", args, 2);
 
     let mut i = 0;
     loop {
@@ -542,6 +580,265 @@ fn eval_cond_args(args: &[Expression], env: &mut Environment) -> Result<Expressi
             _ => (),
         }
         i += 1;
+    }
+}
+
+macro_rules! check_type_onlyone {
+    ($fnname:expr, $value:expr, $env:ident, $_type:ident) => {
+        match eval($value, $env) {
+            Ok(Expression::$_type(a)) => a,
+            _ => {
+                return Err(GError::Reason(format!(
+                    "{}: Unsupported type: {}",
+                    $fnname,
+                    std::stringify!($_type)
+                )))
+            }
+        }
+    };
+}
+
+fn eval_length_args(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
+    args_len_min!("length", args, 1);
+    args_len_max!("length", args, 1);
+    let str = check_type_onlyone!("length", &args[0], env, String);
+
+    Ok(Expression::Number(str.len() as f64))
+}
+
+fn eval_str_eq_args(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
+    args_len_min!("str.=", args, 2);
+    args_len_max!("str.=", args, 2);
+    let str1 = check_type_onlyone!("str.=", &args[0], env, String);
+    let str2 = check_type_onlyone!("str.=", &args[1], env, String);
+
+    Ok(Expression::Bool(str::eq(&str1, &str2)))
+}
+
+fn eval_str_ne_args(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
+    args_len_min!("str.!=", args, 2);
+    args_len_max!("str.!=", args, 2);
+    let str1 = check_type_onlyone!("str.!=", &args[0], env, String);
+    let str2 = check_type_onlyone!("str.!=", &args[1], env, String);
+
+    Ok(Expression::Bool(str::ne(&str1, &str2)))
+}
+fn eval_str_lt_args(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
+    args_len_min!("str.<", args, 2);
+    args_len_max!("str.<", args, 2);
+    let str1 = check_type_onlyone!("str.<", &args[0], env, String);
+    let str2 = check_type_onlyone!("str.<", &args[1], env, String);
+
+    Ok(Expression::Bool(str::lt(&str1, &str2)))
+}
+fn eval_str_le_args(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
+    args_len_min!("str.<=", args, 2);
+    args_len_max!("str.<=", args, 2);
+    let str1 = check_type_onlyone!("str.<=", &args[0], env, String);
+    let str2 = check_type_onlyone!("str.<=", &args[1], env, String);
+
+    Ok(Expression::Bool(str::le(&str1, &str2)))
+}
+fn eval_str_gt_args(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
+    args_len_min!("str.>", args, 2);
+    args_len_max!("str.>", args, 2);
+    let str1 = check_type_onlyone!("str.>", &args[0], env, String);
+    let str2 = check_type_onlyone!("str.>", &args[1], env, String);
+
+    Ok(Expression::Bool(str::gt(&str1, &str2)))
+}
+fn eval_str_ge_args(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
+    args_len_min!("str.>=", args, 2);
+    args_len_max!("str.>=", args, 2);
+    let str1 = check_type_onlyone!("str.>=", &args[0], env, String);
+    let str2 = check_type_onlyone!("str.>=", &args[1], env, String);
+
+    Ok(Expression::Bool(str::ge(&str1, &str2)))
+}
+fn eval_str_last_args(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
+    args_len_min!("str.last", args, 1);
+    args_len_max!("str.last", args, 1);
+    let str = check_type_onlyone!("str.last", &args[0], env, String);
+
+    Ok(Expression::String(str[str.len() - 1..].to_string()))
+}
+macro_rules! to_quote_list {
+    ($list:expr) => {{
+        let mut v = vec![Expression::Symbol("quote".to_string())];
+        v.extend($list);
+        v
+    }};
+}
+fn eval_str_chars_args(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
+    args_len_min!("str.chars", args, 1);
+    args_len_max!("str.chars", args, 1);
+    let str = check_type_onlyone!("str.chars", &args[0], env, String);
+
+    Ok(Expression::List(to_quote_list!(str
+        .chars()
+        .map(|x| Expression::String(x.to_string()))
+        .collect::<Vec<_>>())))
+}
+fn eval_str_find_args(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
+    args_len_min!("str.find", args, 2);
+    args_len_max!("str.find", args, 2);
+    let str1 = check_type_onlyone!("str.find", &args[0], env, String);
+    let str2 = check_type_onlyone!("str.find", &args[1], env, String);
+
+    Ok(if let Some(a) = str1.find(&str2) {
+        Expression::Number(a as f64)
+    } else {
+        Expression::Bool(false)
+    })
+}
+fn eval_str_contains_args(
+    args: &[Expression],
+    env: &mut Environment,
+) -> Result<Expression, GError> {
+    args_len_min!("str.contains", args, 2);
+    args_len_max!("str.contains", args, 2);
+    let str1 = check_type_onlyone!("str.contains", &args[0], env, String);
+    let str2 = check_type_onlyone!("str.contains", &args[1], env, String);
+
+    Ok(Expression::Bool(str1.contains(&str2)))
+}
+fn eval_str_insert_args(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
+    args_len_min!("str.insert", args, 3);
+    args_len_max!("str.insert", args, 3);
+    let mut str1 = check_type_onlyone!("str.insert", &args[0], env, String);
+    let num = check_type_onlyone!("str.insert", &args[1], env, Number);
+    let str2 = check_type_onlyone!("str.insert", &args[2], env, String);
+    str1.insert_str(num as usize, &str2);
+
+    Ok(Expression::String(str1))
+}
+
+fn eval_str_begin_args(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
+    args_len_min!("str.begin", args, 1);
+    args_len_max!("str.begin", args, 1);
+    let str1 = check_type_onlyone!("str.begin", &args[0], env, String);
+
+    Ok(if let Some(a) = str1.chars().next() {
+        Expression::String(a.to_string())
+    } else {
+        Expression::Bool(false)
+    })
+}
+
+fn eval_str_is_empty_args(
+    args: &[Expression],
+    env: &mut Environment,
+) -> Result<Expression, GError> {
+    args_len_min!("str.is-empty", args, 1);
+    args_len_max!("str.is-empty", args, 1);
+    let str1 = check_type_onlyone!("str.is-empty", &args[0], env, String);
+
+    Ok(Expression::Bool(str1.is_empty()))
+}
+fn eval_str_remove_args(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
+    args_len_min!("str.remove", args, 2);
+    args_len_max!("str.remove", args, 2);
+    let mut str1 = check_type_onlyone!("str.remove", &args[0], env, String);
+    let num1 = check_type_onlyone!("str.remove", &args[1], env, Number) as usize;
+
+    Ok(Expression::String(str1.remove(num1).to_string()))
+}
+
+fn eval_str_reverse_args(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
+    args_len_min!("str.reverse", args, 1);
+    args_len_max!("str.reverse", args, 1);
+    let str1 = check_type_onlyone!("str.reverse", &args[0], env, String);
+
+    Ok(Expression::String(str1.chars().rev().collect::<String>()))
+}
+
+fn eval_str_rfind_args(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
+    args_len_min!("str.rfind", args, 2);
+    args_len_max!("str.rfind", args, 2);
+    let str1 = check_type_onlyone!("str.rfind", &args[0], env, String);
+    let str2 = check_type_onlyone!("str.rfind", &args[1], env, String);
+
+    Ok(if let Some(a) = str1.rfind(&str2) {
+        Expression::Number(a as f64)
+    } else {
+        Expression::Bool(false)
+    })
+}
+
+fn eval_str_slice_args(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
+    args_len_min!("str.slice", args, 3);
+    args_len_max!("str.slice", args, 3);
+    let str1 = check_type_onlyone!("str.slice", &args[0], env, String);
+    let num1 = check_type_onlyone!("str.slice", &args[1], env, Number) as usize;
+    let num2 = check_type_onlyone!("str.slice", &args[2], env, Number) as usize;
+
+    if str1.len() <= num2 {
+        return Err(GError::Reason(format!(
+            "str.slice: index {} out of {}",
+            num2,
+            str1.len() - 1
+        )));
+    }
+
+    Ok(Expression::String(str1[num1..num2].to_string()))
+}
+
+fn eval_console_log_args(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
+    args_len_min!("--log", args, 1);
+    args_len_max!("--log", args, 1);
+    let str1 = check_type_onlyone!("--log", &args[0], env, String);
+
+    use super::super::drop::log::LogLevel::*;
+    use super::super::marco::*;
+
+    log!(Info, format!("[ghost-lisp] [console.log] {}", str1.replace("\\b", " ").replace("\\n", "\n")));
+
+    Ok(Expression::Bool(true))
+}
+
+fn eval_loop_args(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
+    args_len_min!("loop", args, 2);
+
+    let ret = Expression::List({let mut v = Vec::new(); v.push(Expression::Symbol("quote".to_owned())); v.push(Expression::Symbol("return".to_owned())); v});
+
+    let mut i = 0;
+    loop {
+        if i >= args.len() {
+            return Err(GError::Reason(format!("loop: Error2")));
+        }
+
+        if args[i] == ret {
+            break;
+        }
+
+        eval(&args[i], env)?;
+        
+        i += 1;
+    }
+
+    Ok(Expression::Bool(true))
+}
+
+fn eval_read_file_args(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
+    args_len_min!("read-file", args, 1);
+    args_len_max!("read-file", args, 1);
+    let filename = check_type_onlyone!("read-file", &args[0], env, String);
+
+    if let Ok(a) = std::fs::read_to_string(filename) {
+        Ok(Expression::String(a))
+    }
+    else {Err(GError::Reason("read-file: not a file".to_owned()))}
+}
+
+fn eval_write_file_args(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
+    args_len_min!("write-file", args, 2);
+    args_len_max!("write-file", args, 2);
+    let filename = check_type_onlyone!("write-file", &args[0], env, String);
+    let str = check_type_onlyone!("write-file", &args[1], env, String);
+
+    match std::fs::write(filename, str) {
+        Ok(_) => Ok(Expression::Bool(true)),
+        Err(_) => Ok(Expression::Bool(false)),
     }
 }
 
@@ -562,6 +859,28 @@ fn eval_built_in_form(
             "cdr" => Some(eval_cdr_args(other_args)),
             "cons" => Some(eval_cons_args(other_args)),
             "cond" => Some(eval_cond_args(other_args, env)),
+            "length" => Some(eval_length_args(other_args, env)),
+            "str.=" => Some(eval_str_eq_args(other_args, env)),
+            "str.!=" => Some(eval_str_ne_args(other_args, env)),
+            "str.<" => Some(eval_str_lt_args(other_args, env)),
+            "str.<=" => Some(eval_str_le_args(other_args, env)),
+            "str.>" => Some(eval_str_gt_args(other_args, env)),
+            "str.>=" => Some(eval_str_ge_args(other_args, env)),
+            "str.last" => Some(eval_str_last_args(other_args, env)),
+            "str.chars" => Some(eval_str_chars_args(other_args, env)),
+            "str.find" => Some(eval_str_find_args(other_args, env)),
+            "str.contains" => Some(eval_str_contains_args(other_args, env)),
+            "str.insert" => Some(eval_str_insert_args(other_args, env)),
+            "str.begin" => Some(eval_str_begin_args(other_args, env)),
+            "str.is-empty" => Some(eval_str_is_empty_args(other_args, env)),
+            "str.remove" => Some(eval_str_remove_args(other_args, env)),
+            "str.reverse" => Some(eval_str_reverse_args(other_args, env)),
+            "str.rfind" => Some(eval_str_rfind_args(other_args, env)),
+            "str.slice" => Some(eval_str_slice_args(other_args, env)),
+            "--log" => Some(eval_console_log_args(other_args, env)),
+            "loop" => Some(eval_loop_args(other_args, env)),
+            "read-file" => Some(eval_read_file_args(other_args, env)),
+            "write-file" => Some(eval_write_file_args(other_args, env)),
             _ => None,
         },
         _ => None,

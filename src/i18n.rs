@@ -38,5 +38,8 @@ crate::marco::create_static_string_list!(
     "Can not parse your address setting: ",
     "Unable to get time, There may be a serious failure within the OS.",
     "Unknown command", // 30
-    "Invalid UTF-8 sequence"
+    "Invalid UTF-8 sequence",
+    "ghost-lisp",
+    "Return code:",
+    "Compile error:"
 );

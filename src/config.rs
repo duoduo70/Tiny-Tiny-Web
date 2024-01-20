@@ -9,6 +9,7 @@ use crate::drop::{http::HttpResponse, log::LogLevel::*};
 use crate::i18n::LOG;
 use crate::{marco::*, ShouldResult};
 
+use std::fs::read_to_string;
 use std::process::exit;
 use std::sync::atomic::AtomicU32;
 use std::sync::{Arc, Mutex};
@@ -389,6 +390,23 @@ fn method_inject(mut args: MethodArgs) {
         return;
     }
 }
+#[cfg(not(feature = "stable"))]
+fn method_import_gl(args: MethodArgs) {
+    use crate::glisp::compile::*;
+    if let Some(head2) = args.line_splitted.next() {
+        let env = &mut default_env();
+        match parse_eval(
+            read_to_string("config/".to_owned() + head2)
+                .result_shldfatal(-1, || log!(Fatal, format!("{}{}", LOG[22], head2))),
+            env,
+        ) {
+            Ok(res) => log!(Info, format!("[{}] {} {}", LOG[32], LOG[33], res)),
+            Err(e) => match e {
+                GError::Reason(msg) => log!(Info, format!("[{}] {} {}", LOG[32], LOG[34], msg)),
+            },
+        }
+    }
+}
 fn method_inject_haserr(args: &mut MethodArgs) -> Result<(), ()> {
     let pathname = if let Some(a) = args.line_splitted.next() {
         a
@@ -529,6 +547,16 @@ fn parse_line(line: String, config: &mut Config, file: &str, line_number: i32) {
         }
         if head == "@" {
             method_import(MethodArgs {
+                config,
+                line_splitted: &mut line_splitted,
+                file,
+                line_number,
+            });
+            return;
+        }
+        #[cfg(not(feature = "stable"))]
+        if head == "@gl" {
+            method_import_gl(MethodArgs {
                 config,
                 line_splitted: &mut line_splitted,
                 file,
