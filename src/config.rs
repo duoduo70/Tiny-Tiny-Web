@@ -5,9 +5,10 @@
  * along with this program;
  * if not, see <https://www.gnu.org/licenses/>.
  */
+use crate::drop::tool::ShouldResult;
 use crate::drop::{http::HttpResponse, log::LogLevel::*};
 use crate::i18n::LOG;
-use crate::{macros::*, ShouldResult};
+use crate::macros::*;
 
 use std::fs::read_to_string;
 use std::process::exit;

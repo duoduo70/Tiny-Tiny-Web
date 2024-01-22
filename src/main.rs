@@ -16,23 +16,16 @@ mod utils;
 #[cfg(not(feature = "stable"))]
 mod glisp;
 
-use config::*;
-use drop::http::*;
 use drop::log::LogLevel::*;
-use drop::thread::*;
-use drop::tool::*;
 use i18n::LOG;
 use macros::*;
-use utils::*;
-
-use std::sync::atomic::Ordering;
 
 fn main() {
     mode::toolmode::try_start();
 
     log!(Info, format!("{}{}).", LOG[0], env!("CARGO_PKG_VERSION")));
 
-    if config::BOX_MODE.load(Ordering::Relaxed) {
+    if config::BOX_MODE.load(std::sync::atomic::Ordering::Relaxed) {
         mode::boxmode::start();
     }
 

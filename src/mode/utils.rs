@@ -12,8 +12,7 @@ use std::{
 };
 
 use crate::{
-    drop::log::LogLevel::*, i18n::LOG, macros::*, Config, HttpRequest, HttpResponse, ShouldResult,
-    TimeErr, ENABLE_DEBUG, XRPS_COUNTER_CACHE_SIZE,
+    drop::{log::LogLevel::*, http::{HttpRequest, HttpResponse}}, i18n::LOG, macros::*, config::{XRPS_COUNTER_CACHE_SIZE, Config}, utils::TimeErr
 };
 use std::collections::VecDeque;
 
@@ -43,7 +42,7 @@ impl ReqCounter {
 }
 
 pub fn config_init() -> Config {
-    let config: Config = match crate::read_config("main.gc".to_owned(), &mut Config::new()) {
+    let config: Config = match crate::config::read_config("main.gc".to_owned(), &mut Config::new()) {
         Ok(config) => config.clone(),
         Err(_) => Config::new(),
     };
@@ -58,8 +57,7 @@ pub fn listener_init(config: Config) -> TcpListener {
         .addr_bind
         .iter()
         .map(|address| {
-            std::net::ToSocketAddrs::to_socket_addrs(&address)
-                .result_shldfatal(-1, || log!(Fatal, format!("{}{}", LOG[28], address)))
+            crate::drop::tool::ShouldResult::result_shldfatal(std::net::ToSocketAddrs::to_socket_addrs(&address), -1, || log!(Fatal, format!("{}{}", LOG[28], address)))
                 .next()
                 .unwrap()
         })
@@ -100,7 +98,7 @@ pub fn handle_connection(mut stream: std::net::TcpStream, config: &Mutex<Config>
     };
 
     let mut request = {
-        if ENABLE_DEBUG.load(Ordering::Relaxed) {
+        if crate::config::ENABLE_DEBUG.load(Ordering::Relaxed) {
             match HttpRequest::from(req_str.clone()) {
                 Ok(req) => {
                     log!(Debug, format!("{}{}\n", LOG[7], req_str));
@@ -139,7 +137,7 @@ pub fn handle_connection(mut stream: std::net::TcpStream, config: &Mutex<Config>
         return;
     }
     let content_stream = response.get_stream();
-    if ENABLE_DEBUG.load(Ordering::Relaxed) {
+    if crate::config::ENABLE_DEBUG.load(Ordering::Relaxed) {
         match std::str::from_utf8(&content_stream) {
             Ok(v) => log!(Debug, format!("{}{}\n", LOG[8], v)),
             Err(_) => log!(Debug, format!("{}{:?}\n", LOG[8], content_stream)),

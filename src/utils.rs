@@ -6,13 +6,13 @@
  * if not, see <https://www.gnu.org/licenses/>.
  */
 use crate::drop::log::LogLevel::*;
-use crate::{macros::*, LOG};
+use crate::macros::*;
 
 pub trait TimeErr<T> {
     fn result_timeerr_default(self) -> T;
 }
 impl<T> TimeErr<T> for Result<T, std::time::SystemTimeError> {
     fn result_timeerr_default(self) -> T {
-        crate::drop::tool::result_timeerr(self, -1, || log!(Fatal, LOG[29]))
+        crate::drop::tool::result_timeerr(self, -1, || log!(Fatal, crate::i18n::LOG[29]))
     }
 }
