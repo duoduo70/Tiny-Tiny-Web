@@ -7,7 +7,7 @@
  */
 use crate::drop::{http::HttpResponse, log::LogLevel::*};
 use crate::i18n::LOG;
-use crate::{marco::*, ShouldResult};
+use crate::{macros::*, ShouldResult};
 
 use std::fs::read_to_string;
 use std::process::exit;
@@ -286,12 +286,7 @@ fn method_set(args: MethodArgs) {
                 return;
             } else if head2 == "box-mode" {
                 let mut value = false;
-                pas_bool_option(
-                    &mut value,
-                    head3,
-                    args.file,
-                    args.line_number,
-                );
+                pas_bool_option(&mut value, head3, args.file, args.line_number);
                 BOX_MODE.store(value, Ordering::Relaxed);
                 return;
             } else {
@@ -403,17 +398,18 @@ fn method_inject(mut args: MethodArgs) {
 }
 #[cfg(not(feature = "stable"))]
 fn method_import_gl(args: MethodArgs) {
-    use crate::glisp::compile::*;
     if let Some(head2) = args.line_splitted.next() {
-        let env = &mut default_env();
-        match parse_eval(
+        let env = &mut crate::glisp::core::default_env();
+        match crate::glisp::core::parse_eval(
             read_to_string("config/".to_owned() + head2)
                 .result_shldfatal(-1, || log!(Fatal, format!("{}{}", LOG[22], head2))),
             env,
         ) {
             Ok(res) => log!(Info, format!("[{}] {} {}", LOG[32], LOG[33], res)),
             Err(e) => match e {
-                GError::Reason(msg) => log!(Info, format!("[{}] {} {}", LOG[32], LOG[34], msg)),
+                crate::glisp::core::GError::Reason(msg) => {
+                    log!(Info, format!("[{}] {} {}", LOG[32], LOG[34], msg))
+                }
             },
         }
     }

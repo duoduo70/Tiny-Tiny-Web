@@ -6,7 +6,7 @@
  * if not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod core;
-pub mod repl;
-
-mod std;
+pub mod boxmode;
+pub mod normalmode;
+pub mod toolmode;
+mod utils;

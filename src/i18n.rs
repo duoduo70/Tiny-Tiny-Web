@@ -5,7 +5,7 @@
  * along with this program;
  * if not, see <https://www.gnu.org/licenses/>.
  */
-crate::marco::create_static_string_list!(
+crate::macros::create_static_string_list!(
     LOG,
     "Tiny-Tiny-Web Started (Ver.",
     "Can not listen: ",

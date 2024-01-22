@@ -7,17 +7,17 @@
  */
 use std::process::exit;
 
-#[cfg(not(feature = "stable"))]
-use crate::glisp::compile::run_repl;
-use crate::marco::*;
-use crate::i18n::LOG;
 use crate::drop::log::LogLevel::*;
+#[cfg(not(feature = "stable"))]
+use crate::glisp::repl::run_repl;
+use crate::i18n::LOG;
+use crate::macros::*;
 
-pub fn tool_mode_try_start() {
+pub fn try_start() {
     let args: Vec<String> = std::env::args().collect();
     match args.get(1) {
         Some(a) => parse(a.to_string(), args),
-        _ => return
+        _ => return,
     }
 }
 
@@ -26,7 +26,10 @@ fn parse(fst: String, _args: Vec<String>) {
         #[cfg(not(feature = "stable"))]
         "repl" => {
             run_repl();
-        },
-        _ => {log!(Fatal, LOG[30]); exit(-1);}
+        }
+        _ => {
+            log!(Fatal, LOG[30]);
+            exit(-1);
+        }
     }
 }

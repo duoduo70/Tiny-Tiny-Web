@@ -5,10 +5,17 @@
  * along with this program;
  * if not, see <https://www.gnu.org/licenses/>.
  */
-use std::{process::exit, sync::{atomic::Ordering, Mutex, Arc}, collections::VecDeque, net::{TcpListener, TcpStream}};
-use crate::{config::*, ReqCounter, drop::time::Time, TimeErr, i18n::LOG, handle_connection, ThreadPool};
-use crate::marco::*;
+
+use super::utils::*;
 use crate::drop::log::LogLevel::*;
+use crate::macros::*;
+use crate::{config::*, drop::time::Time, i18n::LOG, ThreadPool, TimeErr};
+use std::{
+    collections::VecDeque,
+    net::TcpStream,
+    process::exit,
+    sync::{atomic::Ordering, Arc, Mutex},
+};
 
 struct StreamResultCounters {
     req_counter: ReqCounter,
@@ -23,8 +30,15 @@ struct StreamResultCounters {
 
 static mut THREADS_BOX: Option<Arc<Mutex<VecDeque<std::net::TcpStream>>>> = None;
 
-pub fn boxmode(listener: TcpListener, mut threadpool: ThreadPool) -> ! {
-    
+pub fn start() -> ! {
+    let config = config_init();
+
+    log!(Info, LOG[15]);
+
+    let listener = listener_init(config);
+
+    let mut threadpool = ThreadPool::new();
+
     match listener.set_nonblocking(true) {
         Err(_) => log!(Warn, LOG[26]),
         _ => (),

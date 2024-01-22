@@ -5,7 +5,7 @@
  * along with this program;
  * if not, see <https://www.gnu.org/licenses/>.
  */
-use crate::{config::*, drop::http::*, drop::log::LogLevel::*, i18n::LOG, marco::*};
+use crate::{config::*, drop::http::*, drop::log::LogLevel::*, i18n::LOG, macros::*};
 use std::sync::{Arc, RwLock};
 
 static mut FILE_CACHE: Option<Arc<RwLock<(String, Vec<u8>)>>> = None;
@@ -17,10 +17,18 @@ pub fn router<'a>(
 ) -> bool {
     let serve_args = &config.serve_files_custom;
     if serve_args.contains_key(&req.get_url().to_owned()) {
-        res.set_header("Content-Type", match &config.serve_files_custom.get(&req.get_url().to_owned()).unwrap().1 {
-            Some(a) => a.content_type.clone(),
-            _ => "text/html; charset=utf-8".to_owned()
-        });
+        res.set_header(
+            "Content-Type",
+            match &config
+                .serve_files_custom
+                .get(&req.get_url().to_owned())
+                .unwrap()
+                .1
+            {
+                Some(a) => a.content_type.clone(),
+                _ => "text/html; charset=utf-8".to_owned(),
+            },
+        );
         let str = unsafe {
             match &FILE_CACHE {
                 Some(a) => {
@@ -58,7 +66,10 @@ pub fn router<'a>(
                                 .0,
                     )
                     .unwrap();
-                    FILE_CACHE = Some(Arc::new(RwLock::new(("export".to_owned(), _stream.clone()))));
+                    FILE_CACHE = Some(Arc::new(RwLock::new((
+                        "export".to_owned(),
+                        _stream.clone(),
+                    ))));
                     _stream
                 }
             }
@@ -67,10 +78,19 @@ pub fn router<'a>(
         if let Some(k) = serve_args.get(&req.get_url().to_owned()) {
             if let Some(extra_args) = &k.1 {
                 if let Some(replaces) = &extra_args.replace {
-                    return router_iftype_replace(req, res, config, replaces, match std::str::from_utf8(&str) {
-                        Ok(v) => v.to_owned(),
-                        Err(_) => {log!(Debug, LOG[31]); return false;}
-                    });
+                    return router_iftype_replace(
+                        req,
+                        res,
+                        config,
+                        replaces,
+                        match std::str::from_utf8(&str) {
+                            Ok(v) => v.to_owned(),
+                            Err(_) => {
+                                log!(Debug, LOG[31]);
+                                return false;
+                            }
+                        },
+                    );
                 }
             }
         }

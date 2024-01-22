@@ -6,7 +6,7 @@
  * if not, see <https://www.gnu.org/licenses/>.
  */
 use crate::drop::log::LogLevel::*;
-use crate::{marco::*, LOG};
+use crate::{macros::*, LOG};
 
 pub trait TimeErr<T> {
     fn result_timeerr_default(self) -> T;
