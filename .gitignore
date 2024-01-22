@@ -7,3 +7,5 @@
 !LICENSE
 !docs
 !docs/**
+!config
+!config/markdown-auto-compile.gl

@@ -1,0 +1,212 @@
+;;; Tiny Tiny Web
+;;; Copyright (C) 2024 Plasma (https://github.com/duoduo70/Tiny-Tiny-Web/).
+;;;
+;;; You should have received a copy of the GNU General Public License
+;;; along with this program;
+;;; if not, see <https://www.gnu.org/licenses/>.
+;;;
+(do
+    (set markdown-parse-line 
+        (lambda 
+            (str)
+            (do
+            (set str-length (length str))
+                (if 
+                    (str.= 
+                        (slice str 0 0) "#") 
+                    (if 
+                        (str.= 
+                            (slice str 1 1) "#") 
+                        (if 
+                            (str.= 
+                                (slice str 2 2) "#") 
+                            (if 
+                                (str.= 
+                                    (slice str 3 3) "#") 
+                                (if 
+                                    (str.= 
+                                        (slice str 4 4) "#") 
+                                    (set str (str.+ 
+                                        (insert 
+                                            (remove str 0 5) 0 "<h5>") "</h5>") )
+                                    (set str (str.+ 
+                                        (insert 
+                                            (remove str 0 4) 0 "<h4>") "</h4>")) )
+                               (set str (str.+ 
+                                    (insert 
+                                        (remove str 0 3) 0 "<h3>") "</h3>")) )
+                            (set str (str.+ 
+                                (insert 
+                                    (remove str 0 2) 0 "<h2>") "</h2>")) )
+                        (set str (str.+ 
+                            (insert 
+                                (remove str 0 1) 0 "<h1>") "</h1>")) )
+                    (if 
+                        (str.= 
+                            (slice str 
+                                (- 
+                                    str-length 2)
+                                (- 
+                                    str-length 1)) 
+                            (str "\b\b")) 
+                        (set str (str.+ str (str "<br\b/>"))) (pass)))
+    (set str-length (length str))
+    (set strong-flag false)
+    (set italic-flag false)
+    (set str (str.+ str "\n"))
+    (set i 0)
+    (loop
+    (if (>= i str-length) (return) (pass))
+    (set str-field (slice str i (+ i 1)))
+    (if (str.= str-field "**")
+        (if strong-flag (if italic-flag (pass) (do
+            (set strong-flag false)
+            (set str (remove str i (+ i 1)))
+            (set str (insert str i "</strong>"))
+            (set str-length (+ str-length 7))
+            (set i (+ i 8)))
+        ) (do
+            (set strong-flag true)
+            (set str (remove str i (+ i 1)))
+            (set str (insert str i "<strong>"))
+            (set str-length (+ str-length 6))
+            (set i (+ i 7))
+        ))
+     (pass))
+    (if (str.= str-field "__")
+        (if strong-flag (if italic-flag (pass) (do
+            (set strong-flag false)
+            (set str (remove str i (+ i 1)))
+            (set str (insert str i "</strong>"))
+            (set str-length (+ str-length 7))
+            (set i (+ i 8)))
+        ) (do
+            (set strong-flag true)
+            (set str (remove str i (+ i 1)))
+            (set str (insert str i "<strong>"))
+            (set str-length (+ str-length 6))
+            (set i (+ i 7))
+        ))
+     (pass))
+     (if (str.= (slice str i i) "*")
+        (if italic-flag (do
+            (set italic-flag false)
+            (set str (remove str i))
+            (set str (insert str i "</em>"))
+            (set str-length (+ str-length 4))
+            (set i (+ i 3))
+        ) (do
+            (set italic-flag true)
+            (set str (remove str i))
+            (set str (insert str i "<em>"))
+            (set str-length (+ str-length 3))
+            (set i (+ i 2))
+        ))
+     (pass))
+     (if (str.= (slice str i i) "_")
+        (if italic-flag (do
+            (set italic-flag false)
+            (set str (remove str i))
+            (set str (insert str i "</em>"))
+            (set str-length (+ str-length 4))
+            (set i (+ i 3))
+        ) (do
+            (set italic-flag true)
+            (set str (remove str i))
+            (set str (insert str i "<em>"))
+            (set str-length (+ str-length 3))
+            (set i (+ i 2))
+        ))
+     (pass))
+    (set i (+ i 1))
+    )
+    str
+)
+))
+
+    (set markdown-parse
+        (lambda 
+            (str) 
+            (do
+                (set flag_part false)
+                (set flag_part_start true)
+                (set flag_linelist false)
+
+                (set head 0)
+                (set ret "")
+                (loop
+                    (if 
+                        (= 0 
+                            (length str)) 
+                        (return) 0)
+                    (set head 
+                        (car str))
+                    (set str 
+                        (cdr str))
+                    
+                    (if 
+                        (= (length head) 0) 
+                        (do
+                            (if flag_linelist (do
+                                (set flag_linelist false)
+                                (set ret (str.+ ret "</ul>"))
+                                (if flag_part (set flag_part false) 0)
+                            )(pass))
+                        (if 
+                            (= flag_part false) 
+                            (do 
+                                (set ret 
+                                    (str.+ ret 
+                                        (if flag_part_start 
+                                            (do 
+                                                (set flag_part_start false) "<p>\n" ) "</p><p>\n")))
+                                (set flag_part true)
+                                (continue)) 0)
+                        )
+                    (pass))
+
+                    (if 
+                            (= flag_part true) 
+                            (set flag_part false) 0)
+
+                    (if (and (> (length head) 1)(and (str.= (slice head 0 0) "-") (str.!= (slice head 1 1) "-"))) (do
+                        (if flag_linelist 
+                            (set ret (str.+ ret "</li><li>"))
+                             (do 
+                                 (set flag_linelist true)
+                                 (set ret (str.+ ret "<ul><li>"))
+                             )
+                        )
+                        (set head (remove head 0))
+                        )
+                    (pass))
+                    (if 
+                        (str.= head "---") 
+                        (do
+                            (set ret 
+                                (str.+ ret  (str "</p><hr\b/></p>\n")))
+                            (set flag_part true)
+                            (continue) )0)
+                    (if (= (length head) 0) 0
+                        (set ret 
+                                (str.+ ret 
+                                    (markdown-parse-line head))))
+                    
+)
+    (if flag_part_start 0 
+        (set ret 
+            (str.+ ret 
+            "</p>")))
+    (set ret-length (length ret))
+    (if (str.= (slice ret (- ret-length 9) (- ret-length 1)) "<p>\n</p>") 
+        (set ret (remove ret (- ret-length 9) (- ret-length 1)))
+     (pass))
+    ret
+)
+)
+)
+
+    (for-each-eval (read-dir "markdown") 
+        (str "\[write-file\b\'temp/$$.html\'\b\[str\b\[markdown-parse\b\[lines\b\[read-file\b\'markdown/$$\'\]\]\]\]\]")
+    )
+)

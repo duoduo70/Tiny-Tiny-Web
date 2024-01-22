@@ -28,6 +28,7 @@ pub static XRPS_COUNTER_CACHE_SIZE: AtomicU32 = AtomicU32::new(8);
 pub static BOX_NUM_PER_THREAD_MAG: AtomicU32 = AtomicU32::new(1000);
 pub static BOX_NUM_PER_THREAD_INIT_MAG: AtomicU32 = AtomicU32::new(1000);
 pub static XRPS_PREDICT_MAG: AtomicU32 = AtomicU32::new(1100);
+pub static BOX_MODE: AtomicBool = AtomicBool::new(false);
 pub static mut GLOBAL_CONFIG: Option<Arc<Mutex<Config>>> = None;
 #[derive(Clone)]
 pub struct ServeFilesCustomExtra {
@@ -282,6 +283,16 @@ fn method_set(args: MethodArgs) {
                     },
                     Ordering::Relaxed,
                 );
+                return;
+            } else if head2 == "box-mode" {
+                let mut value = false;
+                pas_bool_option(
+                    &mut value,
+                    head3,
+                    args.file,
+                    args.line_number,
+                );
+                BOX_MODE.store(value, Ordering::Relaxed);
                 return;
             } else {
                 syntax_error(
