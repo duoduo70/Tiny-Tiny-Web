@@ -6,6 +6,7 @@
 ;;; if not, see <https://www.gnu.org/licenses/>.
 ;;;
 (do
+
     (set markdown-parse-line 
         (lambda 
             (str)
@@ -131,6 +132,7 @@
                 (set flag_part false)
                 (set flag_part_start true)
                 (set flag_linelist false)
+                (set flag-codeblock false)
 
                 (set head 0)
                 (set ret "")
@@ -143,7 +145,49 @@
                         (car str))
                     (set str 
                         (cdr str))
-                    
+                    (if 
+                        (and (> (length head) 2) (str.= (slice head 0 2) "```"))
+                        (do (if (= (length head) 3) (if flag-codeblock                         ; 开头或结尾
+                                (do
+                                    (set flag-codeblock false)
+                                    (if flag_part (do
+                                        (set ret 
+                                        (str.+ ret  (str "</p>\n")))
+                                        (set falg_part false)
+                                    ) (pass))
+                                    (set ret 
+                                        (str.+ ret  (str "<pre><code>\n")))
+                                )
+                                (do
+                                    (set flag-codeblock true)
+                                    (set ret 
+                                        (str.+ ret  (str "</code></pre>\n")))
+                                    (if flag_part (do
+                                        (set ret 
+                                        (str.+ ret  (str "</p>\n")))
+                                        (set falg_part false)
+                                    ) (pass))
+                                )
+                            )
+                            (do                                                ; 必定是开头
+                                (set flag-codeblock true)
+                                (if flag_part (do
+                                        (set ret 
+                                        (str.+ ret  (str "</p>\n")))
+                                        (set falg_part false)
+                                    ) (pass))
+                                (set ret
+                                    (str.+ (str.+ (str.+ ret (str "<pre><code\bclass=\'language-"))
+                                        (slice head 3 (- (length head) 1))
+                                    )
+                                        (str "\'>\n")
+                                    )
+                                )
+                                (log "1")
+                            )
+                        )
+                        (continue))
+                    0)
                     (if 
                         (= (length head) 0) 
                         (do
@@ -191,7 +235,6 @@
                         (set ret 
                                 (str.+ ret 
                                     (markdown-parse-line head))))
-                    
 )
     (if flag_part_start 0 
         (set ret 
