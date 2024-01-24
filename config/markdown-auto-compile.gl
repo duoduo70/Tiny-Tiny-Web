@@ -151,16 +151,6 @@
                         (and (> (length head) 2) (str.= (slice head 0 2) "```"))
                         (do (if (= (length head) 3) (if flag-codeblock                         ; 开头或结尾
                                 (do
-                                    (set flag-codeblock false)
-                                    (if flag_part (do
-                                        (set ret 
-                                        (str.+ ret  (str "</p>\n")))
-                                        (set falg_part false)
-                                    ) (pass))
-                                    (set ret 
-                                        (str.+ ret  (str "<pre><code>\n")))
-                                )
-                                (do
                                     (set flag-codeblock true)
                                     (set ret 
                                         (str.+ ret  (str "</code></pre>\n")))
@@ -169,6 +159,16 @@
                                         (str.+ ret  (str "</p>\n")))
                                         (set falg_part false)
                                     ) (pass))
+                                )
+                                (do
+                                    (set flag-codeblock false)
+                                    (if flag_part (do
+                                        (set ret 
+                                        (str.+ ret  (str "</p>\n")))
+                                        (set falg_part false)
+                                    ) (pass))
+                                    (set ret 
+                                        (str.+ ret  (str "<pre><code>\n")))
                                 )
                             )
                             (do                                                ; 必定是开头
