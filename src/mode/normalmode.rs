@@ -32,7 +32,10 @@ pub fn start() -> ! {
                     handle_connection(req, unsafe { &crate::config::GLOBAL_CONFIG.clone().unwrap().clone() })
                 });
             }
-            Err(_) => continue, // TODO: add log
+            Err(_) => {
+                log!(Warn, LOG[4]);
+                continue
+            }
         }
     }
     exit(0);

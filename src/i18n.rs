@@ -41,5 +41,5 @@ crate::macros::create_static_string_list!(
     "Invalid UTF-8 sequence",
     "ghost-lisp",
     "Return code:",
-    "Compile error:"
+    "Compile error:"    // 34
 );

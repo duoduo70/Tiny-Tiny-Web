@@ -41,7 +41,7 @@ impl Display for Expression {
                 write!(f, "lambda: {{ params: {} , body: {} }}", &a.params, &a.body)
             }
             Expression::String(a) => write!(f, "\"{}\"", a),
-            Expression::Func(_) => write!(f, "function()"), // TODO: Display function sign
+            Expression::Func(_) => write!(f, "function()"),
         }
     }
 }

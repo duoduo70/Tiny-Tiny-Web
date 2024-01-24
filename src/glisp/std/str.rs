@@ -75,13 +75,14 @@ pub fn func_str_ge(args: &[Expression], env: &mut Environment) -> Result<Express
     Ok(Expression::Bool(str::ge(&str1, &str2)))
 }
 
-// TODO: to chars()
 pub fn func_last(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
     args_len_min!("last", args, 1);
     args_len_max!("last", args, 1);
     let str = check_type_onlyone!("last", &args[0], env, String)?;
-
-    Ok(Expression::String(str[str.len() - 1..].to_string()))
+    match str.chars().nth_back(0) {
+        Some(a) => Ok(Expression::String(a.to_string())),
+        _ => Ok(Expression::List(vec![]))
+    }
 }
 
 pub fn func_chars(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {

@@ -6,8 +6,8 @@
  * if not, see <https://www.gnu.org/licenses/>.
  */
 
-use super::*;
 use super::macros::*;
+use super::*;
 
 pub fn func_quote(args: &[Expression]) -> Result<Expression, GError> {
     let _fst = args
@@ -19,11 +19,10 @@ pub fn func_quote(args: &[Expression]) -> Result<Expression, GError> {
 }
 
 pub fn func_atom(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
-    let fst = eval(
-        args.first()
-            .ok_or(GError::Reason(format!("unexpected args form")))?,
-        env,
-    )?;
+    args_len_min!("atom", args, 1);
+    args_len_max!("atom", args, 1);
+
+    let fst = eval(&args[0], env)?;
     match fst {
         Expression::Symbol(_) => Ok(Expression::Bool(true)),
         Expression::Number(_) => Ok(Expression::Bool(true)),
@@ -47,16 +46,14 @@ pub fn func_atom(args: &[Expression], env: &mut Environment) -> Result<Expressio
     }
 }
 
-//TODO: Need to use args_len_xxx macro reconstruction
 pub fn func_eq(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
-    let (fst, snd) = (
-        args.first()
-            .ok_or(GError::Reason(format!("eq can only have 2 args")))?,
-        args.get(1)
-            .ok_or(GError::Reason(format!("eq can only have 2 args")))?,
-    );
+    args_len_min!("eq", args, 2);
+    args_len_max!("eq", args, 2);
 
-    if eval(fst, env)?.to_string() == eval(snd, env)?.to_string() {
+    let fst = &args[0];
+    let snd = &args[1];
+
+    if eval(&fst, env)?.to_string() == eval(&snd, env)?.to_string() {
         Ok(Expression::Bool(true))
     } else {
         Ok(Expression::Bool(false))
