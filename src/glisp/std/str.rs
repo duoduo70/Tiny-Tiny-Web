@@ -13,7 +13,7 @@ pub fn func_length(args: &[Expression], env: &mut Environment) -> Result<Express
     args_len_max!("length", args, 1);
     let arg_res = check_type_onlyone!("length", &args[0], env, String);
     match arg_res {
-        Ok(str) => Ok(Expression::Number(str.len() as f64)),
+        Ok(str) => Ok(Expression::Number(str.chars().count() as f64)),
         _ => {
             let arg = check_type_onlyone!("length", &args[0], env, List)?;
             Ok(Expression::Number(arg.len() as f64))
@@ -75,6 +75,7 @@ pub fn func_str_ge(args: &[Expression], env: &mut Environment) -> Result<Express
     Ok(Expression::Bool(str::ge(&str1, &str2)))
 }
 
+// TODO: to chars()
 pub fn func_last(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
     args_len_min!("last", args, 1);
     args_len_max!("last", args, 1);
@@ -188,14 +189,16 @@ pub fn func_slice(args: &[Expression], env: &mut Environment) -> Result<Expressi
     let num1 = check_type_onlyone!("slice", &args[1], env, Number)? as usize;
     let num2 = check_type_onlyone!("slice", &args[2], env, Number)? as usize;
 
-    if str1.len() <= num2 {
+    let chars = str1.chars();
+
+    if chars.clone().count() <= num2 {
         return Err(GError::Reason(format!(
             "str.slice: index {} out of {}",
             num2,
             str1.len()
         )));
     }
-    Ok(Expression::String(str1[num1..num2 + 1].to_string()))
+    Ok(Expression::String(str1.chars().collect::<Vec<_>>()[num1..num2 + 1].iter().collect()))
 }
 
 pub fn func_str(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
