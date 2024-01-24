@@ -252,9 +252,16 @@
                     (if 
                         (str.= head "---") 
                         (do
+                            (if flag_part (do
+                                        (set ret 
+                                        (str.+ ret  (str "</p>\n")))
+                                    ) (pass))
                             (set ret 
-                                (str.+ ret  (str "</p><hr\b/></p>\n")))
-                            (set flag_part true)
+                                (str.+ ret  (str "<hr\b/>\n")))
+                            (if flag_part (do
+                                        (set ret 
+                                        (str.+ ret  (str "<p>\n")))
+                                    ) (pass))
                             (continue) )0)
                     (if (or (= (length head) 0) (= flag-dontparse true))
                         (set ret 
