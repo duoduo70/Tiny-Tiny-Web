@@ -421,10 +421,11 @@ fn method_inject_haserr(args: &mut MethodArgs) -> Result<(), ()> {
     } else {
         return Err(());
     };
+    let temp_pathname = &("/".to_owned() + pathname);
     let conf_serve_value = if let Some(a) = args
         .config
         .serve_files_custom
-        .get_mut(&("/".to_owned() + pathname))
+        .get_mut(if pathname=="/" {"/"} else {temp_pathname})
     {
         a
     } else {
