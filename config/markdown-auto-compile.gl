@@ -133,6 +133,7 @@
                 (set flag_part_start true)
                 (set flag_linelist false)
                 (set flag-codeblock false)
+                (set flag-dontparse false)
 
                 (set head 0)
                 (set ret "")
@@ -145,6 +146,7 @@
                         (car str))
                     (set str 
                         (cdr str))
+
                     (if 
                         (and (> (length head) 2) (str.= (slice head 0 2) "```"))
                         (do (if (= (length head) 3) (if flag-codeblock                         ; 开头或结尾
@@ -187,6 +189,30 @@
                         )
                         (continue))
                     0)
+
+                    (if 
+                        (and (> (length head) 6) (str.= (slice head 0 6) "<style>"))
+                        (do
+                            (if flag_part (do
+                                        (set ret 
+                                        (str.+ ret  (str "</p>\n")))
+                                        (set falg_part false)
+                                    ) (pass))
+                            (set ret 
+                                        (str.+ ret  (str "<style>\n")))
+                            (set flag-dontparse true)
+                            (continue)
+                        )
+                    0)
+                    (if 
+                        (and (> (length head) 7) (str.= (slice head 0 7) "</style>"))
+                        (do
+                            (set flag-dontparse false)
+                            (set ret 
+                                        (str.+ ret  (str "</style>\n")))
+                            (continue)
+                        )
+                    0)
                     (if 
                         (= (length head) 0) 
                         (do
@@ -196,7 +222,7 @@
                                 (if flag_part (set flag_part false) 0)
                             )(pass))
                         (if 
-                            (= flag_part false) 
+                            (and (= flag_part false) (= flag-dontparse false))
                             (do 
                                 (set ret 
                                     (str.+ ret 
@@ -230,7 +256,10 @@
                                 (str.+ ret  (str "</p><hr\b/></p>\n")))
                             (set flag_part true)
                             (continue) )0)
-                    (if (= (length head) 0) 0
+                    (if (or (= (length head) 0) (= flag-dontparse true))
+                        (set ret 
+                                (str.+ ret 
+                                    head))
                         (set ret 
                                 (str.+ ret 
                                     (markdown-parse-line head))))
