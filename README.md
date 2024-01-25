@@ -1,4 +1,5 @@
-![icon.png](icon.png)
+<img src='icon.png' align='right'/>
+
 # Tiny Tiny Web 2
 Power by rust.
 All platforms.
