@@ -1,4 +1,4 @@
-[icon.png](icon.png)
+![icon.png](icon.png)
 # Tiny Tiny Web 2
 Power by rust.
 All platforms.
