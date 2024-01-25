@@ -26,7 +26,11 @@ fn parse(fst: String, _args: Vec<String>) {
         #[cfg(not(feature = "stable"))]
         "repl" => {
             run_repl();
-        }
+        },
+        "--version" => {
+            println!("ttweb {}\nCopyright (C) 2024 Plasma\nIt is free software. See https://github.com/duoduo70/Tiny-Tiny-Web/.", env!("CARGO_PKG_VERSION"));
+            exit(0);
+        },
         _ => {
             log!(Fatal, LOG[30]);
             exit(-1);

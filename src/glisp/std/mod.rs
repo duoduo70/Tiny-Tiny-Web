@@ -18,9 +18,6 @@ use str::*;
 use io::*;
 use eval::*;
 
-//TODO: Standardize error reporting
-//TODO: i18n support
-
 pub fn eval_built_in_form(
     exp: &Expression,
     other_args: &[Expression],
