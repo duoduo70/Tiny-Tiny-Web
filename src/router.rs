@@ -117,7 +117,10 @@ pub fn router<'a>(
         return true;
     }
 
-    false
+    res.set_version("HTTP/1.1");
+    res.set_state("404 NOT FOUND");
+    
+    true
 }
 fn router_iftype_replace<'a>(
     //TODO: optimize it
