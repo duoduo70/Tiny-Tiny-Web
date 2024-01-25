@@ -73,3 +73,20 @@ pub fn func_read_dir(args: &[Expression], env: &mut Environment) -> Result<Expre
         _ => Ok(Expression::Bool(false)),
     }
 }
+
+pub fn func_run(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
+    args_len_min!("run", args, 1);
+    let mut list1 = check_type_onlyone!("run", &args[0], env, List)?;
+    
+    use std::process::Command;
+    let mut command = Command::new(list1[0].to_string());
+    let output = if list1.len() > 1 {
+        command.args(list1.drain(1..).map(|x|x.to_string())).output()
+    } else {
+        command.output()
+    };
+    match output {
+        Ok(a) => Ok(Expression::String(unsafe { std::str::from_utf8_unchecked(&a.stdout).to_string() })),
+        Err(_) => Ok(Expression::Bool(false)),
+    }
+}

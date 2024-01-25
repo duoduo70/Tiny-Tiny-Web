@@ -113,6 +113,9 @@ impl HttpResponse {
     pub fn get_content(&self) -> &Option<Vec<u8>> {
         &self.content
     }
+    pub fn get_content_unref(&self) -> Option<Vec<u8>> {
+        self.content.clone()
+    }
     pub fn get_stream(&self) -> Vec<u8> {
         let mut res: Vec<u8> = format!("{} {}\r\n",self.version, self.state).as_bytes().to_vec();
         for k in self.headers.keys() {

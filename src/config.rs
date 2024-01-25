@@ -24,6 +24,7 @@ use std::{
 
 pub static USE_LOCALTIME: AtomicBool = AtomicBool::new(true);
 pub static ENABLE_DEBUG: AtomicBool = AtomicBool::new(true);
+pub static ENABLE_PIPE: AtomicBool = AtomicBool::new(false);
 pub static THREADS_NUM: AtomicU32 = AtomicU32::new(2);
 pub static XRPS_COUNTER_CACHE_SIZE: AtomicU32 = AtomicU32::new(8);
 pub static BOX_NUM_PER_THREAD_MAG: AtomicU32 = AtomicU32::new(1000);
@@ -43,6 +44,7 @@ pub struct Config {
     pub addr_bind: Vec<String>,
     pub serve_files_custom: HashMap<String, (String, Option<ServeFilesCustomExtra>)>,
     pub response_404: Option<HttpResponse>,
+    pub pipe: Vec<String>
 }
 impl Config {
     pub fn new() -> Self {
@@ -52,12 +54,16 @@ impl Config {
             addr_bind: vec![],
             serve_files_custom: HashMap::new(),
             response_404: None,
+            pipe: vec![]
         }
     }
     pub fn sync_static_vars(&self) {
         USE_LOCALTIME.store(self.use_localtime, Ordering::Relaxed);
         ENABLE_DEBUG.store(self.enable_debug, Ordering::Relaxed);
         unsafe { GLOBAL_CONFIG = Some(Arc::new(Mutex::new(self.clone()))) };
+        if !self.pipe.is_empty() {
+            ENABLE_PIPE.store(true, Ordering::Relaxed)
+        }
     }
     pub fn check(&self) {
         if self.serve_files_custom.is_empty() {
@@ -415,6 +421,12 @@ fn method_import_gl(args: MethodArgs) {
         }
     }
 }
+#[cfg(not(feature = "stable"))]
+fn method_import_pipe(args: MethodArgs) {
+    if let Some(head2) = args.line_splitted.next() {
+        args.config.pipe.push(read_to_string("config/".to_owned() + head2).result_shldfatal(-1, || log!(Fatal, format!("{}{}", LOG[22], head2))));
+    }
+}
 fn method_inject_haserr(args: &mut MethodArgs) -> Result<(), ()> {
     let pathname = if let Some(a) = args.line_splitted.next() {
         a
@@ -566,6 +578,16 @@ fn parse_line(line: String, config: &mut Config, file: &str, line_number: i32) {
         #[cfg(not(feature = "stable"))]
         if head == "@gl" {
             method_import_gl(MethodArgs {
+                config,
+                line_splitted: &mut line_splitted,
+                file,
+                line_number,
+            });
+            return;
+        }
+        #[cfg(not(feature = "stable"))]
+        if head == "@pipe" {
+            method_import_pipe(MethodArgs {
                 config,
                 line_splitted: &mut line_splitted,
                 file,

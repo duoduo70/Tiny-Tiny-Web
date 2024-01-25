@@ -71,6 +71,7 @@ pub fn eval_built_in_form(
             "read-dir" => Some(func_read_dir(other_args, env)),
             "for-each-eval" => Some(func_for_each_eval(other_args, env)),
             "eval" => Some(func_eval(other_args, env)),
+            "run" => Some(func_run(other_args, env)),
             _ => None,
         },
         _ => None,
