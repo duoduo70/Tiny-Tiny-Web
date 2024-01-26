@@ -427,6 +427,9 @@ fn method_import_pipe(args: MethodArgs) {
         args.config.pipe.push(read_to_string("config/".to_owned() + head2).result_shldfatal(-1, || log!(Fatal, format!("{}{}", LOG[22], head2))));
     }
 }
+fn method_log(args: MethodArgs) {
+    log!(Info, args.line_splitted.map(|s|s.to_owned() + " ").collect::<String>());
+}
 fn method_inject_haserr(args: &mut MethodArgs) -> Result<(), ()> {
     let pathname = if let Some(a) = args.line_splitted.next() {
         a
@@ -588,6 +591,15 @@ fn parse_line(line: String, config: &mut Config, file: &str, line_number: i32) {
         #[cfg(not(feature = "stable"))]
         if head == "@pipe" {
             method_import_pipe(MethodArgs {
+                config,
+                line_splitted: &mut line_splitted,
+                file,
+                line_number,
+            });
+            return;
+        }
+        if head == ">" {
+            method_log(MethodArgs {
                 config,
                 line_splitted: &mut line_splitted,
                 file,
