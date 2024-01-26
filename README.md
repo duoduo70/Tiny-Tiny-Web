@@ -26,6 +26,25 @@ Config-->Writer
 By default, the Nightly version will be compiled。
 If you want to get stable version, please use `cargo build --features stable`
 
+## Start
+Create `config` , `export` , `temp` directory in your program root directory.
+Create `main.gc` in `config` directory, and write:
+```
+$ +addr 127.0.0.1:22397
++ index.html /
+```
+After that, create `index.html` in `export` directory, and write:
+```
+Hello, World!
+```
+Start the program, and open `http://127.0.0.1:22397/` in your browser, you should be able to see:
+```
+Hello, World!
+```
+
+### Document
+[Chinese](https://github.com/duoduo70/Tiny-Tiny-Web/blob/master/docs/index.md)
+
 ### Thanks
 Thank for all.
 Enjoy.
