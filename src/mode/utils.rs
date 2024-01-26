@@ -109,6 +109,10 @@ pub fn handle_connection(mut stream: std::net::TcpStream, config: &Mutex<Config>
         str
     };
 
+    if req_str.is_empty() {
+        return;
+    }
+
     let mut request = {
         if crate::config::ENABLE_DEBUG.load(Ordering::Relaxed) {
             match HttpRequest::from(req_str.clone()) {
