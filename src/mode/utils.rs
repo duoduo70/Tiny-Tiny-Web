@@ -173,6 +173,7 @@ pub fn handle_connection(mut stream: std::net::TcpStream, config: &Mutex<Config>
             
         }
     
+    
 
     match stream.write_all(&response.get_stream()) {
         Err(_) => log!(Debug, LOG[6]),
