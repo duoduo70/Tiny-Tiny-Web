@@ -201,14 +201,18 @@ fn pipe(config: &Mutex<Config>, content: &str, enable_debug: bool, response: &mu
                         log!(Info, format!("[{}] {} {}", LOG[32], LOG[34], msg))
                     }
                 }
-                return; // TODO: make it configurable
+                if crate::config::ENABLE_RETURN_IF_PIPE_ERR.load(Ordering::Relaxed) {
+                    return
+                }
             }
             Ok(crate::glisp::core::Expression::Bool(res)) => {
                 log!(Info, format!("[{}] {} {}", LOG[32], LOG[33], res))
             }
             Ok(a) => {
                 log!(Error, format!("[{}] {} {}", LOG[32], LOG[35], a));
-                return; // TODO: make it configurable
+                if crate::config::ENABLE_RETURN_IF_PIPE_ERR.load(Ordering::Relaxed) {
+                    return
+                }
             }
         }
     }

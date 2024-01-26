@@ -31,6 +31,7 @@ pub static BOX_NUM_PER_THREAD_MAG: AtomicU32 = AtomicU32::new(1000);
 pub static BOX_NUM_PER_THREAD_INIT_MAG: AtomicU32 = AtomicU32::new(1000);
 pub static XRPS_PREDICT_MAG: AtomicU32 = AtomicU32::new(1100);
 pub static BOX_MODE: AtomicBool = AtomicBool::new(false);
+pub static ENABLE_RETURN_IF_PIPE_ERR: AtomicBool = AtomicBool::new(true);
 pub static mut GLOBAL_CONFIG: Option<Arc<Mutex<Config>>> = None;
 #[derive(Clone)]
 pub struct ServeFilesCustomExtra {
@@ -295,6 +296,11 @@ fn method_set(args: MethodArgs) {
                 let mut value = false;
                 pas_bool_option(&mut value, head3, args.file, args.line_number);
                 BOX_MODE.store(value, Ordering::Relaxed);
+                return;
+            } else if head2 == "return-if-pipe-err" {
+                let mut value = false;
+                pas_bool_option(&mut value, head3, args.file, args.line_number);
+                ENABLE_RETURN_IF_PIPE_ERR.store(value, Ordering::Relaxed);
                 return;
             } else {
                 syntax_error(
