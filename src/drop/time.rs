@@ -90,7 +90,6 @@ impl Time {
         tmp_time.mday = tmp_time.day;
         let mut total_days = tmp_time.yday - 1;
         let start_year = 1900;
-        let start_weekday = 1;
         let mut year1 = start_year;
         while year1 < tmp_time.year {
             if (year1 % 4 == 0 && year1 % 100 != 0) || year1 % 400 == 0 {
@@ -100,7 +99,7 @@ impl Time {
             }
             year1 += 1;
         }
-        let weekday = (start_weekday + total_days) % 7;
+        let weekday = total_days % 7;
         tmp_time.wday = weekday;
         tmp_time
     }
