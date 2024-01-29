@@ -29,7 +29,7 @@ Config-->Pipe
 
 ### Build / 如何构建
 Install Rust, after that, in your program root directory:  
-下载 Rust, 在此之后，在程序根目录中执行：
+下载 Rust，在此之后，在程序根目录中执行：
 ```sh
 cargo build
 ```

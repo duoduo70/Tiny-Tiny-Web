@@ -34,18 +34,42 @@ pub static BOX_MODE: AtomicBool = AtomicBool::new(false);
 pub static ENABLE_RETURN_IF_PIPE_ERR: AtomicBool = AtomicBool::new(true);
 pub static mut GLOBAL_CONFIG: Option<Arc<Mutex<Config>>> = None;
 #[derive(Clone)]
-pub struct ServeFilesCustomExtra {
+pub struct ReplaceData {
+    pub content: String,
+    pub column: u32,
+    pub line: u32,
+}
+#[derive(Clone)]
+pub struct ServeFileData {
+    pub file_path: String,
     pub content_type: String,
-    pub replace: Option<Vec<(String, (usize, usize))>>,
+    pub replace: Option<Vec<ReplaceData>>,
+}
+impl ServeFileData {
+    pub fn from(file_path: String) -> Self {
+        // TODO: auto content type inference
+        ServeFileData {
+            content_type: "text/html; charset=utf-8".to_owned(),
+            replace: None,
+            file_path,
+        }
+    }
+    pub fn from_with_content_type(file_path: String, content_type: String) -> Self {
+        ServeFileData {
+            content_type,
+            replace: None,
+            file_path,
+        }
+    }
 }
 #[derive(Clone)]
 pub struct Config {
     pub use_localtime: bool,
     pub enable_debug: bool,
     pub addr_bind: Vec<String>,
-    pub serve_files_custom: HashMap<String, (String, Option<ServeFilesCustomExtra>)>,
+    pub serve_files_info: HashMap<String, ServeFileData>,
     pub response_404: Option<HttpResponse>,
-    pub pipe: Vec<String>
+    pub pipe: Vec<String>,
 }
 impl Config {
     pub fn new() -> Self {
@@ -53,9 +77,9 @@ impl Config {
             use_localtime: true,
             enable_debug: false,
             addr_bind: vec![],
-            serve_files_custom: HashMap::new(),
+            serve_files_info: HashMap::new(),
             response_404: None,
-            pipe: vec![]
+            pipe: vec![],
         }
     }
     pub fn sync_static_vars(&self) {
@@ -67,7 +91,7 @@ impl Config {
         }
     }
     pub fn check(&self) {
-        if self.serve_files_custom.is_empty() {
+        if self.serve_files_info.is_empty() {
             log!(Warn, LOG[13]);
         }
     }
@@ -135,9 +159,9 @@ fn method_add(args: MethodArgs) {
             syntax_error(args.file, args.line_number, LOG[20]);
             return;
         }
-        args.config.serve_files_custom.insert(
+        args.config.serve_files_info.insert(
             "/".to_owned() + &head2.to_string(),
-            ("/".to_owned() + head2, None),
+            ServeFileData::from("/".to_owned() + head2),
         );
         return;
     } else {
@@ -146,7 +170,7 @@ fn method_add(args: MethodArgs) {
     }
 }
 fn method_add_head3_ext(args: MethodArgs, head2: &str, head3: &str) {
-    args.config.serve_files_custom.insert(
+    args.config.serve_files_info.insert(
         "/".to_owned() + {
             if head3 == "/" {
                 ""
@@ -154,16 +178,13 @@ fn method_add_head3_ext(args: MethodArgs, head2: &str, head3: &str) {
                 head3
             }
         },
-        (
+        ServeFileData::from_with_content_type(
             "/".to_owned() + head2,
-            Some(ServeFilesCustomExtra {
-                content_type: if let Some(head4) = args.line_splitted.next() {
-                    head4.to_string()
-                } else {
-                    "text/html; charset=utf-8".to_string()
-                },
-                replace: None,
-            }),
+            if let Some(head4) = args.line_splitted.next() {
+                head4.to_string()
+            } else {
+                "text/html; charset=utf-8".to_string()
+            },
         ),
     );
 }
@@ -177,14 +198,14 @@ fn method_remove(args: MethodArgs) {
 }
 fn method_remove_head2_ext(args: MethodArgs, head2: &str) {
     if head2 == "/" {
-        if let Some(_) = args.config.serve_files_custom.remove("/") {
+        if let Some(_) = args.config.serve_files_info.remove("/") {
         } else {
             syntax_error(args.file, args.line_number, LOG[19]);
         }
     } else {
         if let Some(_) = args
             .config
-            .serve_files_custom
+            .serve_files_info
             .remove(&("/".to_owned() + &head2.to_string()))
         {
         } else {
@@ -430,11 +451,19 @@ fn method_import_gl(args: MethodArgs) {
 #[cfg(not(feature = "no-glisp"))]
 fn method_import_pipe(args: MethodArgs) {
     if let Some(head2) = args.line_splitted.next() {
-        args.config.pipe.push(read_to_string("config/".to_owned() + head2).result_shldfatal(-1, || log!(Fatal, format!("{}{}", LOG[22], head2))));
+        args.config.pipe.push(
+            read_to_string("config/".to_owned() + head2)
+                .result_shldfatal(-1, || log!(Fatal, format!("{}{}", LOG[22], head2))),
+        );
     }
 }
 fn method_log(args: MethodArgs) {
-    log!(Info, args.line_splitted.map(|s|s.to_owned() + " ").collect::<String>());
+    log!(
+        Info,
+        args.line_splitted
+            .map(|s| s.to_owned() + " ")
+            .collect::<String>()
+    );
 }
 fn method_inject_haserr(args: &mut MethodArgs) -> Result<(), ()> {
     let pathname = if let Some(a) = args.line_splitted.next() {
@@ -445,14 +474,14 @@ fn method_inject_haserr(args: &mut MethodArgs) -> Result<(), ()> {
     let temp_pathname = &("/".to_owned() + pathname);
     let conf_serve_value = if let Some(a) = args
         .config
-        .serve_files_custom
-        .get_mut(if pathname=="/" {"/"} else {temp_pathname})
+        .serve_files_info
+        .get_mut(if pathname == "/" { "/" } else { temp_pathname })
     {
         a
     } else {
         return Err(());
     };
-    let filename = &conf_serve_value.0;
+    let filename = &conf_serve_value.file_path;
     if !Path::new(&("temp/".to_string() + &filename)).is_file() {
         return Err(());
     }
@@ -462,7 +491,7 @@ fn method_inject_haserr(args: &mut MethodArgs) -> Result<(), ()> {
     } else {
         return Err(());
     };
-    let mut linenumbers: Vec<(usize, usize)> = vec![];
+    let mut linenumbers: Vec<(u32, u32)> = vec![];
     for e in lines {
         if let Ok(line) = e {
             linenumbers.push(match line.split_once(' ') {
@@ -479,10 +508,10 @@ fn method_inject_haserr(args: &mut MethodArgs) -> Result<(), ()> {
 
     let mut linenumber = 0;
     loop {
-        if let Some(a) = &mut conf_serve_value.1 {
-            if let Some(ori_tur) = &mut a.replace {
-                ori_tur.push((
-                    if let Some(f) = args.line_splitted.next() {
+        if let Some(ori_tur) = &mut conf_serve_value.replace {
+            if let Some(f) = linenumbers.get(linenumber) {
+                ori_tur.push(ReplaceData {
+                    content: if let Some(f) = args.line_splitted.next() {
                         match std::fs::read_to_string("export/".to_owned() + f) {
                             Ok(a) => a,
                             _ => return Err(()),
@@ -490,15 +519,16 @@ fn method_inject_haserr(args: &mut MethodArgs) -> Result<(), ()> {
                     } else {
                         return Err(());
                     },
-                    if let Some(f) = linenumbers.get(linenumber) {
-                        *f
-                    } else {
-                        return Err(());
-                    },
-                ));
+                    column: f.0,
+                    line: f.1,
+                });
             } else {
-                a.replace = Some(vec![(
-                    if let Some(f) = args.line_splitted.next() {
+                return Err(());
+            };
+        } else {
+            if let Some(f) = linenumbers.get(linenumber) {
+                conf_serve_value.replace = Some(vec![ReplaceData {
+                    content: if let Some(f) = args.line_splitted.next() {
                         match std::fs::read_to_string("export/".to_owned() + f) {
                             Ok(a) => a,
                             _ => return Err(()),
@@ -506,15 +536,12 @@ fn method_inject_haserr(args: &mut MethodArgs) -> Result<(), ()> {
                     } else {
                         return Err(());
                     },
-                    if let Some(f) = linenumbers.get(linenumber) {
-                        *f
-                    } else {
-                        return Err(());
-                    },
-                )]);
+                    column: f.0,
+                    line: f.1,
+                }]);
+            } else {
+                return Err(());
             }
-        } else {
-            return Err(());
         }
         linenumber += 1;
         if linenumber == linenumbers.len() {
