@@ -113,7 +113,7 @@ impl HttpResponse {
     pub fn get_content_ref(&self) -> &Option<Vec<u8>> {
         &self.content
     }
-    pub fn get_content(&self) -> Option<Vec<u8>> {
+    pub fn get_content_unref(&self) -> Option<Vec<u8>> {
         self.content.clone()
     }
     pub fn get_stream(&self) -> Vec<u8> {

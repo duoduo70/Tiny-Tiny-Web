@@ -12,7 +12,7 @@ use std::{
 };
 
 use crate::{
-    config::{Config, XRPS_COUNTER_CACHE_SIZE},
+    config::{Config, RouterConfig, XRPS_COUNTER_CACHE_SIZE},
     drop::{
         http::{HttpRequest, HttpResponse},
         log::LogLevel::*,
@@ -85,7 +85,7 @@ pub fn listener_init(config: Config) -> TcpListener {
     )
 }
 
-pub fn handle_connection(mut stream: std::net::TcpStream, config: &Mutex<Config>) {
+pub fn handle_connection(mut stream: std::net::TcpStream, config: &Mutex<RouterConfig>) {
     use std::io::*;
 
     let buf_reader = BufReader::new(&mut stream);
@@ -166,9 +166,9 @@ pub fn handle_connection(mut stream: std::net::TcpStream, config: &Mutex<Config>
             Err(_) => log!(Debug, format!("{}{:?}\n", LOG[8], content_stream)),
         }
     }
-        #[cfg(not(feature = "no-glisp"))]
+        #[cfg(not(feature = "stable"))]
         if enable_pipe {
-            if let Some(content) = response.get_content() {
+            if let Some(content) = response.get_content_unref() {
                 match std::str::from_utf8(&content){
                     Ok(a) => pipe(config, a,enable_debug, &mut response),
                     Err(_) => {},
@@ -185,7 +185,7 @@ pub fn handle_connection(mut stream: std::net::TcpStream, config: &Mutex<Config>
     }
 }
 
-fn pipe(config: &Mutex<Config>, content: &str, enable_debug: bool, response: &mut HttpResponse) {
+fn pipe(config: &Mutex<RouterConfig>, content: &str, enable_debug: bool, response: &mut HttpResponse) {
     for e in &config.lock().unwrap().pipe {
         let env = &mut crate::glisp::core::default_env();
         env.data.insert(

@@ -6,6 +6,7 @@
  * if not, see <https://www.gnu.org/licenses/>.
  */
 
+use std::sync::{Arc, Mutex};
 use std::{process::exit, sync::atomic::Ordering};
 
 use super::utils::*;
@@ -13,6 +14,7 @@ use crate::drop::log::LogLevel::*;
 use crate::drop::thread::ThreadPool;
 use crate::i18n::LOG;
 use crate::macros::*;
+use crate::utils::GlobalValue;
 
 pub fn start() -> ! {
     let config = config_init();
@@ -29,7 +31,7 @@ pub fn start() -> ! {
         match stream {
             Ok(req) => {
                 threadpool.add(threads_num.try_into().unwrap(), || {
-                    handle_connection(req, unsafe { &crate::config::GLOBAL_CONFIG.clone().unwrap().clone() })
+                    handle_connection(req, &Arc::new(Mutex::new(unsafe { crate::config::GLOBAL_ROUTER_CONFIG.get() })))
                 });
             }
             Err(_) => {

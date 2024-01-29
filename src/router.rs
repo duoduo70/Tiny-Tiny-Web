@@ -5,7 +5,7 @@
  * along with this program;
  * if not, see <https://www.gnu.org/licenses/>.
  */
-use crate::{config::*, drop::http::*, drop::log::LogLevel::*, i18n::LOG, macros::*};
+use crate::{config::*, drop::http::*, drop::log::LogLevel::*, i18n::LOG, macros::*, utils::*};
 use std::sync::{Arc, RwLock};
 
 static mut FILE_CACHE: Option<Arc<RwLock<(String, Vec<u8>)>>> = None;
@@ -13,7 +13,7 @@ static mut FILE_CACHE: Option<Arc<RwLock<(String, Vec<u8>)>>> = None;
 pub fn router<'a>(
     req: HttpRequest<std::net::TcpStream>,
     res: &'a mut HttpResponse,
-    config: &'a Config,
+    config: &'a RouterConfig,
 ) -> bool {
     let serve_args = &config.serve_files_info;
     if serve_args.contains_key(&req.get_url().to_owned()) {
@@ -30,9 +30,9 @@ pub fn router<'a>(
             match &FILE_CACHE {
                 Some(a) => {
                     let str = if &req.get_url().to_owned()
-                        == &FILE_CACHE.clone().unwrap().read().unwrap().0
+                        == &FILE_CACHE.get().0
                     {
-                        FILE_CACHE.clone().unwrap().read().unwrap().1.clone()
+                        FILE_CACHE.get().1
                     } else {
                         let _stream = match std::fs::read(
                             "export".to_owned()
@@ -120,7 +120,7 @@ pub fn router<'a>(
 fn router_iftype_replace<'a>(
     req: HttpRequest<std::net::TcpStream>,
     res: &'a mut HttpResponse,
-    config: &'a Config,
+    config: &'a RouterConfig,
     replaces: &Vec<ReplaceData>,
     str: String,
 ) -> bool {

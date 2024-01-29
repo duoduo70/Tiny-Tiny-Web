@@ -10,7 +10,7 @@ use super::utils::*;
 use crate::drop::log::LogLevel::*;
 use crate::drop::thread::ThreadPool;
 use crate::macros::*;
-use crate::utils::TimeErr;
+use crate::utils::{GlobalValue, TimeErr};
 use crate::{config::*, drop::time::Time, i18n::LOG};
 use std::{
     collections::VecDeque,
@@ -82,7 +82,7 @@ pub fn start() -> ! {
                         {
                             handle_connection_s(
                                 unsafe { &THREADS_BOX.clone().unwrap() },
-                                &Arc::clone(unsafe { &GLOBAL_CONFIG.clone().unwrap() }),
+                                &Arc::new(Mutex::new(unsafe { GLOBAL_ROUTER_CONFIG.get() })),
                             );
                             i += 1;
                         }
@@ -104,7 +104,7 @@ pub fn start() -> ! {
                         {
                             handle_connection_s(
                                 unsafe { &THREADS_BOX.clone().unwrap() },
-                                &Arc::clone(unsafe { &GLOBAL_CONFIG.clone().unwrap() }),
+                                &Arc::new(Mutex::new(unsafe { GLOBAL_ROUTER_CONFIG.get() })),
                             );
                             i += 1;
                         }
@@ -121,7 +121,7 @@ pub fn start() -> ! {
     exit(0);
 }
 
-fn handle_connection_s(streams: &Mutex<VecDeque<std::net::TcpStream>>, config: &Mutex<Config>) {
+fn handle_connection_s(streams: &Mutex<VecDeque<std::net::TcpStream>>, config: &Mutex<RouterConfig>) {
     let stream = match streams.lock().unwrap().pop_front() {
         Some(a) => a,
         _ => return,
