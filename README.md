@@ -28,10 +28,16 @@ Config-->Pipe
 ```
 
 ### Build / 如何构建
+Install Rust, after that, in your program root directory:
+下载 Rust, 在此之后，在程序根目录中执行：
+```sh
+cargo build
+```
+
 If you want to build no-glisp version, use:  
 如果你希望构建不包含 GLisp 的版本，使用：
 ```sh
-cargo build --features stable
+cargo build --features no-glisp
 ```
 
 ## Start / 启动
