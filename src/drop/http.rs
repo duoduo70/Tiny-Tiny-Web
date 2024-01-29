@@ -110,10 +110,10 @@ impl HttpResponse {
     pub fn set_content(&mut self, str: Vec<u8>) {
         self.content = Some(str.into())
     }
-    pub fn get_content(&self) -> &Option<Vec<u8>> {
+    pub fn get_content_ref(&self) -> &Option<Vec<u8>> {
         &self.content
     }
-    pub fn get_content_unref(&self) -> Option<Vec<u8>> {
+    pub fn get_content(&self) -> Option<Vec<u8>> {
         self.content.clone()
     }
     pub fn get_stream(&self) -> Vec<u8> {

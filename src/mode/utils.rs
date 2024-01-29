@@ -168,7 +168,7 @@ pub fn handle_connection(mut stream: std::net::TcpStream, config: &Mutex<Config>
     }
         #[cfg(not(feature = "stable"))]
         if enable_pipe {
-            if let Some(content) = response.get_content_unref() {
+            if let Some(content) = response.get_content() {
                 match std::str::from_utf8(&content){
                     Ok(a) => pipe(config, a,enable_debug, &mut response),
                     Err(_) => {},

@@ -112,7 +112,7 @@ pub fn router<'a>(
         res.set_state("404 NOT FOUND");
         res.set_header(
             "Content-Length",
-            res.get_content().clone().unwrap().len().to_string(),
+            res.get_content_ref().clone().unwrap().len().to_string(),
         );
         return true;
     }
@@ -123,19 +123,29 @@ pub fn router<'a>(
     true
 }
 fn router_iftype_replace<'a>(
-    //TODO: optimize it
-    _req: HttpRequest<std::net::TcpStream>,
+    req: HttpRequest<std::net::TcpStream>,
     res: &'a mut HttpResponse,
-    _config: &'a Config,
+    config: &'a Config,
     replaces: &Vec<(String, (usize, usize))>,
-    _str: String,
+    str: String,
 ) -> bool {
     res.set_version("HTTP/1.1");
     res.set_state("200 OK");
-    res.set_header("Content-Type", "text/html;charset=utf-8".to_owned());
+    res.set_header(
+        "Content-Type",
+        match &config
+            .serve_files_custom
+            .get(&req.get_url().to_owned())
+            .unwrap()
+            .1
+        {
+            Some(a) => a.content_type.clone(),
+            _ => "text/html; charset=utf-8".to_owned(),
+        },
+    );
     let mut final_str = String::new();
     for e in replaces {
-        final_str = _str.replace("$_gcflag", &e.0);
+        final_str = str.replace("$_gcflag", &e.0);
     }
     res.set_header("Content-Length", final_str.len().to_string());
     res.set_content(final_str.into());
