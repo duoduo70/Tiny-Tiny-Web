@@ -10,4 +10,4 @@ license = "GPL-3"
 lto = true
 
 [features]
-stable = []
+no-glisp = []

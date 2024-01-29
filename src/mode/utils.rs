@@ -166,7 +166,7 @@ pub fn handle_connection(mut stream: std::net::TcpStream, config: &Mutex<Config>
             Err(_) => log!(Debug, format!("{}{:?}\n", LOG[8], content_stream)),
         }
     }
-        #[cfg(not(feature = "stable"))]
+        #[cfg(not(feature = "no-glisp"))]
         if enable_pipe {
             if let Some(content) = response.get_content() {
                 match std::str::from_utf8(&content){

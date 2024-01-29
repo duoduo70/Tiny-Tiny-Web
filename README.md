@@ -23,8 +23,10 @@ Config-->Writer
 ```
 
 ### Build
-By default, the Nightly version will be compiled。
-If you want to get stable version, please use `cargo build --features stable`
+If you want to build no-glisp version, use:
+```sh
+cargo build --features stable
+```
 
 ## Start
 Create `config` , `export` , `temp` directory in your program root directory.

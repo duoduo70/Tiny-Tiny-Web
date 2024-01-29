@@ -13,7 +13,6 @@ mod mode;
 mod router;
 mod utils;
 
-#[cfg(not(feature = "stable"))]
 mod glisp;
 
 use drop::log::LogLevel::*;

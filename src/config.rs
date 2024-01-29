@@ -409,7 +409,7 @@ fn method_inject(mut args: MethodArgs) {
         return;
     }
 }
-#[cfg(not(feature = "stable"))]
+#[cfg(not(feature = "no-glisp"))]
 fn method_import_gl(args: MethodArgs) {
     if let Some(head2) = args.line_splitted.next() {
         let env = &mut crate::glisp::core::default_env();
@@ -427,7 +427,7 @@ fn method_import_gl(args: MethodArgs) {
         }
     }
 }
-#[cfg(not(feature = "stable"))]
+#[cfg(not(feature = "no-glisp"))]
 fn method_import_pipe(args: MethodArgs) {
     if let Some(head2) = args.line_splitted.next() {
         args.config.pipe.push(read_to_string("config/".to_owned() + head2).result_shldfatal(-1, || log!(Fatal, format!("{}{}", LOG[22], head2))));
@@ -584,7 +584,7 @@ fn parse_line(line: String, config: &mut Config, file: &str, line_number: i32) {
             });
             return;
         }
-        #[cfg(not(feature = "stable"))]
+        #[cfg(not(feature = "no-glisp"))]
         if head == "@gl" {
             method_import_gl(MethodArgs {
                 config,
@@ -594,7 +594,7 @@ fn parse_line(line: String, config: &mut Config, file: &str, line_number: i32) {
             });
             return;
         }
-        #[cfg(not(feature = "stable"))]
+        #[cfg(not(feature = "no-glisp"))]
         if head == "@pipe" {
             method_import_pipe(MethodArgs {
                 config,

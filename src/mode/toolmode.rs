@@ -8,7 +8,6 @@
 use std::process::exit;
 
 use crate::drop::log::LogLevel::*;
-#[cfg(not(feature = "stable"))]
 use crate::glisp::repl::run_repl;
 use crate::i18n::LOG;
 use crate::macros::*;
@@ -23,7 +22,7 @@ pub fn try_start() {
 
 fn parse(fst: String, _args: Vec<String>) {
     match fst.as_str() {
-        #[cfg(not(feature = "stable"))]
+        #[cfg(not(feature = "no-glisp"))]
         "repl" => {
             run_repl();
         },
