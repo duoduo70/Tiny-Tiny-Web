@@ -158,7 +158,7 @@ fn method_add(args: MethodArgs) {
         }
         args.config.router_config.serve_files_info.insert(
             "/".to_owned() + &head2.to_string(),
-            ServeFileData::from("/".to_owned() + head2),
+            ServeFileData::from("/".to_owned() + head2, args.config),
         );
         return;
     } else {

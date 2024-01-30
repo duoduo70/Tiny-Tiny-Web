@@ -7,12 +7,12 @@
  */
 
 use std::{
-    net::TcpListener,
+    net::{TcpListener, TcpStream},
     sync::{atomic::Ordering, Mutex},
 };
 
 use crate::{
-    config::{Config, RouterConfig, XRPS_COUNTER_CACHE_SIZE},
+    config::{Config, RouterConfig, ENABLE_CODE_BAD_REQUEST, XRPS_COUNTER_CACHE_SIZE},
     drop::{
         http::{HttpRequest, HttpResponse},
         log::LogLevel::*,
@@ -91,48 +91,21 @@ pub fn handle_connection(mut stream: std::net::TcpStream, config: &Mutex<RouterC
     let buf_reader = BufReader::new(&mut stream);
     let mut lines = std::io::BufRead::lines(buf_reader);
 
-    let req_str = {
-        let mut str = String::new();
-        loop {
-            let line = lines.next();
-            match line {
-                Some(Ok(a)) => {
-                    if a == "" {
-                        break;
-                    };
-                    str += &(a + "\r\n")
-                }
-                _ => break,
-            }
-            break;
-        }
-        str
-    };
+    let req_str = get_request_str(&mut lines);
 
     if req_str.is_empty() {
+        if ENABLE_CODE_BAD_REQUEST.load(Ordering::Relaxed) {
+            let mut response = HttpResponse::new();
+            response.set_state("400 BAD REQUEST");
+            write_stream(stream, &mut response);
+        }
         return;
     }
 
-    let mut request = {
-        if crate::config::ENABLE_DEBUG.load(Ordering::Relaxed) {
-            match HttpRequest::from(req_str.clone()) {
-                Ok(req) => {
-                    log!(Debug, format!("{}{}\n", LOG[7], req_str));
-                    req
-                }
-                _ => {
-                    log!(Debug, format!("{}{}\n", LOG[5], req_str));
-                    return;
-                }
-            }
-        } else {
-            match HttpRequest::from(req_str) {
-                Ok(req) => req,
-                _ => {
-                    return;
-                }
-            }
-        }
+    let mut request = if let Ok(req) = get_request(req_str) {
+        req
+    } else {
+        return;
     };
 
     match request.get_header("Content-Length".to_owned()) {
@@ -166,26 +139,70 @@ pub fn handle_connection(mut stream: std::net::TcpStream, config: &Mutex<RouterC
             Err(_) => log!(Debug, format!("{}{:?}\n", LOG[8], content_stream)),
         }
     }
-        #[cfg(not(feature = "stable"))]
-        if enable_pipe {
-            if let Some(content) = response.get_content_unref() {
-                match std::str::from_utf8(&content){
-                    Ok(a) => pipe(config, a,enable_debug, &mut response),
-                    Err(_) => {},
-                }
+    #[cfg(not(feature = "stable"))]
+    if enable_pipe {
+        if let Some(content) = response.get_content_unref() {
+            match std::str::from_utf8(&content) {
+                Ok(a) => pipe(config, a, enable_debug, &mut response),
+                Err(_) => {}
             }
-            
         }
-    
-    
+    }
 
-    match stream.write_all(&response.get_stream()) {
+    write_stream(stream, response)
+}
+
+fn get_request<'a>(req_str: String) -> Result<HttpRequest<'a, TcpStream>, ()> {
+    if crate::config::ENABLE_DEBUG.load(Ordering::Relaxed) {
+        match HttpRequest::from(req_str.clone()) {
+            Ok(req) => {
+                log!(Debug, format!("{}{}\n", LOG[7], req_str));
+                Ok(req)
+            }
+            _ => {
+                log!(Debug, format!("{}{}\n", LOG[5], req_str));
+                Err(())
+            }
+        }
+    } else {
+        match HttpRequest::from(req_str) {
+            Ok(req) => Ok(req),
+            _ => Err(()),
+        }
+    }
+}
+
+fn get_request_str(lines: &mut std::io::Lines<std::io::BufReader<&mut TcpStream>>) -> String {
+    let mut str = String::new();
+    loop {
+        let line = lines.next();
+        match line {
+            Some(Ok(a)) => {
+                if a == "" {
+                    break;
+                };
+                str += &(a + "\r\n")
+            }
+            _ => break,
+        }
+        break;
+    }
+    str
+}
+
+fn write_stream(mut stream: TcpStream, response: &mut HttpResponse) {
+    match std::io::Write::write_all(&mut stream, &response.get_stream()) {
         Err(_) => log!(Debug, LOG[6]),
         _ => (),
     }
 }
 
-fn pipe(config: &Mutex<RouterConfig>, content: &str, enable_debug: bool, response: &mut HttpResponse) {
+fn pipe(
+    config: &Mutex<RouterConfig>,
+    content: &str,
+    enable_debug: bool,
+    response: &mut HttpResponse,
+) {
     for e in &config.lock().unwrap().pipe {
         let env = &mut crate::glisp::core::default_env();
         env.data.insert(
@@ -207,7 +224,7 @@ fn pipe(config: &Mutex<RouterConfig>, content: &str, enable_debug: bool, respons
                     }
                 }
                 if crate::config::ENABLE_RETURN_IF_PIPE_ERR.load(Ordering::Relaxed) {
-                    return
+                    return;
                 }
             }
             Ok(crate::glisp::core::Expression::Bool(res)) => {
@@ -216,7 +233,7 @@ fn pipe(config: &Mutex<RouterConfig>, content: &str, enable_debug: bool, respons
             Ok(a) => {
                 log!(Error, format!("[{}] {} {}", LOG[32], LOG[35], a));
                 if crate::config::ENABLE_RETURN_IF_PIPE_ERR.load(Ordering::Relaxed) {
-                    return
+                    return;
                 }
             }
         }

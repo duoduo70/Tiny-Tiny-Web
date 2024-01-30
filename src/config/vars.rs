@@ -34,11 +34,43 @@ pub fn method_set(args: MethodArgs) {
                     args.line_number,
                 );
                 return;
-            } else if head2 == "404page" {
-                page_404_option(args, head3);
+            } else if head2 == "+errpage" {
+                if let Some(head4) = args.line_splitted.next() {
+                    if head3 == "404" {
+                        page_404_option(args, head4);
+                    } else {
+                        syntax_error(
+                            args.file,
+                            args.line_number,
+                            &format!("{}{}", LOG[36], head3),
+                        )
+                    }
+                } else {
+                    syntax_error(args.file, args.line_number, &format!("{}", LOG[18]));
+                }
                 return;
             } else if head2 == "+addr" {
                 args.config.addr_bind.push(head3.to_owned());
+                return;
+            } else if head2 == "+mime" {
+                if let Some(head4) = args.line_splitted.next() {
+                    args.config
+                        .mime_bind
+                        .insert(head3.to_owned(), head4.to_owned());
+                } else {
+                    syntax_error(args.file, args.line_number, &format!("{}", LOG[18]));
+                }
+                return;
+            } else if head2 == "+code" {
+                match head3 {
+                    "400" => args.config.status_codes.push(400),
+                    "404" => args.config.status_codes.push(404),
+                    _ => syntax_error(
+                        args.file,
+                        args.line_number,
+                        &format!("{}{}", LOG[36], head3),
+                    ),
+                }
                 return;
             } else if head2 == "threads" {
                 THREADS_NUM.store(

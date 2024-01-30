@@ -2,7 +2,7 @@
 这是一个用以简单创建Web服务器的软件，使用 Rust 语言开发， GPLv3 开源，以下简称 TTWeb 。
 
 本文档所述内容可能不适合最新版本或对于最新版本而言不全面。
-当前文档基于版本 2.0.0-beta3。
+当前文档基于版本 2.0.0-beta4。
 
 对于二次开发所使用的 Ghost Lisp 语言，以下简称 Glisp 。
 
@@ -47,8 +47,8 @@ Hello, World!
 $ +addr 127.0.0.1:80
 $ +addr [fe80::1]:80
 
-# 设置一个 404 页面，当请求的网页不存在时返回给浏览器这个页面
-$ 404page 404.html
+# 设置一个错误页面，随错误码返回，目前仅支持 404
+$ +errpage 404 404.html
 
 # 导入并加载一个配置文件
 @ a.gc
@@ -58,6 +58,11 @@ $ 404page 404.html
 
 # 导入一个 Pipe 待用
 @pipe pipe.gl
+
+# 编译一个文件，与下面的加载命令要一起使用，对于要替换的位置，使用 $_gcflag 占位符
+compile contents.html
+# 注入一个文件（用 a.txt, b.txt, c.txt 中的内容替换 contents.html 中的 $_gcflag 占位符）
+inject contents.html a.txt b.txt c.txt
 ```
 ```
 # 以下全部是对一个内部变量进行设置，且全部都展示了默认设置
@@ -88,10 +93,22 @@ $ xrps-predict-mag 1.1
 # 默认设置：返回没有输入该错误管道的原始数据（仅仅是当前错误管道，而非全部管道）
 $ return-if-pipe-err no
 
-# 编译一个文件，与下面的加载命令要一起使用，对于要替换的位置，使用 $_gcflag 占位符
-compile contents.html
-# 注入一个文件（用 a.txt, b.txt, c.txt 中的内容替换 contents.html 中的 $_gcflag 占位符）
-inject contents.html a.txt b.txt c.txt
+# 注册一个新的默认 MIME 类型，以后在挂载文件时会根据文件扩展名自动使用注册的 MIME 类型
+# 自动注册的类型：
+$ +mime html text/html
+$ +mime css text/css
+$ +mime js text/html
+$ +mime gif image/gif
+$ +mime png image/png
+$ +mime jpg image/jpeg
+$ +mime jpeg image/jpeg
+$ +mime webp image/webp
+$ +mime svg image/svg+xml
+
+# 启用一个状态码，默认皆是关闭状态
+# 以下是所有可以启用的状态，根据 RFC7231 标准
+$ +code 400
+$ +code 404
 ```
 
 ## 基于架构来理解 Inject 和 Pipe 的不同及如何使用

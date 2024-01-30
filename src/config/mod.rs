@@ -31,6 +31,8 @@ pub static BOX_NUM_PER_THREAD_INIT_MAG: AtomicU32 = AtomicU32::new(1000);
 pub static XRPS_PREDICT_MAG: AtomicU32 = AtomicU32::new(1100);
 pub static BOX_MODE: AtomicBool = AtomicBool::new(false);
 pub static ENABLE_RETURN_IF_PIPE_ERR: AtomicBool = AtomicBool::new(true);
+pub static ENABLE_CODE_BAD_REQUEST: AtomicBool = AtomicBool::new(false);
+pub static ENABLE_CODE_NOT_FOUND: AtomicBool = AtomicBool::new(false);
 pub static mut GLOBAL_ROUTER_CONFIG: Option<Arc<Mutex<RouterConfig>>> = None;
 #[derive(Clone)]
 pub struct ReplaceData {
@@ -45,11 +47,10 @@ pub struct ServeFileData {
     pub replace: Option<Vec<ReplaceData>>,
 }
 impl ServeFileData {
-    pub fn from(file_path: String) -> Self {
-        // TODO: auto content type inference
+    pub fn from(file_path: String, config: &Config) -> Self {
         ServeFileData {
             content_type: match file_path.rsplit('.').next() {
-                Some(a) => Self::auto_content_type(a.to_owned()),
+                Some(a) => Self::auto_content_type(a.to_owned(), config),
                 _ => "application/octet-stream".to_owned(),
             },
             replace: None,
@@ -63,21 +64,25 @@ impl ServeFileData {
             file_path,
         }
     }
-    fn auto_content_type(ex_name: String) -> String {
-        // make it configurable
-        match ex_name.as_str() {
-            "html" => "text/html",
-            "css" => "text/css",
-            "js" => "text/javascript",
-            "gif" => "image/gif",
-            "png" => "image/png",
-            "jpg" => "image/jpeg",
-            "jpeg" => "image/jpeg",
-            "webp" => "image/webp",
-            "svg" => "image/svg+xml",
-            _ => "text/plain",
+    fn auto_content_type(ex_name: String, config: &Config) -> String {
+        if let Some(mime_type) = config.mime_bind.get(&ex_name) {
+            mime_type.to_string()
+        } else {
+            match ex_name.as_str() {
+                "html" => "text/html",
+                "css" => "text/css",
+                "js" => "text/javascript",
+                "gif" => "image/gif",
+                "png" => "image/png",
+                "jpg" => "image/jpeg",
+                "jpeg" => "image/jpeg",
+                "webp" => "image/webp",
+                "svg" => "image/svg+xml",
+                _ => "text/plain",
+            }
+            .to_owned()
         }
-        .to_owned()
+        
     }
 }
 #[derive(Clone)]
@@ -92,6 +97,8 @@ pub struct Config {
     pub enable_debug: bool,
     pub addr_bind: Vec<String>,
     pub router_config: RouterConfig,
+    pub mime_bind: HashMap<String, String>,
+    pub status_codes: Vec<u16>,
 }
 impl Config {
     pub fn new() -> Self {
@@ -104,6 +111,8 @@ impl Config {
                 response_404: None,
                 pipe: vec![],
             },
+            mime_bind: HashMap::new(),
+            status_codes: vec![]
         }
     }
     pub fn sync_static_vars(&self) {
@@ -112,6 +121,12 @@ impl Config {
         unsafe { GLOBAL_ROUTER_CONFIG = Some(Arc::new(Mutex::new(self.clone().router_config))) };
         if !self.router_config.pipe.is_empty() {
             ENABLE_PIPE.store(true, Ordering::Relaxed)
+        }
+        if let Some(_) = self.status_codes.get(400) {
+            ENABLE_CODE_BAD_REQUEST.store(true, Ordering::Relaxed)
+        }
+        if let Some(_) = self.status_codes.get(404) {
+            ENABLE_CODE_NOT_FOUND.store(true, Ordering::Relaxed)
         }
     }
     pub fn check(&self) {

@@ -6,7 +6,7 @@
  * if not, see <https://www.gnu.org/licenses/>.
  */
 use crate::{config::*, drop::http::*, drop::log::LogLevel::*, i18n::LOG, macros::*, utils::*};
-use std::sync::{Arc, RwLock};
+use std::sync::{atomic::Ordering, Arc, RwLock};
 
 static mut FILE_CACHE: Option<Arc<RwLock<(String, Vec<u8>)>>> = None;
 
@@ -101,21 +101,25 @@ pub fn router<'a>(
         return true;
     };
 
-    if let Some(res404) = &config.response_404 {
-        *res = res404.clone();
+    if ENABLE_CODE_NOT_FOUND.load(Ordering::Relaxed) {
+        if let Some(res404) = &config.response_404 {
+            *res = res404.clone();
+            res.set_version("HTTP/1.1");
+            res.set_state("404 NOT FOUND");
+            res.set_header(
+                "Content-Length",
+                res.get_content_ref().clone().unwrap().len().to_string(),
+            );
+            return true;
+        }
+    
         res.set_version("HTTP/1.1");
         res.set_state("404 NOT FOUND");
-        res.set_header(
-            "Content-Length",
-            res.get_content_ref().clone().unwrap().len().to_string(),
-        );
-        return true;
+        true
+    } else {
+        false
     }
-
-    res.set_version("HTTP/1.1");
-    res.set_state("404 NOT FOUND");
-
-    true
+    
 }
 fn router_iftype_replace<'a>(
     req: HttpRequest<std::net::TcpStream>,
