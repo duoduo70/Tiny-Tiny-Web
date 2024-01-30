@@ -22,6 +22,9 @@ use macros::*;
 fn main() {
     mode::toolmode::try_start();
 
+    #[cfg(not(feature = "no-glisp"))]
+    log!(Info, format!("{}{}+glisp).", LOG[0], env!("CARGO_PKG_VERSION")));
+    #[cfg(feature = "no-glisp")]
     log!(Info, format!("{}{}).", LOG[0], env!("CARGO_PKG_VERSION")));
 
     if config::BOX_MODE.load(std::sync::atomic::Ordering::Relaxed) {

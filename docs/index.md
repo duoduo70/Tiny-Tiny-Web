@@ -340,7 +340,7 @@ pub fn eval_built_in_form(
 ```
 目前还没有实现函数签名和文档注释，所以你或许要查看源代码来了解函数的用法。
 
-或者，有一个用 Glisp 实现的 Markdown 编译器，它应该会：
+或者，有一个用 Glisp 实现的 Markdown 编译器，它应该会包含在完整的二进制发布内：
 ```scheme
 ;;; Tiny Tiny Web
 ;;; Copyright (C) 2024 Plasma (https://github.com/duoduo70/Tiny-Tiny-Web/).
