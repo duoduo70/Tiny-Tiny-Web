@@ -455,9 +455,10 @@ impl HandshakeClientHello {
         let mut ciper_suites_length = (bytes.remove(0) as u16) << 8 | (bytes.remove(0) as u16);
         let mut ciper_suites = vec![];
         while ciper_suites_length != 0 {
-            match CipherSuite::new_2byte((bytes.remove(0) as u16) << 8 | (bytes.remove(0) as u16)) {
-                Ok(suite) => ciper_suites.push(suite),
-                _ => (),
+            if let Ok(suite) =
+                CipherSuite::new_2byte((bytes.remove(0) as u16) << 8 | (bytes.remove(0) as u16))
+            {
+                ciper_suites.push(suite)
             }
             ciper_suites_length -= 2;
         }

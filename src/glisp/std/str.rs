@@ -81,7 +81,7 @@ pub fn func_last(args: &[Expression], env: &mut Environment) -> Result<Expressio
     let str = check_type_onlyone!("last", &args[0], env, String)?;
     match str.chars().nth_back(0) {
         Some(a) => Ok(Expression::String(a.to_string())),
-        _ => Ok(Expression::List(vec![]))
+        _ => Ok(Expression::List(vec![])),
     }
 }
 
@@ -199,7 +199,11 @@ pub fn func_slice(args: &[Expression], env: &mut Environment) -> Result<Expressi
             str1.len()
         )));
     }
-    Ok(Expression::String(str1.chars().collect::<Vec<_>>()[num1..num2 + 1].iter().collect()))
+    Ok(Expression::String(
+        str1.chars().collect::<Vec<_>>()[num1..num2 + 1]
+            .iter()
+            .collect(),
+    ))
 }
 
 pub fn func_str(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
@@ -208,7 +212,11 @@ pub fn func_str(args: &[Expression], env: &mut Environment) -> Result<Expression
     let meta = check_type_onlyone!("str", &args[0], env, String)?;
 
     Ok(Expression::String(
-        meta.replace("\\b", " ").replace("\\n", "\n").replace("\\[", "(").replace("\\]", ")").replace("\\'", "\""),
+        meta.replace("\\b", " ")
+            .replace("\\n", "\n")
+            .replace("\\[", "(")
+            .replace("\\]", ")")
+            .replace("\\'", "\""),
     ))
 }
 

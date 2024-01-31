@@ -22,6 +22,7 @@ pub struct MethodArgs<'a> {
 }
 
 pub fn parse_line(line: String, config: &mut Config, file: &str, line_number: i32) {
+    #[allow(clippy::single_char_pattern)]
     let mut line_splitted = line.split(" ");
     if let Some(head) = line_splitted.next() {
         if head == "+" {
@@ -157,13 +158,11 @@ fn method_add(args: MethodArgs) {
             return;
         }
         args.config.router_config.serve_files_info.insert(
-            "/".to_owned() + &head2.to_string(),
+            "/".to_owned() + head2,
             ServeFileData::from("/".to_owned() + head2, args.config),
         );
-        return;
     } else {
         syntax_error(args.file, args.line_number, LOG[18]);
-        return;
     }
 }
 fn method_add_head3_ext(args: MethodArgs, head2: &str, head3: &str) {
@@ -190,25 +189,29 @@ fn method_remove(args: MethodArgs) {
         method_remove_head2_ext(args, head2);
     } else {
         syntax_error(args.file, args.line_number, LOG[18]);
-        return;
     }
 }
 fn method_remove_head2_ext(args: MethodArgs, head2: &str) {
     if head2 == "/" {
-        if let Some(_) = args.config.router_config.serve_files_info.remove("/") {
-        } else {
-            syntax_error(args.file, args.line_number, LOG[19]);
-        }
-    } else {
-        if let Some(_) = args
+        if args
             .config
             .router_config
             .serve_files_info
-            .remove(&("/".to_owned() + &head2.to_string()))
+            .remove("/")
+            .is_some()
         {
         } else {
             syntax_error(args.file, args.line_number, LOG[19]);
         }
+    } else if args
+        .config
+        .router_config
+        .serve_files_info
+        .remove(&("/".to_owned() + head2))
+        .is_some()
+    {
+    } else {
+        syntax_error(args.file, args.line_number, LOG[19]);
     };
 }
 
@@ -232,16 +235,13 @@ fn compile(args: MethodArgs, head2: &str) {
 
     let mut linenumber = 1;
     for l in lines {
-        match l {
-            Err(_) => {
-                syntax_error(
-                    args.file,
-                    args.line_number,
-                    &format!("{}{}", LOG[22], "export/".to_owned() + head2),
-                );
-                return;
-            }
-            Ok(_) => (),
+        if l.is_err() {
+            syntax_error(
+                args.file,
+                args.line_number,
+                &format!("{}{}", LOG[22], "export/".to_owned() + head2),
+            );
+            return;
         }
 
         if let Some(pos) = l.unwrap().find("$_gcflag") {
@@ -272,14 +272,12 @@ fn compile(args: MethodArgs, head2: &str) {
                 args.line_number,
                 &format!("{}{}", LOG[23], "temp/".to_owned() + head2),
             );
-            return;
         }
     }
 }
 fn method_inject(mut args: MethodArgs) {
     if method_inject_haserr(&mut args) == Err(()) {
         syntax_error(args.file, args.line_number, LOG[25]);
-        return;
     }
 }
 #[cfg(not(feature = "no-glisp"))]
@@ -378,23 +376,21 @@ fn method_inject_haserr(args: &mut MethodArgs) -> Result<(), ()> {
             } else {
                 return Err(());
             };
+        } else if let Some(f) = linenumbers.get(linenumber) {
+            conf_serve_value.replace = Some(vec![ReplaceData {
+                content: if let Some(f) = args.line_splitted.next() {
+                    match std::fs::read_to_string("export/".to_owned() + f) {
+                        Ok(a) => a,
+                        _ => return Err(()),
+                    }
+                } else {
+                    return Err(());
+                },
+                column: f.0,
+                line: f.1,
+            }]);
         } else {
-            if let Some(f) = linenumbers.get(linenumber) {
-                conf_serve_value.replace = Some(vec![ReplaceData {
-                    content: if let Some(f) = args.line_splitted.next() {
-                        match std::fs::read_to_string("export/".to_owned() + f) {
-                            Ok(a) => a,
-                            _ => return Err(()),
-                        }
-                    } else {
-                        return Err(());
-                    },
-                    column: f.0,
-                    line: f.1,
-                }]);
-            } else {
-                return Err(());
-            }
+            return Err(());
         }
         linenumber += 1;
         if linenumber == linenumbers.len() {

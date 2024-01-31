@@ -8,6 +8,7 @@
 use crate::{config::*, drop::http::*, drop::log::LogLevel::*, i18n::LOG, macros::*, utils::*};
 use std::sync::{atomic::Ordering, Arc, RwLock};
 
+#[allow(clippy::type_complexity)]
 static mut FILE_CACHE: Option<Arc<RwLock<(String, Vec<u8>)>>> = None;
 
 pub fn router<'a>(
@@ -29,9 +30,7 @@ pub fn router<'a>(
         let str = unsafe {
             match &FILE_CACHE {
                 Some(a) => {
-                    let str = if &req.get_url().to_owned()
-                        == &FILE_CACHE.get().0
-                    {
+                    let str = if *req.get_url() == FILE_CACHE.get().0 {
                         FILE_CACHE.get().1
                     } else {
                         let _stream = match std::fs::read(
@@ -112,14 +111,13 @@ pub fn router<'a>(
             );
             return true;
         }
-    
+
         res.set_version("HTTP/1.1");
         res.set_state("404 NOT FOUND");
         true
     } else {
         false
     }
-    
 }
 fn router_iftype_replace<'a>(
     req: HttpRequest<std::net::TcpStream>,

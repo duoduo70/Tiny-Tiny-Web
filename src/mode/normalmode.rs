@@ -31,12 +31,17 @@ pub fn start() -> ! {
         match stream {
             Ok(req) => {
                 threadpool.add(threads_num.try_into().unwrap(), || {
-                    handle_connection(req, &Arc::new(Mutex::new(unsafe { crate::config::GLOBAL_ROUTER_CONFIG.get() })))
+                    handle_connection(
+                        req,
+                        &Arc::new(Mutex::new(unsafe {
+                            crate::config::GLOBAL_ROUTER_CONFIG.get()
+                        })),
+                    )
                 });
             }
             Err(_) => {
                 log!(Warn, LOG[4]);
-                continue
+                continue;
             }
         }
     }

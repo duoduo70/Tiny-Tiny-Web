@@ -61,13 +61,11 @@ pub fn func_read_dir(args: &[Expression], env: &mut Environment) -> Result<Expre
     match dir {
         Ok(readdir) => {
             let mut v = vec![];
-            for e in readdir {
-                if let Ok(a) = e {
-                    v.push(Expression::String(
-                        a.file_name().to_string_lossy().to_string(),
-                    ));
-                }
-            }
+            readdir.flatten().for_each(|e| {
+                v.push(Expression::String(
+                    e.file_name().to_string_lossy().to_string(),
+                ))
+            });
             Ok(Expression::List(v))
         }
         _ => Ok(Expression::Bool(false)),
@@ -90,7 +88,7 @@ pub fn func_run(args: &[Expression], env: &mut Environment) -> Result<Expression
         let args_ori = &args[1..];
         let mut _args = vec![];
         for e in args_ori {
-            match eval(&e, env) {
+            match eval(e, env) {
                 Ok(a) => _args.push(match a {
                     Expression::String(s) => s,
                     _ => return Err(GError::Reason("run: unsupport type".to_owned())),

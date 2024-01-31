@@ -7,7 +7,12 @@
  */
 use super::time::get_formatted_time;
 
-pub fn log(lv: LogLevel, str: String, enable_debug: bool, fn_line_col_lctime:(&str, u32, u32, bool)) {
+pub fn log(
+    lv: LogLevel,
+    str: String,
+    enable_debug: bool,
+    fn_line_col_lctime: (&str, u32, u32, bool),
+) {
     if lv == LogLevel::Debug && !enable_debug {
         return;
     }
@@ -15,8 +20,14 @@ pub fn log(lv: LogLevel, str: String, enable_debug: bool, fn_line_col_lctime:(&s
 
     if lv == LogLevel::Debug {
         match time {
-            Ok(a) => put_text(format!("[{a}] [{lv}] [{}] [line:{}, column:{}] {str}", fn_line_col_lctime.0, fn_line_col_lctime.1, fn_line_col_lctime.2)),
-            Err(_) => put_text(format!("[VOIDTIME] [{lv}] [{}] [line:{}, column:{}] {str}", fn_line_col_lctime.0, fn_line_col_lctime.1, fn_line_col_lctime.2)),
+            Ok(a) => put_text(format!(
+                "[{a}] [{lv}] [{}] [line:{}, column:{}] {str}",
+                fn_line_col_lctime.0, fn_line_col_lctime.1, fn_line_col_lctime.2
+            )),
+            Err(_) => put_text(format!(
+                "[VOIDTIME] [{lv}] [{}] [line:{}, column:{}] {str}",
+                fn_line_col_lctime.0, fn_line_col_lctime.1, fn_line_col_lctime.2
+            )),
         }
     } else {
         match time {
@@ -24,7 +35,6 @@ pub fn log(lv: LogLevel, str: String, enable_debug: bool, fn_line_col_lctime:(&s
             Err(_) => put_text(format!("[VOIDTIME] [{lv}] {str}")),
         }
     }
-    
 }
 
 fn put_text(str: String) {

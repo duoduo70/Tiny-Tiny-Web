@@ -41,9 +41,8 @@ pub fn start() -> ! {
 
     let mut threadpool = ThreadPool::new();
 
-    match listener.set_nonblocking(true) {
-        Err(_) => log!(Warn, LOG[26]),
-        _ => (),
+    if listener.set_nonblocking(true).is_err() {
+        log!(Warn, LOG[26])
     }
 
     let box_num_per_thread_mag = BOX_NUM_PER_THREAD_MAG.load(Ordering::Relaxed) as f32 / 1000.0;
@@ -121,12 +120,15 @@ pub fn start() -> ! {
     exit(0);
 }
 
-fn handle_connection_s(streams: &Mutex<VecDeque<std::net::TcpStream>>, config: &Mutex<RouterConfig>) {
+fn handle_connection_s(
+    streams: &Mutex<VecDeque<std::net::TcpStream>>,
+    config: &Mutex<RouterConfig>,
+) {
     let stream = match streams.lock().unwrap().pop_front() {
         Some(a) => a,
         _ => return,
     };
-    handle_connection(stream, &config);
+    handle_connection(stream, config);
 }
 
 fn err_vars_init(counters: &mut StreamResultCounters) {
@@ -173,10 +175,8 @@ fn is_nst_gt_ost_timeout(old_stamp: &i16, new_stamp: &i16) -> bool {
     let differ = new_stamp - old_stamp;
     if differ > 50 {
         true
-    } else if differ < 0 && 1000 + differ > 50 {
-        true
     } else {
-        false
+        differ < 0 && 1000 + differ > 50
     }
 }
 
@@ -184,9 +184,7 @@ fn is_nst_gt_ost_helfsec(old_stamp: &i16, new_stamp: &i16) -> bool {
     let differ = new_stamp - old_stamp;
     if differ > 500 {
         true
-    } else if differ < 0 && 1000 + differ > 500 {
-        true
     } else {
-        false
+        differ < 0 && 1000 + differ > 500
     }
 }

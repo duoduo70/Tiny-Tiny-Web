@@ -14,9 +14,8 @@ use crate::macros::*;
 
 pub fn try_start() {
     let args: Vec<String> = std::env::args().collect();
-    match args.get(1) {
-        Some(a) => parse(a.to_string(), args),
-        _ => return,
+    if let Some(a) = args.get(1) {
+        parse(a.to_string(), args)
     }
 }
 

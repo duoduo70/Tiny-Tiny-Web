@@ -82,7 +82,6 @@ impl ServeFileData {
             }
             .to_owned()
         }
-        
     }
 }
 #[derive(Clone)]
@@ -112,7 +111,7 @@ impl Config {
                 pipe: vec![],
             },
             mime_bind: HashMap::new(),
-            status_codes: vec![]
+            status_codes: vec![],
         }
     }
     pub fn sync_static_vars(&self) {
@@ -122,10 +121,10 @@ impl Config {
         if !self.router_config.pipe.is_empty() {
             ENABLE_PIPE.store(true, Ordering::Relaxed)
         }
-        if let Some(_) = self.status_codes.get(400) {
+        if self.status_codes.get(400).is_some() {
             ENABLE_CODE_BAD_REQUEST.store(true, Ordering::Relaxed)
         }
-        if let Some(_) = self.status_codes.get(404) {
+        if self.status_codes.get(404).is_some() {
             ENABLE_CODE_NOT_FOUND.store(true, Ordering::Relaxed)
         }
     }
@@ -135,7 +134,7 @@ impl Config {
         }
     }
 }
-pub fn read_config(filename: String, mut config: &mut Config) -> Result<&mut Config, ()> {
+pub fn read_config(filename: String, config: &mut Config) -> Result<&mut Config, ()> {
     let lines = if let Ok(lines) = read_lines("config/".to_owned() + &filename) {
         lines
     } else {
@@ -151,7 +150,7 @@ pub fn read_config(filename: String, mut config: &mut Config) -> Result<&mut Con
         match line {
             Ok(str) => parse_line(
                 str,
-                &mut config,
+                config,
                 &("config/".to_owned() + &filename),
                 line_number,
             ),

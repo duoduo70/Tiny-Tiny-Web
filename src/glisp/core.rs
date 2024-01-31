@@ -6,8 +6,8 @@
  * if not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::{collections::HashMap, fmt::Display, rc::Rc};
 use super::std::eval_built_in_form;
+use std::{collections::HashMap, fmt::Display, rc::Rc};
 
 #[derive(Clone, PartialEq)]
 pub enum Expression {
@@ -58,12 +58,12 @@ pub struct Environment<'a> {
 pub fn func_lambda(args: &[Expression]) -> Result<Expression, GError> {
     let params = args
         .first()
-        .ok_or(GError::Reason(format!("unexpected args form")))?;
+        .ok_or(GError::Reason("unexpected args form".to_string()))?;
     let body = args
         .get(1)
-        .ok_or(GError::Reason(format!("unexpected second form")))?;
+        .ok_or(GError::Reason("unexpected second form".to_string()))?;
     if args.len() != 2 {
-        return Err(GError::Reason(format!("lambda can only have two forms")));
+        return Err(GError::Reason("lambda can only have two forms".to_string()));
     }
     Ok(Expression::Lambda(Lambda {
         params: Rc::new(params.clone()),
@@ -82,14 +82,14 @@ pub fn tokenize(expr: String) -> Vec<String> {
         }
     }
     new_expr
-        .replace("(", " ( ")
-        .replace(")", " ) ")
+        .replace('(', " ( ")
+        .replace(')', " ) ")
         .split_whitespace()
         .map(|x| x.to_string())
         .collect()
 }
 
-pub fn parse<'a>(tokens: &'a [String]) -> Result<(Expression, &'a [String]), GError> {
+pub fn parse(tokens: &[String]) -> Result<(Expression, &[String]), GError> {
     let (token, rest) = tokens
         .split_first()
         .ok_or(GError::Reason("could not get token".to_string()))?;
@@ -100,7 +100,7 @@ pub fn parse<'a>(tokens: &'a [String]) -> Result<(Expression, &'a [String]), GEr
     }
 }
 
-pub fn read_seq<'a>(tokens: &'a [String]) -> Result<(Expression, &'a [String]), GError> {
+pub fn read_seq(tokens: &[String]) -> Result<(Expression, &[String]), GError> {
     let mut res: Vec<Expression> = vec![];
     let mut xs = tokens;
     loop {
@@ -110,7 +110,7 @@ pub fn read_seq<'a>(tokens: &'a [String]) -> Result<(Expression, &'a [String]), 
         if next_token == ")" {
             return Ok((Expression::List(res), rest));
         }
-        let (exp, new_xs) = parse(&xs)?;
+        let (exp, new_xs) = parse(xs)?;
         res.push(exp);
         xs = new_xs;
     }
@@ -118,8 +118,8 @@ pub fn read_seq<'a>(tokens: &'a [String]) -> Result<(Expression, &'a [String]), 
 
 pub fn parse_atom(token: &str) -> Expression {
     if token.len() >= 2
-        && token.bytes().nth(0).unwrap() == b'\"'
-        && token.bytes().nth(token.len() - 1).unwrap() == b'\"'
+        && token.as_bytes()[0] == b'\"'
+        && token.as_bytes()[token.len() - 1] == b'\"'
     {
         return Expression::String(token[1..token.len() - 1].to_string());
     }
@@ -169,10 +169,10 @@ pub fn default_env<'a>() -> Environment<'a> {
                 return Err(GError::Reason("expected two number".to_string()));
             }
             // 将第 0 个元素和第 1 个元素进行比较
-            if floats.get(0).is_none() || floats.get(1).is_none() {
+            if floats.first().is_none() || floats.get(1).is_none() {
                 return Err(GError::Reason("expected number".to_string()));
             }
-            let is_ok = floats.get(0).unwrap().eq(floats.get(1).unwrap());
+            let is_ok = floats.first().unwrap().eq(floats.get(1).unwrap());
             Ok(Expression::Bool(is_ok))
         }),
     );
@@ -187,6 +187,7 @@ pub fn default_env<'a>() -> Environment<'a> {
                 let rest = &floats[1..];
                 fn f(prev: &f64, xs: &[f64]) -> bool {
                     match xs.first() {
+                        #[allow(clippy::redundant_closure_call)]
                         Some(x) => $check_fn(prev, x) && f(x, &xs[1..]),
                         None => true,
                     }
@@ -195,7 +196,6 @@ pub fn default_env<'a>() -> Environment<'a> {
             }
         }};
     }
-
     data.insert(
         ">".to_string(),
         Expression::Func(ensure_tonicity!(|a, b| a > b)),
@@ -222,7 +222,7 @@ pub fn default_env<'a>() -> Environment<'a> {
 pub fn eval(exp: &Expression, env: &mut Environment) -> Result<Expression, GError> {
     match exp {
         Expression::Bool(_) => Ok(exp.clone()),
-        Expression::Symbol(k) => env_get(&k, env)
+        Expression::Symbol(k) => env_get(k, env)
             .ok_or(GError::Reason(format!("unexpected symbol k={}", k)))
             .map(|x| x.clone()),
         Expression::Number(_a) => Ok(exp.clone()),
@@ -271,12 +271,11 @@ pub fn func_if(args: &[Expression], env: &mut Environment) -> Result<Expression,
             let res_form = args
                 .get(form_idx)
                 .ok_or(GError::Reason(format!("expected form idx={}", form_idx)))?;
-            let res_eval = eval(res_form, env);
-            res_eval
+            eval(res_form, env)
         }
         _ => Err(GError::Reason(format!(
             "unexpected test form='{}'",
-            test_form.to_string()
+            test_form
         ))),
     }
 }
@@ -296,7 +295,7 @@ pub fn slurp_expr() -> String {
 }
 
 fn parse_list_of_floats(args: &[Expression]) -> Result<Vec<f64>, GError> {
-    args.iter().map(|x| parse_single_float(x)).collect()
+    args.iter().map(parse_single_float).collect()
 }
 
 fn parse_single_float(exp: &Expression) -> Result<f64, GError> {
@@ -339,14 +338,14 @@ fn eval_forms(args: &[Expression], env: &mut Environment) -> Result<Vec<Expressi
 fn parse_list_of_symbol_strings(params: Rc<Expression>) -> Result<Vec<String>, GError> {
     let list = match params.as_ref() {
         Expression::List(s) => Ok(s.clone()),
-        _ => Err(GError::Reason(format!("expected params to be a list"))),
+        _ => Err(GError::Reason("expected params to be a list".to_string())),
     }?;
     list.iter()
         .map(|x| match x {
             Expression::Symbol(s) => Ok(s.clone()),
-            _ => Err(GError::Reason(format!(
-                "expected symbol in the argument list"
-            ))),
+            _ => Err(GError::Reason(
+                "expected symbol in the argument list".to_string(),
+            )),
         })
         .collect()
 }
@@ -355,7 +354,7 @@ fn env_get(key: &str, env: &Environment) -> Option<Expression> {
     match env.data.get(key) {
         Some(exp) => Some(exp.clone()),
         None => match env.outer {
-            Some(outer_env) => env_get(key, &outer_env),
+            Some(outer_env) => env_get(key, outer_env),
             None => None,
         },
     }

@@ -87,9 +87,8 @@ pub fn listener_init(config: Config) -> TcpListener {
 
 pub fn handle_connection(mut stream: std::net::TcpStream, config: &Mutex<RouterConfig>) {
     use std::io::*;
-
     let buf_reader = BufReader::new(&mut stream);
-    
+
     let mut lines = std::io::BufRead::lines(buf_reader);
 
     let req_str = get_request_str(&mut lines);
@@ -103,33 +102,26 @@ pub fn handle_connection(mut stream: std::net::TcpStream, config: &Mutex<RouterC
         return;
     }
 
-    #[cfg(feature = "nightly")]
-    if req_str.as_bytes()[0] == 0x22 {
-        result_https_request(req_str, stream);
-        return;
-    }
-
     let mut request = if let Ok(req) = get_request(req_str) {
         req
     } else {
         return;
     };
 
-    match request.get_header("Content-Length".to_owned()) {
-        Some(a) => request.set_content(Some(lines.take({
+    if let Some(a) = request.get_header("Content-Length".to_owned()) {
+        request.set_content(Some(lines.take({
             match a.parse() {
                 Ok(a) => a,
                 _ => 0,
             }
-        }))),
-        _ => (),
-    };
+        })))
+    }
 
-    let mut response = &mut HttpResponse::new();
+    let response = &mut HttpResponse::new();
     response
         .set_default_headers("Tiny-Tiny-Web/2")
         .result_timeerr_default();
-    if !crate::router::router(request, &mut response, &config.lock().unwrap()) {
+    if !crate::router::router(request, response, &config.lock().unwrap()) {
         return;
     }
 
@@ -146,12 +138,11 @@ pub fn handle_connection(mut stream: std::net::TcpStream, config: &Mutex<RouterC
             Err(_) => log!(Debug, format!("{}{:?}\n", LOG[8], content_stream)),
         }
     }
-    #[cfg(not(feature = "stable"))]
+    #[cfg(not(feature = "no-glisp"))]
     if enable_pipe {
         if let Some(content) = response.get_content_unref() {
-            match std::str::from_utf8(&content) {
-                Ok(a) => pipe(config, a, enable_debug, &mut response),
-                Err(_) => {}
+            if let Ok(a) = std::str::from_utf8(&content) {
+                pipe(config, a, enable_debug, response)
             }
         }
     }
@@ -159,13 +150,21 @@ pub fn handle_connection(mut stream: std::net::TcpStream, config: &Mutex<RouterC
     write_stream(stream, response)
 }
 
+// TODO: add https support
 #[allow(dead_code)]
-fn result_https_request(req_str: String, _stream: std::net::TcpStream) {
-    let req = crate::https::tls::parse(req_str.as_bytes().to_vec());
-    match req {
-        Ok(message) => println!("{:#?}", message),
-        _ => () // TODO: add log
-    }
+fn result_https_request(_stream: std::net::TcpStream) {
+
+    // let req = crate::https::tls::parse(req_str.as_bytes().to_vec());
+    // match req {
+    //     Ok(message) => println!("{:#?}", message),
+    //     Err(e) => match e {
+    //         crate::https::tls::TLSError::RecodeTypeError(_) => todo!(),
+    //         crate::https::tls::TLSError::RecodeVersionError(_, _) => todo!(),
+    //         crate::https::tls::TLSError::HandshakeContentTypeError(_) => todo!(),
+    //         crate::https::tls::TLSError::UndefinedCiperSuite => todo!(),
+    //         crate::https::tls::TLSError::BadRequest => todo!(),
+    //     }
+    // }
 }
 
 fn get_request<'a>(req_str: String) -> Result<HttpRequest<'a, TcpStream>, ()> {
@@ -190,11 +189,12 @@ fn get_request<'a>(req_str: String) -> Result<HttpRequest<'a, TcpStream>, ()> {
 
 fn get_request_str(lines: &mut std::io::Lines<std::io::BufReader<&mut TcpStream>>) -> String {
     let mut str = String::new();
+    #[allow(clippy::never_loop)]
     loop {
         let line = lines.next();
         match line {
             Some(Ok(a)) => {
-                if a == "" {
+                if a.is_empty() {
                     break;
                 };
                 str += &(a + "\r\n")
@@ -207,9 +207,8 @@ fn get_request_str(lines: &mut std::io::Lines<std::io::BufReader<&mut TcpStream>
 }
 
 fn write_stream(mut stream: TcpStream, response: &mut HttpResponse) {
-    match std::io::Write::write_all(&mut stream, &response.get_stream()) {
-        Err(_) => log!(Debug, LOG[6]),
-        _ => (),
+    if std::io::Write::write_all(&mut stream, &response.get_stream()).is_err() {
+        log!(Debug, LOG[6])
     }
 }
 

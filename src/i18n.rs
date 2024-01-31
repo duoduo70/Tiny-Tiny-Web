@@ -41,7 +41,7 @@ crate::macros::create_static_string_list!(
     "Invalid UTF-8 sequence",
     "ghost-lisp",
     "Return code:",
-    "Compile error:",    // 34
+    "Compile error:", // 34
     "The pipe only receive string or bool, not: ",
     "Unsupported status code: "
 );

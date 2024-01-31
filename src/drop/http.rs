@@ -29,8 +29,8 @@ impl<'a, T> HttpRequest<'a, T> {
 
         let mut req_line_flag = false;
         for line in str.lines() {
-            if req_line_flag != true {
-                let mut req_line = line.split(" ");
+            if !req_line_flag {
+                let mut req_line = line.split(' ');
                 match req_line.nth(0) {
                     Some(a) => request.request_method = a.to_string(),
                     _ => return Err(HttpRequestError),
@@ -47,16 +47,14 @@ impl<'a, T> HttpRequest<'a, T> {
                 continue;
             }
 
-            let (k, v) = match line.split_once(":") {
-                Some((k,v)) => (k,v),
-                _ => {
-                    match line.split_once(": ") {
-                        Some((k,v)) => (k,v),
-                        _ => {
-                            return Err(HttpRequestError);
-                        }
+            let (k, v) = match line.split_once(':') {
+                Some((k, v)) => (k, v),
+                _ => match line.split_once(": ") {
+                    Some((k, v)) => (k, v),
+                    _ => {
+                        return Err(HttpRequestError);
                     }
-                }
+                },
             };
             request.headers.insert(k.to_string(), v.to_string());
         }
@@ -77,7 +75,10 @@ impl<'a, T> HttpRequest<'a, T> {
         &self.version
     }
 
-    pub fn set_content(&mut self, content: Option<std::iter::Take<std::io::Lines<std::io::BufReader<&'a mut T>>>>) {
+    pub fn set_content(
+        &mut self,
+        content: Option<std::iter::Take<std::io::Lines<std::io::BufReader<&'a mut T>>>>,
+    ) {
         self.content = content;
     }
 }
@@ -108,7 +109,7 @@ impl HttpResponse {
         self.headers.insert(k.to_string(), v)
     }
     pub fn set_content(&mut self, str: Vec<u8>) {
-        self.content = Some(str.into())
+        self.content = Some(str)
     }
     pub fn get_content_ref(&self) -> &Option<Vec<u8>> {
         &self.content
@@ -117,22 +118,40 @@ impl HttpResponse {
         self.content.clone()
     }
     pub fn get_stream(&self) -> Vec<u8> {
-        let mut res: Vec<u8> = format!("{} {}\r\n",self.version, self.state).as_bytes().to_vec();
+        let mut res: Vec<u8> = format!("{} {}\r\n", self.version, self.state)
+            .as_bytes()
+            .to_vec();
         for k in self.headers.keys() {
-            res.extend(format!("{}: {}\r\n", k, self.headers.get(k).unwrap()).as_bytes().to_vec())
+            res.extend(
+                format!("{}: {}\r\n", k, self.headers.get(k).unwrap())
+                    .as_bytes()
+                    .to_vec(),
+            )
         }
         res.push(b'\r');
         res.push(b'\n');
-        match &self.content {
-            Some(a) => res.extend(a),
-            _ => ()
+        if let Some(a) = &self.content {
+            res.extend(a)
         }
         res
     }
     pub fn set_default_headers(&mut self, server: &str) -> Result<(), SystemTimeError> {
         let time = super::time::Time::new();
-        self.headers.insert("Date".to_string(), format!("{}, {} {} {} {:0>2}:{:0>2}:{:0>2} GMT", time.wday_name()?, time.day()?, time.month_name()?, time.year()?, time.hour()?, time.min()?, time.sec()?));
-        self.headers.insert("Server".to_string(), server.to_string());
+        self.headers.insert(
+            "Date".to_string(),
+            format!(
+                "{}, {} {} {} {:0>2}:{:0>2}:{:0>2} GMT",
+                time.wday_name()?,
+                time.day()?,
+                time.month_name()?,
+                time.year()?,
+                time.hour()?,
+                time.min()?,
+                time.sec()?
+            ),
+        );
+        self.headers
+            .insert("Server".to_string(), server.to_string());
         Ok(())
     }
 }

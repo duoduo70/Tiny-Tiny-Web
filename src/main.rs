@@ -41,7 +41,10 @@ fn main() {
         #[cfg(not(feature = "nightly"))]
         log!(Info, format!("{}{}).", LOG[0], env!("CARGO_PKG_VERSION")));
         #[cfg(feature = "nightly")]
-        log!(Info, format!("{}{}+nightly).", LOG[0], env!("CARGO_PKG_VERSION")));
+        log!(
+            Info,
+            format!("{}{}+nightly).", LOG[0], env!("CARGO_PKG_VERSION"))
+        );
     }
 
     if config::BOX_MODE.load(std::sync::atomic::Ordering::Relaxed) {

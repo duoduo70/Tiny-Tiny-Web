@@ -12,7 +12,7 @@ use super::*;
 pub fn func_quote(args: &[Expression]) -> Result<Expression, GError> {
     let _fst = args
         .first()
-        .ok_or(GError::Reason(format!("unexpected args form")))?;
+        .ok_or(GError::Reason("unexpected args form".to_string()))?;
     let mut retfst = vec![Expression::Symbol("quote".to_owned())];
     retfst.extend_from_slice(args);
     Ok(Expression::List(retfst))
@@ -30,7 +30,7 @@ pub fn func_atom(args: &[Expression], env: &mut Environment) -> Result<Expressio
         Expression::Bool(_) => Ok(Expression::Bool(true)),
         Expression::String(_) => Ok(Expression::Bool(true)),
         Expression::List(a) => {
-            let _fst = if let Some(e) = a.get(0) {
+            let _fst = if let Some(e) = a.first() {
                 e
             } else {
                 return Ok(Expression::Bool(true));
@@ -53,7 +53,7 @@ pub fn func_eq(args: &[Expression], env: &mut Environment) -> Result<Expression,
     let fst = &args[0];
     let snd = &args[1];
 
-    if eval(&fst, env)?.to_string() == eval(&snd, env)?.to_string() {
+    if eval(fst, env)?.to_string() == eval(snd, env)?.to_string() {
         Ok(Expression::Bool(true))
     } else {
         Ok(Expression::Bool(false))
@@ -67,31 +67,31 @@ pub fn func_cons(args: &[Expression]) -> Result<Expression, GError> {
     let mut lst1 = match args[0].clone() {
         Expression::List(a) => a,
         _ => {
-            return Err(GError::Reason(format!(
-                "cons can only result a static list"
-            )))
+            return Err(GError::Reason(
+                "cons can only result a static list".to_string(),
+            ))
         }
     };
 
     if lst1.remove(0).to_string() != "quote" {
-        return Err(GError::Reason(format!(
-            "cons can only result a static list"
-        )));
+        return Err(GError::Reason(
+            "cons can only result a static list".to_string(),
+        ));
     }
 
     let mut lst2 = match args[1].clone() {
         Expression::List(a) => a,
         _ => {
-            return Err(GError::Reason(format!(
-                "cons can only result a static list"
-            )))
+            return Err(GError::Reason(
+                "cons can only result a static list".to_string(),
+            ))
         }
     };
 
     if lst2.remove(0).to_string() != "quote" {
-        return Err(GError::Reason(format!(
-            "cons can only result a static list"
-        )));
+        return Err(GError::Reason(
+            "cons can only result a static list".to_string(),
+        ));
     }
 
     lst1.extend(lst2);
@@ -105,16 +105,15 @@ pub fn func_cond(args: &[Expression], env: &mut Environment) -> Result<Expressio
     let mut i = 0;
     loop {
         if i >= args.len() {
-            return Err(GError::Reason(format!("cond: Error2")));
+            return Err(GError::Reason("cond: Error2".to_string()));
         }
 
         let v = match eval(&args[i * 2].clone(), env) {
             Ok(a) => a,
-            _ => return Err(GError::Reason(format!("cond: Error3"))),
+            _ => return Err(GError::Reason("cond: Error3".to_string())),
         };
-        match v {
-            Expression::Bool(true) => return eval(&args[i * 2 + 1].clone(), env),
-            _ => (),
+        if let Expression::Bool(true) = v {
+            return eval(&args[i * 2 + 1].clone(), env);
         }
         i += 1;
     }
@@ -132,7 +131,7 @@ pub fn func_set(args: &[Expression], env: &mut Environment) -> Result<Expression
             env.data.insert(var_name.clone(), evaled_val);
             Ok(var_exp.clone())
         }
-        _ => Err(GError::Reason(format!("unexpected var name"))),
+        _ => Err(GError::Reason("unexpected var name".to_string())),
     }
 }
 
@@ -140,7 +139,7 @@ pub fn func_car(args: &[Expression], env: &mut Environment) -> Result<Expression
     args_len_min!("car", args, 1);
     args_len_max!("car", args, 1);
     let list = check_type_onlyone!("car", &args[0], env, List)?;
-    if list.len() == 0 {
+    if list.is_empty() {
         Ok(Expression::List(vec![]))
     } else {
         Ok(list[0].clone())

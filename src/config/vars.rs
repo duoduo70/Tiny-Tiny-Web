@@ -46,7 +46,7 @@ pub fn method_set(args: MethodArgs) {
                         )
                     }
                 } else {
-                    syntax_error(args.file, args.line_number, &format!("{}", LOG[18]));
+                    syntax_error(args.file, args.line_number, LOG[18]);
                 }
                 return;
             } else if head2 == "+addr" {
@@ -58,7 +58,7 @@ pub fn method_set(args: MethodArgs) {
                         .mime_bind
                         .insert(head3.to_owned(), head4.to_owned());
                 } else {
-                    syntax_error(args.file, args.line_number, &format!("{}", LOG[18]));
+                    syntax_error(args.file, args.line_number, LOG[18]);
                 }
                 return;
             } else if head2 == "+code" {
@@ -167,10 +167,8 @@ pub fn method_set(args: MethodArgs) {
             return;
         }
         syntax_error(args.file, args.line_number, LOG[18]);
-        return;
     } else {
         syntax_error(args.file, args.line_number, LOG[18]);
-        return;
     }
 }
 

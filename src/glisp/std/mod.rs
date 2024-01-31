@@ -7,16 +7,16 @@
  */
 
 mod core;
-mod str;
-mod macros;
-mod io;
 mod eval;
+mod io;
+mod macros;
+mod str;
 
 use super::core::*;
 use core::*;
-use str::*;
-use io::*;
 use eval::*;
+use io::*;
+use str::*;
 
 pub fn eval_built_in_form(
     exp: &Expression,

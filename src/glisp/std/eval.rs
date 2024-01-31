@@ -6,8 +6,8 @@
  * if not, see <https://www.gnu.org/licenses/>.
  */
 
-use super::*;
 use super::macros::*;
+use super::*;
 
 pub fn func_for_each_eval(
     args: &[Expression],
@@ -20,7 +20,7 @@ pub fn func_for_each_eval(
 
     for e in from {
         let e_str = e.to_string();
-        let (parsed_exp, _) = parse(&tokenize(to.replace("$$", &e_str[1..e_str.len()-1])))?;
+        let (parsed_exp, _) = parse(&tokenize(to.replace("$$", &e_str[1..e_str.len() - 1])))?;
         eval(&parsed_exp, env)?;
     }
     Ok(Expression::Bool(true))
@@ -32,7 +32,7 @@ pub fn func_eval(args: &[Expression], env: &mut Environment) -> Result<Expressio
     let meta = check_type_onlyone!("eval", &args[0], env, String)?;
 
     let (parsed_exp, _) = parse(&tokenize(meta))?;
-    Ok(eval(&parsed_exp, env)?)
+    eval(&parsed_exp, env)
 }
 
 pub fn func_meta(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {

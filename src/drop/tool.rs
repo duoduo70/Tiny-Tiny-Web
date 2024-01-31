@@ -6,10 +6,10 @@
  * if not, see <https://www.gnu.org/licenses/>.
  */
 pub trait ShouldResult<T> {
-    fn result_shldfatal(self, ret_code: i32, func: impl FnOnce() -> () + std::marker::Send) -> T;
+    fn result_shldfatal(self, ret_code: i32, func: impl FnOnce() + std::marker::Send) -> T;
 }
 impl<T> ShouldResult<T> for Option<T> {
-    fn result_shldfatal(self, ret_code: i32, func: impl FnOnce() -> () + std::marker::Send) -> T {
+    fn result_shldfatal(self, ret_code: i32, func: impl FnOnce() + std::marker::Send) -> T {
         match self {
             Some(a) => a,
             _ => {
@@ -20,7 +20,7 @@ impl<T> ShouldResult<T> for Option<T> {
     }
 }
 impl<T, E> ShouldResult<T> for Result<T, E> {
-    fn result_shldfatal(self, ret_code: i32, func: impl FnOnce() -> () + std::marker::Send) -> T {
+    fn result_shldfatal(self, ret_code: i32, func: impl FnOnce() + std::marker::Send) -> T {
         match self {
             Ok(a) => a,
             _ => {
@@ -31,6 +31,10 @@ impl<T, E> ShouldResult<T> for Result<T, E> {
     }
 }
 
-pub fn result_timeerr<T>(v: Result<T, std::time::SystemTimeError>, ret_code: i32, func: impl FnOnce() -> () + std::marker::Send) -> T {
+pub fn result_timeerr<T>(
+    v: Result<T, std::time::SystemTimeError>,
+    ret_code: i32,
+    func: impl FnOnce() + std::marker::Send,
+) -> T {
     v.result_shldfatal(ret_code, func)
 }
