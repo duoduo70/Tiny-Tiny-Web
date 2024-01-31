@@ -7,6 +7,7 @@
  */
 mod config;
 mod drop;
+mod https;
 mod i18n;
 mod macros;
 mod mode;
@@ -23,9 +24,25 @@ fn main() {
     mode::toolmode::try_start();
 
     #[cfg(not(feature = "no-glisp"))]
-    log!(Info, format!("{}{}+glisp).", LOG[0], env!("CARGO_PKG_VERSION")));
+    {
+        #[cfg(not(feature = "nightly"))]
+        log!(
+            Info,
+            format!("{}{}+glisp).", LOG[0], env!("CARGO_PKG_VERSION"))
+        );
+        #[cfg(feature = "nightly")]
+        log!(
+            Info,
+            format!("{}{}+glisp+nightly).", LOG[0], env!("CARGO_PKG_VERSION"))
+        );
+    }
     #[cfg(feature = "no-glisp")]
-    log!(Info, format!("{}{}).", LOG[0], env!("CARGO_PKG_VERSION")));
+    {
+        #[cfg(not(feature = "nightly"))]
+        log!(Info, format!("{}{}).", LOG[0], env!("CARGO_PKG_VERSION")));
+        #[cfg(feature = "nightly")]
+        log!(Info, format!("{}{}+nightly).", LOG[0], env!("CARGO_PKG_VERSION")));
+    }
 
     if config::BOX_MODE.load(std::sync::atomic::Ordering::Relaxed) {
         mode::boxmode::start();

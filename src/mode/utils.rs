@@ -89,6 +89,7 @@ pub fn handle_connection(mut stream: std::net::TcpStream, config: &Mutex<RouterC
     use std::io::*;
 
     let buf_reader = BufReader::new(&mut stream);
+    
     let mut lines = std::io::BufRead::lines(buf_reader);
 
     let req_str = get_request_str(&mut lines);
@@ -99,6 +100,12 @@ pub fn handle_connection(mut stream: std::net::TcpStream, config: &Mutex<RouterC
             response.set_state("400 BAD REQUEST");
             write_stream(stream, &mut response);
         }
+        return;
+    }
+
+    #[cfg(feature = "nightly")]
+    if req_str.as_bytes()[0] == 0x22 {
+        result_https_request(req_str, stream);
         return;
     }
 
@@ -150,6 +157,15 @@ pub fn handle_connection(mut stream: std::net::TcpStream, config: &Mutex<RouterC
     }
 
     write_stream(stream, response)
+}
+
+#[allow(dead_code)]
+fn result_https_request(req_str: String, _stream: std::net::TcpStream) {
+    let req = crate::https::tls::parse(req_str.as_bytes().to_vec());
+    match req {
+        Ok(message) => println!("{:#?}", message),
+        _ => () // TODO: add log
+    }
 }
 
 fn get_request<'a>(req_str: String) -> Result<HttpRequest<'a, TcpStream>, ()> {

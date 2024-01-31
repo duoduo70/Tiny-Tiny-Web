@@ -34,6 +34,12 @@ Install Rust, after that, in your program root directory:
 cargo build
 ```
 
+If you want to build nightly version, use:
+如果你希望构建开发版本（Nightly版本），使用：
+```sh
+cargo build --features nightly
+```
+
 If you want to build no-glisp version, use:  
 如果你希望构建不包含 GLisp 的版本，使用：
 ```sh

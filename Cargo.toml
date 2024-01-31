@@ -10,4 +10,5 @@ license = "GPL-3"
 lto = true
 
 [features]
+nightly = []
 no-glisp = []
