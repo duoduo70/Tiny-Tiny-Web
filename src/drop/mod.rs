@@ -10,3 +10,4 @@ pub mod log;
 pub mod thread;
 pub mod time;
 pub mod tool;
+pub mod random;

@@ -127,6 +127,13 @@ impl Time {
         };
         Ok((stamp % 1000).try_into().unwrap())
     }
+    pub fn nsec() -> Result<u16, SystemTimeError> {
+        let stamp = match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
+            Ok(timestamp) => timestamp.as_nanos(),
+            Err(error) => return Err(error),
+        };
+        Ok((stamp % 1000).try_into().unwrap())
+    }
     pub fn sec(&self) -> Result<u32, SystemTimeError> {
         match &self.timestamp {
             Ok(_) => Ok(self.sec),

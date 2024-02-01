@@ -7,19 +7,14 @@
  */
 
 use std::{
-    net::{TcpListener, TcpStream},
-    sync::{atomic::Ordering, Mutex},
+    io::Read, net::{TcpListener, TcpStream}, sync::{atomic::Ordering, Mutex}
 };
 
 use crate::{
-    config::{Config, RouterConfig, ENABLE_CODE_BAD_REQUEST, XRPS_COUNTER_CACHE_SIZE},
-    drop::{
+    config::{Config, RouterConfig, ENABLE_CODE_BAD_REQUEST, XRPS_COUNTER_CACHE_SIZE}, drop::{
         http::{HttpRequest, HttpResponse},
         log::LogLevel::*,
-    },
-    i18n::LOG,
-    macros::*,
-    utils::TimeErr,
+    }, https::tls::{get_server_record_tls1_2_bytes, parse_has_record, CipherSuite, CompressionMethod, HandshakeServerHello, Random, RecordMessage}, i18n::LOG, macros::*, utils::TimeErr
 };
 use std::collections::VecDeque;
 
@@ -87,7 +82,28 @@ pub fn listener_init(config: Config) -> TcpListener {
 
 pub fn handle_connection(mut stream: std::net::TcpStream, config: &Mutex<RouterConfig>) {
     use std::io::*;
-    let buf_reader = BufReader::new(&mut stream);
+
+    #[cfg(feature = "nightly")]
+    {
+    let mut buf = [0; 5];
+    let _ = stream.read(&mut buf);
+    if buf[0] == 22 {
+        //https
+        let record = crate::https::tls::RecordMessage::new(buf.into());
+        if let Ok(a) = record {
+            result_https_request(&stream, config, a)
+        }
+    } else if buf == "GET ".as_bytes() {
+        //http
+        result_http_request(stream, config)
+    }
+}
+    #[cfg(not(feature = "nightly"))]
+    result_http_request(stream, config)
+}
+
+fn result_http_request(mut stream: std::net::TcpStream, config: &Mutex<RouterConfig>) {
+    let buf_reader = std::io::BufReader::new(&mut stream);
 
     let mut lines = std::io::BufRead::lines(buf_reader);
 
@@ -152,19 +168,48 @@ pub fn handle_connection(mut stream: std::net::TcpStream, config: &Mutex<RouterC
 
 // TODO: add https support
 #[allow(dead_code)]
-fn result_https_request(_stream: std::net::TcpStream) {
-
-    // let req = crate::https::tls::parse(req_str.as_bytes().to_vec());
-    // match req {
-    //     Ok(message) => println!("{:#?}", message),
-    //     Err(e) => match e {
-    //         crate::https::tls::TLSError::RecodeTypeError(_) => todo!(),
-    //         crate::https::tls::TLSError::RecodeVersionError(_, _) => todo!(),
-    //         crate::https::tls::TLSError::HandshakeContentTypeError(_) => todo!(),
-    //         crate::https::tls::TLSError::UndefinedCiperSuite => todo!(),
-    //         crate::https::tls::TLSError::BadRequest => todo!(),
-    //     }
-    // }
+fn result_https_request(mut stream: &std::net::TcpStream, _config: &Mutex<RouterConfig>, record: RecordMessage) {
+    let extra_length = record.length;
+    let mut buf = vec![];
+    if stream.take(extra_length.into()).read_to_end(&mut buf).is_err() {return};
+    match parse_has_record( record, buf) {
+        Ok(message) => {
+            println!("{:#?}", message); // debug
+            match message.handshake_message.handshake_content {
+                crate::https::tls::HandshakeContent::HelloRequest => todo!(),
+                crate::https::tls::HandshakeContent::ClientHello(client_msg) => {
+                    let serverhello = HandshakeServerHello {
+                        version: crate::https::tls::TLSVersion::TLS1_2,
+                        random: Random::new_32bit_random(crate::drop::random::get_random_256().result_timeerr_default()),
+                        session_id: client_msg.session_id,
+                        ciper_suite: CipherSuite::TLS_AES_128_GCM_SHA256,
+                        compression_method: CompressionMethod::Null,
+                        extenssions_length: 0,
+                    }.bytes();
+                    let mut retvec = get_server_record_tls1_2_bytes(serverhello.len().try_into().unwrap());
+                    retvec.extend(serverhello);
+                    if std::io::Write::write_all(&mut stream, &retvec).is_err() {
+                        log!(Debug, LOG[6])
+                    }
+                },
+                crate::https::tls::HandshakeContent::ServerHello(_) => todo!(),
+                crate::https::tls::HandshakeContent::Certificate => todo!(),
+                crate::https::tls::HandshakeContent::ServerKeyExchange => todo!(),
+                crate::https::tls::HandshakeContent::CertificateRequest => todo!(),
+                crate::https::tls::HandshakeContent::ServerDone => todo!(),
+                crate::https::tls::HandshakeContent::CertificateVerify => todo!(),
+                crate::https::tls::HandshakeContent::ClientKeyExchange => todo!(),
+                crate::https::tls::HandshakeContent::Finished => todo!(),
+            }
+        },
+        Err(e) => match e {
+            crate::https::tls::TLSError::RecodeTypeError(_) => println!("1"),
+            crate::https::tls::TLSError::RecodeVersionError(_, _) => println!("2"),
+            crate::https::tls::TLSError::HandshakeContentTypeError(_) => println!("3"),
+            crate::https::tls::TLSError::UndefinedCiperSuite => println!("4"),
+            crate::https::tls::TLSError::BadRequest => println!("5"),
+        },
+    }
 }
 
 fn get_request<'a>(req_str: String) -> Result<HttpRequest<'a, TcpStream>, ()> {
@@ -203,7 +248,10 @@ fn get_request_str(lines: &mut std::io::Lines<std::io::BufReader<&mut TcpStream>
         }
         break;
     }
-    str
+    #[cfg(feature = "nightly")]
+    return "GET ".to_owned() + &str;
+    #[cfg(not(feature = "nightly"))]
+    return str
 }
 
 fn write_stream(mut stream: TcpStream, response: &mut HttpResponse) {

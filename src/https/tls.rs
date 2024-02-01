@@ -1,3 +1,10 @@
+/* Tiny-Tiny-Web
+ * Copyright (C) 2024 Plasma (https://github.com/duoduo70/Tiny-Tiny-Web/).
+ *
+ * You should have received a copy of the GNU General Public License Version 3
+ * along with this program;
+ * if not, see <https://www.gnu.org/licenses/>.
+ */
 #[derive(Debug)]
 pub enum TLSError {
     RecodeTypeError(u8),
@@ -44,16 +51,25 @@ impl TLSVersion {
             _ => Err(TLSError::RecodeVersionError(byte1, byte2)),
         }
     }
+    fn bytes(self) -> (u8, u8) {
+        match self {
+            TLSVersion::SSL3_0 => (3, 0),
+            TLSVersion::TLS1_0 => (3, 1),
+            TLSVersion::TLS1_1 => (3, 2),
+            TLSVersion::TLS1_2 => (3, 3),
+            TLSVersion::TLS1_3 => (3, 4),
+        }
+    }
 }
 #[allow(dead_code)]
 #[derive(Debug)]
 pub struct RecordMessage {
     record_type: RecodeType,
     version: TLSVersion,
-    length: u16,
+    pub length: u16,
 }
 impl RecordMessage {
-    fn new(bytes: Vec<u8>) -> Result<Self, TLSError> {
+    pub fn new(bytes: Vec<u8>) -> Result<Self, TLSError> {
         Ok(RecordMessage {
             record_type: RecodeType::new(bytes[0])?,
             version: TLSVersion::new(bytes[1], bytes[2])?,
@@ -81,6 +97,14 @@ macro_rules! build_ciper_suite {
                     $($($v2 => Ok(CipherSuite::$e),)?)*
                     _ => Err(TLSError::UndefinedCiperSuite)
                 }
+            }
+            fn to_u16(self) -> u16 {
+                match self {
+                    $(CipherSuite::$e => $v1,)*
+                }
+            }
+            fn bytes(self) -> [u8; 2] {
+                Self::to_u16(self).to_be_bytes()
             }
         }
     };
@@ -332,12 +356,35 @@ impl CompressionMethod {
             _ => Self::Undefined,
         }
     }
+    fn to_u8(self) -> u8 {
+        match self {
+            Self::Deflate => 1,
+            _ => 0
+        }
+    }
 }
 #[allow(dead_code)]
 #[derive(Debug)]
 pub struct Random {
-    timestamp: u32,
-    random_bytes: [u8; 28],
+    pub timestamp: u32,
+    pub random_bytes: [u8; 28],
+}
+impl Random {
+    pub fn new_32bit_random((field1, field2): (u128, u128)) -> Self {
+        let field1_bytes = field1.to_be_bytes();
+        let mut field2_vec = field1_bytes[4..].to_vec();
+        field2_vec.extend_from_slice(&field2.to_be_bytes());
+        let timestamp_array: [u8; 4] = field1_bytes[0..4].try_into().unwrap();
+        Random {
+            timestamp: u32::from_be_bytes(timestamp_array),
+            random_bytes: field2_vec.try_into().unwrap(),
+        }
+    }
+    pub fn bytes(self) -> [u8; 32] {
+        let mut vec = self.timestamp.to_be_bytes().to_vec();
+        vec.extend(self.random_bytes);
+        vec.try_into().unwrap()
+    }
 }
 macro_rules! build_tls_extension {
     ($($e:ident=$v:literal),*) => {
@@ -424,12 +471,12 @@ build_tls_extension! {
 #[allow(dead_code)]
 #[derive(Debug)]
 pub struct HandshakeClientHello {
-    version: TLSVersion,
-    random: Random,
-    session_id: Option<Vec<u8>>,
-    ciper_suites: Vec<CipherSuite>,
-    compression_method: CompressionMethod,
-    extenssions_length: u32,
+    pub version: TLSVersion,
+    pub random: Random,
+    pub session_id: Option<Vec<u8>>,
+    pub ciper_suites: Vec<CipherSuite>,
+    pub compression_method: CompressionMethod,
+    pub extenssions_length: u32,
 }
 impl HandshakeClientHello {
     fn new(mut bytes: Vec<u8>, length: u32) -> Result<Self, TLSError> {
@@ -478,12 +525,12 @@ impl HandshakeClientHello {
 #[allow(dead_code)]
 #[derive(Debug)]
 pub struct HandshakeServerHello {
-    version: TLSVersion,
-    random: Random,
-    session_id: Option<Vec<u8>>,
-    ciper_suite: CipherSuite,
-    compression_method: CompressionMethod,
-    extenssions_length: u32,
+    pub version: TLSVersion,
+    pub random: Random,
+    pub session_id: Option<Vec<u8>>,
+    pub ciper_suite: CipherSuite,
+    pub compression_method: CompressionMethod,
+    pub extenssions_length: u32,
 }
 impl HandshakeServerHello {
     fn new(mut bytes: Vec<u8>, length: u32) -> Result<Self, TLSError> {
@@ -519,6 +566,23 @@ impl HandshakeServerHello {
             extenssions_length,
         })
     }
+    pub fn bytes(self) -> Vec<u8> {
+        let mut bytes = vec![];
+        let (version_byte1, version_byte2) = self.version.bytes();
+        bytes.push(version_byte1);
+        bytes.push(version_byte2);
+        bytes.extend(self.random.bytes());
+        if let Some(id) = self.session_id {
+            bytes.extend(id);
+        }
+        bytes.extend(self.ciper_suite.bytes());
+        bytes.push(self.compression_method.to_u8());
+
+        bytes.push(0);
+        bytes.push(0);
+
+        bytes
+    }
 }
 impl HandshakeContent {
     fn new(mut bytes: Vec<u8>, length: u32) -> Result<Self, TLSError> {
@@ -545,8 +609,8 @@ impl HandshakeContent {
 #[allow(dead_code)]
 #[derive(Debug)]
 pub struct HandshakeMessage {
-    handshake_content: HandshakeContent,
-    length: u32,
+    pub handshake_content: HandshakeContent,
+    pub length: u32,
 }
 impl HandshakeMessage {
     fn new(mut bytes: Vec<u8>) -> Result<Self, TLSError> {
@@ -563,8 +627,8 @@ impl HandshakeMessage {
 #[allow(dead_code)]
 #[derive(Debug)]
 pub struct TLSMessage {
-    record_message: RecordMessage,
-    handshake_message: HandshakeMessage,
+    pub record_message: RecordMessage,
+    pub handshake_message: HandshakeMessage,
 }
 #[allow(dead_code)]
 pub fn parse(mut data: Vec<u8>) -> Result<TLSMessage, TLSError> {
@@ -572,4 +636,16 @@ pub fn parse(mut data: Vec<u8>) -> Result<TLSMessage, TLSError> {
         record_message: RecordMessage::new(data.drain(0..5).collect())?,
         handshake_message: HandshakeMessage::new(data)?,
     })
+}
+pub fn parse_has_record(record_message: RecordMessage, extra: Vec<u8>) -> Result<TLSMessage, TLSError> {
+    Ok(TLSMessage {
+        record_message,
+        handshake_message: HandshakeMessage::new(extra)?,
+    })
+}
+
+pub fn get_server_record_tls1_2_bytes(length: u16) -> Vec<u8> {
+    let mut vec = Vec::from([0x16, 0x03, 0x03]);
+    vec.extend(length.to_be_bytes());
+    vec
 }
