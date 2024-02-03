@@ -334,8 +334,8 @@ pub enum HandshakeContent {
     HelloRequest,
     ClientHello(HandshakeClientHello),
     ServerHello(HandshakeServerHello),
-    Certificate,
-    ServerKeyExchange,
+    Certificate(HandshakeCertificate),
+    ServerKeyExchange(HandshakeServerKeyExchange),
     CertificateRequest,
     ServerDone,
     CertificateVerify,
@@ -364,7 +364,7 @@ impl CompressionMethod {
     }
 }
 #[allow(dead_code)]
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Random {
     pub timestamp: u32,
     pub random_bytes: [u8; 28],
@@ -467,7 +467,33 @@ build_tls_extension! {
     Rrc=61,
     Undefined=65535
 }
-
+#[allow(dead_code)]
+#[derive(Debug)]
+pub struct HandshakeCertificate {
+    pub certificate_length: u32,
+    pub certificates: Vec<Vec<u8>>
+}
+impl HandshakeCertificate {
+    pub fn new_just_one_certificate(certificate: Vec<u8>) -> Self {
+        let mut vec = vec![];
+        let length_snd = certificate.len();
+        let length_fst = length_snd + 3;
+        vec.extend(&length_snd.to_be_bytes()[1..]);
+        vec.extend(certificate);
+        HandshakeCertificate {
+            certificate_length: length_fst as u32,
+            certificates: vec![vec],
+        }
+    }
+    pub fn bytes(self) -> Vec<u8> {
+        let mut vec = vec![];
+        vec.extend(&self.certificate_length.to_be_bytes()[1..]);
+        for e in self.certificates {
+            vec.extend(e);
+        }
+        vec
+    }
+}
 #[allow(dead_code)]
 #[derive(Debug)]
 pub struct HandshakeClientHello {
@@ -476,10 +502,10 @@ pub struct HandshakeClientHello {
     pub session_id: Option<Vec<u8>>,
     pub ciper_suites: Vec<CipherSuite>,
     pub compression_method: CompressionMethod,
-    pub extenssions_length: u32,
+    pub extenssions_length: u16,
 }
 impl HandshakeClientHello {
-    fn new(mut bytes: Vec<u8>, length: u32) -> Result<Self, TLSError> {
+    fn new(mut bytes: Vec<u8>) -> Result<Self, TLSError> {
         let version = TLSVersion::new(bytes.remove(0), bytes.remove(0))?;
         let random = Random {
             timestamp: (bytes.remove(0) as u32) << 24
@@ -510,7 +536,7 @@ impl HandshakeClientHello {
             ciper_suites_length -= 2;
         }
         let compression_method = CompressionMethod::new(bytes[0]);
-        let extenssions_length = length - 37 - session_id_length as u32 - 2;
+        let extenssions_length = (bytes.remove(0) as u16) << 8 | (bytes.remove(0) as u16);
         Ok(HandshakeClientHello {
             version,
             random,
@@ -530,10 +556,10 @@ pub struct HandshakeServerHello {
     pub session_id: Option<Vec<u8>>,
     pub ciper_suite: CipherSuite,
     pub compression_method: CompressionMethod,
-    pub extenssions_length: u32,
+    pub extenssions_length: u16,
 }
 impl HandshakeServerHello {
-    fn new(mut bytes: Vec<u8>, length: u32) -> Result<Self, TLSError> {
+    fn new(mut bytes: Vec<u8>) -> Result<Self, TLSError> {
         let version = TLSVersion::new(bytes.remove(0), bytes.remove(0))?;
         let random = Random {
             timestamp: (bytes.remove(0) as u32) << 24
@@ -556,7 +582,7 @@ impl HandshakeServerHello {
         let ciper_suite =
             CipherSuite::new_2byte((bytes.remove(0) as u16) << 8 | (bytes.remove(0) as u16))?;
         let compression_method = CompressionMethod::new(bytes[0]);
-        let extenssions_length = length - 37 - 2;
+        let extenssions_length = (bytes.remove(0) as u16) << 8 | (bytes.remove(0) as u16);
         Ok(HandshakeServerHello {
             version,
             random,
@@ -573,7 +599,10 @@ impl HandshakeServerHello {
         bytes.push(version_byte2);
         bytes.extend(self.random.bytes());
         if let Some(id) = self.session_id {
+            bytes.push(id.len().try_into().unwrap());
             bytes.extend(id);
+        } else {
+            bytes.push(0);
         }
         bytes.extend(self.ciper_suite.bytes());
         bytes.push(self.compression_method.to_u8());
@@ -584,18 +613,49 @@ impl HandshakeServerHello {
         bytes
     }
 }
+#[derive(Debug)]
+pub enum CurveName {
+    X25519
+}
+impl CurveName {
+    fn bytes(self) -> (u8, u8) {
+        match self {
+            Self::X25519 => (0, 0x001d)
+        }
+    }
+}
+#[derive(Debug)]
+pub struct HandshakeServerKeyExchange {
+    pub curve_name: CurveName,
+    pub public_key: Vec<u8>,
+    pub sha_sign: [u8; 32]
+}
+impl HandshakeServerKeyExchange {
+    pub fn bytes(self) -> Vec<u8> {
+        let mut vec = vec![];
+        vec.push(03);
+        let curve_name_bytes = self.curve_name.bytes();
+        vec.push(curve_name_bytes.0);
+        vec.push(curve_name_bytes.1);
+        vec.extend(self.public_key);
+        vec.extend([0x04, 0x01, 0x01, 0x00]);
+        vec.extend(self.sha_sign);
+        vec
+    }
+}
+
 impl HandshakeContent {
-    fn new(mut bytes: Vec<u8>, length: u32) -> Result<Self, TLSError> {
+    fn new(mut bytes: Vec<u8>) -> Result<Self, TLSError> {
         match bytes.remove(0) {
             0 => Ok(HandshakeContent::HelloRequest),
             1 => Ok(HandshakeContent::ClientHello(HandshakeClientHello::new(
-                bytes, length,
+                bytes
             )?)),
             2 => Ok(HandshakeContent::ServerHello(HandshakeServerHello::new(
-                bytes, length,
+                bytes
             )?)),
-            11 => Ok(HandshakeContent::Certificate),
-            12 => Ok(HandshakeContent::ServerKeyExchange),
+            11 => todo!(),
+            12 => todo!(),
             13 => Ok(HandshakeContent::CertificateRequest),
             14 => Ok(HandshakeContent::ServerDone),
             15 => Ok(HandshakeContent::CertificateVerify),
@@ -619,8 +679,45 @@ impl HandshakeMessage {
             | (bytes.remove(1) as u32);
         Ok(HandshakeMessage {
             length,
-            handshake_content: HandshakeContent::new(bytes, length)?,
+            handshake_content: HandshakeContent::new(bytes)?,
         })
+    }
+    pub fn bytes_without_length(self) -> Vec<u8> {
+        match self.handshake_content {
+            HandshakeContent::HelloRequest => todo!(),
+            HandshakeContent::ClientHello(_) => todo!(),
+            HandshakeContent::ServerHello(a) => {
+                let mut vec = vec![];
+                vec.push(2);
+                let bytes = a.bytes();
+                vec.extend(&(bytes.len() as u32 - 3).to_be_bytes()[1..]);
+                vec.extend(bytes);
+                vec
+            },
+            HandshakeContent::Certificate(a) => {
+                let mut vec = vec![];
+                vec.push(11);
+                let bytes = a.bytes();
+                vec.extend(&(bytes.len() as u32 - 3).to_be_bytes()[1..]);
+                vec.extend(bytes);
+                vec
+            },
+            HandshakeContent::ServerKeyExchange(a) => {
+                let mut vec = vec![];
+                vec.push(0x0c);
+                let bytes = a.bytes();
+                vec.extend(&(bytes.len() as u32 - 3).to_be_bytes()[1..]);
+                vec.extend(bytes);
+                vec
+            },
+            HandshakeContent::CertificateRequest => todo!(),
+            HandshakeContent::ServerDone => {
+                [0x0e, 0, 0, 0].to_vec()
+            },
+            HandshakeContent::CertificateVerify => todo!(),
+            HandshakeContent::ClientKeyExchange => todo!(),
+            HandshakeContent::Finished => todo!(),
+        }
     }
 }
 

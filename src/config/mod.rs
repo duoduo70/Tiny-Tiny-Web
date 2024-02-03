@@ -20,6 +20,7 @@ use std::sync::atomic::AtomicBool;
 use std::sync::atomic::AtomicU32;
 use std::sync::Arc;
 use std::sync::Mutex;
+use std::sync::RwLock;
 
 pub static USE_LOCALTIME: AtomicBool = AtomicBool::new(true);
 pub static ENABLE_DEBUG: AtomicBool = AtomicBool::new(true);
@@ -34,6 +35,7 @@ pub static ENABLE_RETURN_IF_PIPE_ERR: AtomicBool = AtomicBool::new(true);
 pub static ENABLE_CODE_BAD_REQUEST: AtomicBool = AtomicBool::new(false);
 pub static ENABLE_CODE_NOT_FOUND: AtomicBool = AtomicBool::new(false);
 pub static mut GLOBAL_ROUTER_CONFIG: Option<Arc<Mutex<RouterConfig>>> = None;
+pub static mut SSL_CERTIFICATE: Option<Arc<RwLock<Vec<u8>>>> = None;
 #[derive(Clone)]
 pub struct ReplaceData {
     pub content: String,
