@@ -6,5 +6,4 @@
  * if not, see <https://www.gnu.org/licenses/>.
  */
 pub mod tls;
-pub mod x25519;
-pub mod sha256;
+pub mod c25519;

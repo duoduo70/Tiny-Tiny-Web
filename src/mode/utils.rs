@@ -7,9 +7,7 @@
  */
 
 use std::{
-    io::Read,
-    net::{TcpListener, TcpStream},
-    sync::{atomic::Ordering, Mutex},
+    io::Read, net::{TcpListener, TcpStream}, process::exit, sync::{atomic::Ordering, Mutex}
 };
 
 use crate::{
@@ -186,15 +184,15 @@ fn get_tls_keys() -> (Vec<u8>, Vec<u8>) {
     let mut random_vec = random.0.to_be_bytes().to_vec();
     random_vec.extend(random.1.to_be_bytes());
     unsafe {
-        crate::https::x25519::compact_x25519_keygen(
+        crate::https::c25519::compact_x25519_keygen(
             pravite_key,
             public_key,
             random_vec.as_mut_ptr(),
         )
     };
     (
-        crate::https::x25519::key_to_vec(pravite_key),
-        crate::https::x25519::key_to_vec(public_key),
+        crate::https::c25519::key_to_vec(pravite_key, 32),
+        crate::https::c25519::key_to_vec(public_key, 32),
     )
 }
 
@@ -219,6 +217,7 @@ fn result_https_request(
             match message.handshake_message.handshake_content {
                 crate::https::tls::HandshakeContent::HelloRequest => todo!(),
                 crate::https::tls::HandshakeContent::ClientHello(client_msg) => {
+                    println!("{:#?}", client_msg);
                     let serverhello_random = Random::new_32bit_random(
                         crate::drop::random::get_random_256().result_timeerr_default(),
                     );
@@ -227,7 +226,7 @@ fn result_https_request(
                             version: crate::https::tls::TLSVersion::TLS1_2,
                             random: serverhello_random,
                             session_id: client_msg.session_id,
-                            ciper_suite: CipherSuite::TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+                            ciper_suite: CipherSuite::TLS_ECDHE_EDDSA_WITH_AES_128_GCM_SHA256,
                             compression_method: CompressionMethod::Null,
                             extenssions_length: 0,
                         }),
@@ -250,26 +249,30 @@ fn result_https_request(
                         certificate.len().try_into().unwrap(),
                     ));
                     retvec.extend(certificate);
+                    println!("{:#?}", retvec.len());
 
                     let (_, public_key) = get_tls_keys();
                     let mut sha_arg = client_msg.random.bytes().to_vec();
                     sha_arg.extend(serverhello_random.bytes());
                     sha_arg.extend([0x03, 0x00, 0x1d]);
                     sha_arg.extend(public_key.clone());
-                    let serverkeyexchange = HandshakeMessage {
-                        handshake_content: HandshakeContent::ServerKeyExchange(
-                            HandshakeServerKeyExchange {
-                                curve_name: crate::https::tls::CurveName::X25519,
-                                public_key,
-                                sha_sign: crate::https::sha256::Sha256::digest(&sha_arg),
-                            },
-                        ),
-                        length: 0,
-                    }.bytes_without_length();
-                    retvec.extend(get_server_record_tls1_2_bytes(
-                        serverkeyexchange.len().try_into().unwrap(),
-                    ));
-                    retvec.extend(serverkeyexchange);
+
+                    // let sha_sign = crate::https::c25519::compact_ed25519_sign(signature, private_key, message, msg_length)
+
+                    // let serverkeyexchange = HandshakeMessage {
+                    //     handshake_content: HandshakeContent::ServerKeyExchange(
+                    //         HandshakeServerKeyExchange {
+                    //             curve_name: crate::https::tls::CurveName::X25519,
+                    //             public_key,
+                    //             sha_sign
+                    //         },
+                    //     ),
+                    //     length: 0,
+                    // }.bytes_without_length();
+                    // retvec.extend(get_server_record_tls1_2_bytes(
+                    //     serverkeyexchange.len().try_into().unwrap(),
+                    // ));
+                    // retvec.extend(serverkeyexchange);
 
                     let serverdone = HandshakeMessage {
                         handshake_content: HandshakeContent::ServerDone,
@@ -283,6 +286,7 @@ fn result_https_request(
                     if std::io::Write::write_all(&mut stream, &retvec).is_err() {
                         log!(Debug, LOG[6])
                     }
+                    exit(-1);
                 }
                 crate::https::tls::HandshakeContent::ServerHello(_) => println!("1"),
                 crate::https::tls::HandshakeContent::Certificate(_) => println!("2"),

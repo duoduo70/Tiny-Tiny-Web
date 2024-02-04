@@ -36,6 +36,7 @@ pub static ENABLE_CODE_BAD_REQUEST: AtomicBool = AtomicBool::new(false);
 pub static ENABLE_CODE_NOT_FOUND: AtomicBool = AtomicBool::new(false);
 pub static mut GLOBAL_ROUTER_CONFIG: Option<Arc<Mutex<RouterConfig>>> = None;
 pub static mut SSL_CERTIFICATE: Option<Arc<RwLock<Vec<u8>>>> = None;
+pub static mut SSL_PRAVITE_KEY: Option<Arc<RwLock<Vec<u8>>>> = None;
 #[derive(Clone)]
 pub struct ReplaceData {
     pub content: String,

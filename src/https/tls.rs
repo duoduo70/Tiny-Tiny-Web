@@ -322,7 +322,10 @@ build_ciper_suite! {
     TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384=0xc038,
     TLS_ECDHE_PSK_WITH_NULL_SHA=0xc039,
     TLS_ECDHE_PSK_WITH_NULL_SHA256 =0xc03a,
-    TLS_ECDHE_PSK_WITH_NULL_SHA384=0xc03b
+    TLS_ECDHE_PSK_WITH_NULL_SHA384=0xc03b,
+    TLS_ECDHE_EDDSA_WITH_CHACHA20_POLY1305=0xccb0,
+    TLS_ECDHE_EDDSA_WITH_AES_128_GCM_SHA256=0xccb1,
+    TLS_ECDHE_EDDSA_WITH_AES_256_GCM_SHA256=0xccb2
     //0xC0,0x3C-FF Unassigned
     //0xC1-FD,*  Unassigned
     //0xFE,0x00-FD Unassigned
@@ -476,18 +479,19 @@ pub struct HandshakeCertificate {
 impl HandshakeCertificate {
     pub fn new_just_one_certificate(certificate: Vec<u8>) -> Self {
         let mut vec = vec![];
-        let length_snd = certificate.len();
-        let length_fst = length_snd + 3;
+        let length_snd: u32 = certificate.len() as u32;
+        let length_fst: u32 = length_snd + 3;
         vec.extend(&length_snd.to_be_bytes()[1..]);
         vec.extend(certificate);
         HandshakeCertificate {
-            certificate_length: length_fst as u32,
+            certificate_length: length_fst,
             certificates: vec![vec],
         }
     }
     pub fn bytes(self) -> Vec<u8> {
         let mut vec = vec![];
         vec.extend(&self.certificate_length.to_be_bytes()[1..]);
+        println!("{:#x?}", vec);
         for e in self.certificates {
             vec.extend(e);
         }
@@ -608,7 +612,9 @@ impl HandshakeServerHello {
         bytes.push(self.compression_method.to_u8());
 
         bytes.push(0);
-        bytes.push(0);
+        bytes.push(5);
+
+        bytes.extend([0xff, 0x01, 0x00, 0x01, 0x00]); // temp: RenegotiationInfo
 
         bytes
     }
@@ -637,6 +643,7 @@ impl HandshakeServerKeyExchange {
         let curve_name_bytes = self.curve_name.bytes();
         vec.push(curve_name_bytes.0);
         vec.push(curve_name_bytes.1);
+        vec.push(self.public_key.len() as u8);
         vec.extend(self.public_key);
         vec.extend([0x04, 0x01, 0x01, 0x00]);
         vec.extend(self.sha_sign);
@@ -690,15 +697,15 @@ impl HandshakeMessage {
                 let mut vec = vec![];
                 vec.push(2);
                 let bytes = a.bytes();
-                vec.extend(&(bytes.len() as u32 - 3).to_be_bytes()[1..]);
+                vec.extend(&(bytes.len() as u32).to_be_bytes()[1..]);
                 vec.extend(bytes);
                 vec
             },
             HandshakeContent::Certificate(a) => {
                 let mut vec = vec![];
-                vec.push(11);
+                vec.push(0x0b);
                 let bytes = a.bytes();
-                vec.extend(&(bytes.len() as u32 - 3).to_be_bytes()[1..]);
+                vec.extend(&(bytes.len() as u32).to_be_bytes()[1..]);
                 vec.extend(bytes);
                 vec
             },
@@ -706,7 +713,7 @@ impl HandshakeMessage {
                 let mut vec = vec![];
                 vec.push(0x0c);
                 let bytes = a.bytes();
-                vec.extend(&(bytes.len() as u32 - 3).to_be_bytes()[1..]);
+                vec.extend(&(bytes.len() as u32).to_be_bytes()[1..]);
                 vec.extend(bytes);
                 vec
             },

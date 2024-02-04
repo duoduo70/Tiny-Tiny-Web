@@ -8,7 +8,7 @@
 
 use std::sync::atomic::Ordering;
 
-use crate::{drop::http::HttpResponse, drop::log::LogLevel::*, i18n::LOG, macros::*};
+use crate::{config::SSL_PRAVITE_KEY, drop::http::HttpResponse, drop::log::LogLevel::*, i18n::LOG, macros::*};
 
 use super::{
     syntax_error, MethodArgs, BOX_MODE, BOX_NUM_PER_THREAD_INIT_MAG, BOX_NUM_PER_THREAD_MAG, ENABLE_RETURN_IF_PIPE_ERR, SSL_CERTIFICATE, THREADS_NUM, XRPS_COUNTER_CACHE_SIZE, XRPS_PREDICT_MAG
@@ -91,6 +91,12 @@ pub fn method_set(args: MethodArgs) {
                 #[cfg(feature = "nightly")]
                 unsafe {
                 SSL_CERTIFICATE = Some(std::sync::Arc::new(std::sync::RwLock::new(std::fs::read(head3.to_owned()).unwrap()))) // TODO: Error log
+            };
+                return;
+            }else if head2 == "ssl-pravite-key" {
+                #[cfg(feature = "nightly")]
+                unsafe {
+                SSL_PRAVITE_KEY = Some(std::sync::Arc::new(std::sync::RwLock::new(std::fs::read(head3.to_owned()).unwrap()))) // TODO: Error log
             };
                 return;
             } else if head2 == "xrps-counter-cache-size" {
