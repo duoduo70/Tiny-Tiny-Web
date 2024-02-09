@@ -39,6 +39,8 @@ If you want to build nightly version, use:
 ```sh
 cargo build --features nightly
 ```
+WARNING: Now, the Nightly version is absolutely unusable, and the only possible use for building the Nightly version is to contribute to the writing of this project.
+警告：现在，Nightly 版本绝对无法正常使用，构建 Nightly 版本的唯一可能用途是为本项目的编写做出贡献。
 
 If you want to build no-glisp version, use:  
 如果你希望构建不包含 GLisp 的版本，使用：
