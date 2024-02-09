@@ -1,0 +1,71 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "Ghost Lisp",
+	"patterns": [
+		{
+			"include": "#keywords"
+		},
+		{
+			"include": "#strings"
+		},
+		{
+			"include": "#comments"
+		},
+		{
+			"include": "#entities"
+		},
+		{
+			"include": "#constants"
+		},
+		{
+			"include": "#variables"
+		}
+	],
+	"repository": {
+		"comments": {
+			"name":"comment.line",
+			"begin": ";",
+			"end": "$"
+		},
+		"strings": {
+			"name": "string.quoted.double",
+			"begin": "\"",
+			"end": "\"",
+			"patterns": [
+				{
+					"name": "constant.character.escape",
+					"match": "\\\\."
+				}
+			]
+		},
+		"keywords": {
+			"patterns": [{
+				"name": "keyword.control",
+				"match": "((str\\.\\+|str\\.\\=|str\\.\\!\\=|str\\.\\<|str\\.\\<\\=|str\\.\\>|str\\.\\>\\=|\\+\\s|\\-\\s|\\*\\s|\\/\\s|\\>\\s|\\<\\s|\\>=\\s|\\<=\\s|\\=\\s|\\!=\\s)|((?<=\\()\\b(if|set|quote|atom|eq|car|cdr|cons|cond|length|last|chars|find|contains|insert|begin|is-empty|remove|reverse|rfind|slice|loop|read-file|write|file|meta|eval-atom|or|and|lines|read-dir|for-each-eval|eval|run)\\b))"
+			}]
+		},
+		"entities": {
+			"patterns": [{
+				"name": "entity.name.type",
+				"match": "(?<=\\()\\b(log|str|do|return|continue|pass|lambda)\\b"
+			},{
+				"name": "entity.name.function",
+				"match": "(?<=\\()\\b(\\S)*\\b"
+			}]
+		},
+		"constants": {
+			"patterns": [{
+			"name": "constant.numeric",
+			"match": "\\b(([1-9][0-9]*)|0)\\b"
+			},{
+				"name": "constant.language",
+				"match": "\\b(true|false)\\b"
+			}]
+		},
+		"variables": {
+			"name": "variable.language",
+			"match": "\\bCONTENT\\b"
+		}
+	},
+	"scopeName": "source.gl"
+}

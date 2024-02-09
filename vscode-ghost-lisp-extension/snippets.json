@@ -1,0 +1,38 @@
+{ 
+  "do": {
+    "prefix": ["do"],
+    "body": ["(do\n    $0)"]
+  },
+  "if": {
+    "prefix": ["if"],
+    "body": ["(if\n    $0\n)"]
+  },
+  "set": {
+    "prefix": ["set"],
+    "body": ["(set $0)"]
+  },
+  "defun": {
+    "prefix": ["defun"],
+    "body": ["(set $1(lambda ($2) (do\n     $3)))"]
+  },
+  "lambda": {
+    "prefix": ["lambda"],
+    "body": ["(lambda ($1)\n    $2)"]
+  },
+  "loop": {
+    "prefix": ["loop"],
+    "body": ["(loop (do\n    $0))"]
+  },
+  "return": {
+    "prefix": ["return"],
+    "body": ["(return)"]
+  },
+  "continue": {
+    "prefix": ["continue"],
+    "body": ["(continue)"]
+  },
+  "pass": {
+    "prefix": ["pass"],
+    "body": ["(pass)"]
+  }
+}

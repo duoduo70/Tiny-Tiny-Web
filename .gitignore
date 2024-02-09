@@ -10,3 +10,14 @@
 !config
 !config/markdown-auto-compile.gl
 !icon.png
+
+
+!vscode-ghost-lisp-extension
+!vscode-ghost-lisp-extension/syntaxes
+!vscode-ghost-lisp-extension/syntaxes/**
+!vscode-ghost-lisp-extension/.vscodeignore
+!vscode-ghost-lisp-extension/CHANGELOG.md
+!vscode-ghost-lisp-extension/language-configuration.json
+!vscode-ghost-lisp-extension/package.json
+!vscode-ghost-lisp-extension/README.md
+!vscode-ghost-lisp-extension/snippets.json

@@ -1,0 +1,33 @@
+{
+  "name": "ghost-lisp",
+  "displayName": "Ghost Lisp",
+  "description": "Support for Ghost Lisp",
+  "version": "1.0.1",
+  "engines": {
+    "vscode": "^1.86.0"
+  },
+  "license":"GPL-3.0-only",
+  "categories": [
+    "Programming Languages",
+    "Snippets"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "glisp",
+      "aliases": ["Ghost Lisp", "glisp"],
+      "extensions": [".gl"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "glisp",
+      "scopeName": "source.gl",
+      "path": "./syntaxes/glisp.tmLanguage.json"
+    }],
+    "snippets": [
+      {
+          "language": "glisp",
+          "path": "./snippets.json"
+      }
+  ]
+  }
+}
