@@ -2087,7 +2087,6 @@ pub unsafe fn compact_ed25519_keygen(private_key: *mut u8, public_key: *mut u8, 
         public_key as *mut libc::c_void,
         32,
     );
-    println!("test: {:?}", key_to_vec(private_key, 64));
     compact_wipe(random_seed as *mut libc::c_void, 32);
 }
 

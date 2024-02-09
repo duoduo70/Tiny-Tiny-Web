@@ -340,7 +340,7 @@ pub enum HandshakeContent {
     Certificate(HandshakeCertificate),
     ServerKeyExchange(HandshakeServerKeyExchange),
     CertificateRequest,
-    ServerDone,
+    HelloDone,
     CertificateVerify,
     ClientKeyExchange,
     Finished,
@@ -491,7 +491,6 @@ impl HandshakeCertificate {
     pub fn bytes(self) -> Vec<u8> {
         let mut vec = vec![];
         vec.extend(&self.certificate_length.to_be_bytes()[1..]);
-        println!("{:#x?}", vec);
         for e in self.certificates {
             vec.extend(e);
         }
@@ -634,7 +633,7 @@ impl CurveName {
 pub struct HandshakeServerKeyExchange {
     pub curve_name: CurveName,
     pub public_key: Vec<u8>,
-    pub sha_sign: [u8; 32]
+    pub sha_sign: Vec<u8>
 }
 impl HandshakeServerKeyExchange {
     pub fn bytes(self) -> Vec<u8> {
@@ -645,7 +644,7 @@ impl HandshakeServerKeyExchange {
         vec.push(curve_name_bytes.1);
         vec.push(self.public_key.len() as u8);
         vec.extend(self.public_key);
-        vec.extend([0x04, 0x01, 0x01, 0x00]);
+        vec.extend([0x08, 0x07, 0x01, 0x00]);
         vec.extend(self.sha_sign);
         vec
     }
@@ -664,7 +663,7 @@ impl HandshakeContent {
             11 => todo!(),
             12 => todo!(),
             13 => Ok(HandshakeContent::CertificateRequest),
-            14 => Ok(HandshakeContent::ServerDone),
+            14 => Ok(HandshakeContent::HelloDone),
             15 => Ok(HandshakeContent::CertificateVerify),
             16 => Ok(HandshakeContent::ClientKeyExchange),
             20 => Ok(HandshakeContent::Finished),
@@ -718,7 +717,7 @@ impl HandshakeMessage {
                 vec
             },
             HandshakeContent::CertificateRequest => todo!(),
-            HandshakeContent::ServerDone => {
+            HandshakeContent::HelloDone => {
                 [0x0e, 0, 0, 0].to_vec()
             },
             HandshakeContent::CertificateVerify => todo!(),

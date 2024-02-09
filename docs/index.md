@@ -1,12 +1,15 @@
 # Tiny Tiny Web 2 临时文档
+
 这是一个用以简单创建Web服务器的软件，使用 Rust 语言开发， GPLv3 开源，以下简称 TTWeb 。
 
 本文档所述内容可能不适合最新版本或对于最新版本而言不全面。
-当前文档基于版本 2.0.0-beta4。
+当前文档基于版本 2.0.0-beta6。
 
 对于二次开发所使用的 Ghost Lisp 语言，以下简称 Glisp 。
 
 本文档可以选择 CC-BY-SA 或 GFDL 协议。
+
+[TOC]
 
 ## 开始使用：
 首先，在程序根目录下创建文件夹：config、export、temp。
@@ -63,6 +66,12 @@ $ +errpage 404 404.html
 compile contents.html
 # 注入一个文件（用 a.txt, b.txt, c.txt 中的内容替换 contents.html 中的 $_gcflag 占位符）
 inject contents.html a.txt b.txt c.txt
+
+# 虽然本项目还没有准备好支持 HTTPS ，但是已经预先编写了很多代码 ，并且预留了：
+# 导入一个 DER 格式的 CA 证书
+$ ssl-certificate ca.der
+# 导入一个 DER 格式的私钥
+$ ssl-pravite-key pravite_key.der
 ```
 ```
 # 以下全部是对一个内部变量进行设置，且全部都展示了默认设置
@@ -636,6 +645,13 @@ pub fn eval_built_in_form(
 这个程序的作用是读取所有 `markdown/*.md` 文件，将其编译到 `temp/*.md.html`。
 
 ## 其它
+
+### HTTPS
+
+本项目还没有做好准备支持 HTTPS ，尽管如此，我预留了一些配置和代码。
+关于这些预留的配置，参见 `所有指令` 一章。
+
+### 最后
 
 如果你发现了一个 Bug，欢迎将其报告到[ Github 上的源代码存储库](https://github.com/duoduo70/Tiny-Tiny-Web)。
 尽管如此，根据 GPLv3 开源协议，我不对程序的运行做任何担保，换句话说，我不保证一定会修复 Bug 。

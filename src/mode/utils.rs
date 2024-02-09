@@ -7,12 +7,15 @@
  */
 
 use std::{
-    io::Read, net::{TcpListener, TcpStream}, process::exit, sync::{atomic::Ordering, Mutex}
+    io::Read,
+    net::{TcpListener, TcpStream},
+    sync::{atomic::Ordering, Mutex},
 };
 
 use crate::{
     config::{
-        Config, RouterConfig, ENABLE_CODE_BAD_REQUEST, SSL_CERTIFICATE, XRPS_COUNTER_CACHE_SIZE,
+        Config, RouterConfig, ENABLE_CODE_BAD_REQUEST, SSL_CERTIFICATE, SSL_PRAVITE_KEY,
+        XRPS_COUNTER_CACHE_SIZE,
     },
     drop::{
         http::{HttpRequest, HttpResponse},
@@ -226,7 +229,7 @@ fn result_https_request(
                             version: crate::https::tls::TLSVersion::TLS1_2,
                             random: serverhello_random,
                             session_id: client_msg.session_id,
-                            ciper_suite: CipherSuite::TLS_ECDHE_EDDSA_WITH_AES_128_GCM_SHA256,
+                            ciper_suite: CipherSuite::TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
                             compression_method: CompressionMethod::Null,
                             extenssions_length: 0,
                         }),
@@ -250,32 +253,50 @@ fn result_https_request(
                     ));
                     retvec.extend(certificate);
                     println!("{:#?}", retvec.len());
+                    // ED25519 Signature (unstable)
+                    let mut signature = [0; 64];
+                    let sha_sign = unsafe {
+                        let mut sign_public_key = [0; 32];
+                        let mut sign_pravite_key = client_msg.random.bytes().to_vec();
+                        sign_pravite_key.extend(SSL_PRAVITE_KEY.get().to_vec());
+                        crate::https::c25519::compact_ed25519_calc_public_key(
+                            sign_public_key.as_mut_ptr(),
+                            sign_pravite_key.as_mut_ptr(),
+                        );
+                        sign_pravite_key.extend(sign_public_key);
+                        let mut sha_arg = client_msg.random.bytes().to_vec();
+                        sha_arg.extend(serverhello_random.bytes());
+                        sha_arg.extend([0x03, 0x00, 0x1d]);
+                        sha_arg.extend(sign_public_key);
+                        crate::https::c25519::compact_ed25519_sign(
+                            signature.as_mut_ptr(),
+                            sign_pravite_key.as_mut_ptr(),
+                            sha_arg.as_mut_ptr(),
+                            sha_arg.len() as u32,
+                        );
+                        signature.clone().to_vec()
+                    };
 
-                    let (_, public_key) = get_tls_keys();
-                    let mut sha_arg = client_msg.random.bytes().to_vec();
-                    sha_arg.extend(serverhello_random.bytes());
-                    sha_arg.extend([0x03, 0x00, 0x1d]);
-                    sha_arg.extend(public_key.clone());
+                    let (_pravite_key, public_key) = get_tls_keys();
 
-                    // let sha_sign = crate::https::c25519::compact_ed25519_sign(signature, private_key, message, msg_length)
-
-                    // let serverkeyexchange = HandshakeMessage {
-                    //     handshake_content: HandshakeContent::ServerKeyExchange(
-                    //         HandshakeServerKeyExchange {
-                    //             curve_name: crate::https::tls::CurveName::X25519,
-                    //             public_key,
-                    //             sha_sign
-                    //         },
-                    //     ),
-                    //     length: 0,
-                    // }.bytes_without_length();
-                    // retvec.extend(get_server_record_tls1_2_bytes(
-                    //     serverkeyexchange.len().try_into().unwrap(),
-                    // ));
-                    // retvec.extend(serverkeyexchange);
+                    let serverkeyexchange = HandshakeMessage {
+                        handshake_content: HandshakeContent::ServerKeyExchange(
+                            HandshakeServerKeyExchange {
+                                curve_name: crate::https::tls::CurveName::X25519,
+                                public_key,
+                                sha_sign,
+                            },
+                        ),
+                        length: 0,
+                    }
+                    .bytes_without_length();
+                    retvec.extend(get_server_record_tls1_2_bytes(
+                        serverkeyexchange.len().try_into().unwrap(),
+                    ));
+                    retvec.extend(serverkeyexchange);
 
                     let serverdone = HandshakeMessage {
-                        handshake_content: HandshakeContent::ServerDone,
+                        handshake_content: HandshakeContent::HelloDone,
                         length: 0,
                     }
                     .bytes_without_length();
@@ -286,13 +307,12 @@ fn result_https_request(
                     if std::io::Write::write_all(&mut stream, &retvec).is_err() {
                         log!(Debug, LOG[6])
                     }
-                    exit(-1);
                 }
                 crate::https::tls::HandshakeContent::ServerHello(_) => println!("1"),
                 crate::https::tls::HandshakeContent::Certificate(_) => println!("2"),
                 crate::https::tls::HandshakeContent::ServerKeyExchange(_) => println!("3"),
                 crate::https::tls::HandshakeContent::CertificateRequest => println!("4"),
-                crate::https::tls::HandshakeContent::ServerDone => println!("5"),
+                crate::https::tls::HandshakeContent::HelloDone => println!("5"),
                 crate::https::tls::HandshakeContent::CertificateVerify => println!("6"),
                 crate::https::tls::HandshakeContent::ClientKeyExchange => println!("7"),
                 crate::https::tls::HandshakeContent::Finished => println!("8"),
