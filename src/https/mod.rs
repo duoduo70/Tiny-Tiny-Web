@@ -5,5 +5,5 @@
  * along with this program;
  * if not, see <https://www.gnu.org/licenses/>.
  */
-pub mod tls;
 pub mod c25519;
+pub mod tls;

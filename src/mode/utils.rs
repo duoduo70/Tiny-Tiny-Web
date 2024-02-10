@@ -91,9 +91,8 @@ pub fn listener_init(config: Config) -> TcpListener {
     )
 }
 
+#[allow(unused_mut)]
 pub fn handle_connection(mut stream: std::net::TcpStream, config: &Mutex<RouterConfig>) {
-    use std::io::*;
-
     #[cfg(feature = "nightly")]
     {
         let mut buf = [0; 5];

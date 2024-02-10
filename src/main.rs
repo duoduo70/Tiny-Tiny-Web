@@ -21,7 +21,6 @@ use i18n::LOG;
 use macros::*;
 
 fn main() {
-
     mode::toolmode::try_start();
 
     #[cfg(not(feature = "no-glisp"))]

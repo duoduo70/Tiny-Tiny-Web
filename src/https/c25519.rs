@@ -9,7 +9,8 @@
     non_snake_case,
     non_upper_case_globals,
     unused_assignments,
-    unused_mut
+    unused_mut,
+    clippy::all
 )]
 mod libc {
     pub type c_void = *mut u8;
@@ -131,7 +132,8 @@ unsafe fn f25519_eq(mut x: *const uint8_t, mut y: *const uint8_t) -> uint8_t {
     sum = (sum as libc::c_int | sum as libc::c_int >> 4 as libc::c_int) as uint8_t;
     sum = (sum as libc::c_int | sum as libc::c_int >> 2 as libc::c_int) as uint8_t;
     sum = (sum as libc::c_int | sum as libc::c_int >> 1 as libc::c_int) as uint8_t;
-    return ((sum as libc::c_int ^ 1 as libc::c_int) & 1 as libc::c_int) as uint8_t;
+
+    ((sum as libc::c_int ^ 1 as libc::c_int) & 1 as libc::c_int) as uint8_t
 }
 unsafe fn f25519_select(
     mut dst: *mut uint8_t,
@@ -616,7 +618,7 @@ unsafe fn compact_wipe(mut data: *mut libc::c_void, mut length: size_t) -> *mut 
         p = p.offset(1);
         core::ptr::write_volatile(fresh8, 0 as libc::c_int as libc::c_uchar);
     }
-    return data;
+    data
 }
 pub unsafe fn compact_x25519_keygen(
     mut private_key: *mut uint8_t,
@@ -802,7 +804,8 @@ unsafe extern "C" fn load64(mut x: *const uint8_t) -> uint64_t {
     let fresh7 = x;
     x = x.offset(1);
     r = r << 8 as libc::c_int | *fresh7 as u64;
-    return r;
+
+    r
 }
 #[inline]
 unsafe extern "C" fn store64(mut x: *mut uint8_t, mut v: uint64_t) {
@@ -841,7 +844,7 @@ unsafe extern "C" fn store64(mut x: *mut uint8_t, mut v: uint64_t) {
 }
 #[inline]
 unsafe extern "C" fn rot64(mut x: uint64_t, mut bits: libc::c_int) -> uint64_t {
-    return x >> bits | x << 64 as libc::c_int - bits;
+    x >> bits | x << 64 as libc::c_int - bits
 }
 #[no_mangle]
 unsafe extern "C" fn sha512_block(mut s: *mut sha512_state, mut blk: *const uint8_t) {
@@ -1185,7 +1188,7 @@ unsafe extern "C" fn prime_msb(mut p: *const uint8_t) -> libc::c_int {
         x = (x as libc::c_int >> 1 as libc::c_int) as uint8_t;
         i += 1;
     }
-    return i - 1 as libc::c_int;
+    i - 1 as libc::c_int
 }
 unsafe extern "C" fn shift_n_bits(mut x: *mut uint8_t, mut n: libc::c_int) {
     let mut c: uint16_t = 0 as libc::c_int as uint16_t;
@@ -1201,7 +1204,11 @@ unsafe extern "C" fn shift_n_bits(mut x: *mut uint8_t, mut n: libc::c_int) {
 }
 #[inline]
 unsafe extern "C" fn min_int(mut a: libc::c_int, mut b: libc::c_int) -> libc::c_int {
-    return if a < b { a } else { b };
+    if a < b {
+        a
+    } else {
+        b
+    }
 }
 #[no_mangle]
 unsafe extern "C" fn fprime_from_bytes(
@@ -1715,7 +1722,8 @@ unsafe extern "C" fn ed25519_try_unpack(
     f25519_mul__distinct(a.as_mut_ptr(), x, x);
     f25519_normalize(a.as_mut_ptr());
     f25519_normalize(c.as_mut_ptr());
-    return f25519_eq(a.as_mut_ptr(), c.as_mut_ptr()) as uint8_t;
+
+    f25519_eq(a.as_mut_ptr(), c.as_mut_ptr()) as uint8_t
 }
 static mut ed25519_k: [uint8_t; 32] = [
     0x59 as libc::c_int as uint8_t,
@@ -1895,7 +1903,8 @@ unsafe fn upp(p: *mut ed25519_pt, packed: *const uint8_t) -> uint8_t {
     let ok = ed25519_try_unpack(x.as_mut_ptr(), y.as_mut_ptr(), packed);
 
     ed25519_project(p, x.as_mut_ptr(), y.as_mut_ptr());
-    return ok;
+
+    ok
 }
 unsafe fn pp(packed: *mut uint8_t, p: *const ed25519_pt) {
     let mut x: [uint8_t; 32] = [0; 32];
@@ -2068,13 +2077,17 @@ unsafe fn edsign_verify(signature: *const u8, _pub: *const u8, message: *const u
     pp(rhs.as_mut_ptr(), &p);
 
     /* Equal? */
-    return ok & f25519_eq(lhs.as_mut_ptr(), rhs.as_mut_ptr());
+    ok & f25519_eq(lhs.as_mut_ptr(), rhs.as_mut_ptr())
 }
 
 /// private_key: [u8; 64],
 /// public_key: [u8; 32],
 /// random_seed: [u8; 32]
-pub unsafe fn compact_ed25519_keygen(private_key: *mut u8, public_key: *mut u8, random_seed: *mut u8) {
+pub unsafe fn compact_ed25519_keygen(
+    private_key: *mut u8,
+    public_key: *mut u8,
+    random_seed: *mut u8,
+) {
     // private key is seed + public key, like golang and others
     edsign_sec_to_pub(public_key, random_seed);
     memcpy(
@@ -2129,7 +2142,7 @@ pub unsafe fn compact_ed25519_verify(
     message: *const u8,
     msg_length: u32,
 ) -> bool {
-    return edsign_verify(signature, public_key, message, msg_length) != 0;
+    edsign_verify(signature, public_key, message, msg_length) != 0
 }
 
 #[cfg(test)]

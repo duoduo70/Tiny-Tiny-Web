@@ -7,7 +7,7 @@
  */
 pub mod http;
 pub mod log;
+pub mod random;
 pub mod thread;
 pub mod time;
 pub mod tool;
-pub mod random;

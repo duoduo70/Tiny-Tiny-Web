@@ -98,13 +98,13 @@ macro_rules! build_ciper_suite {
                     _ => Err(TLSError::UndefinedCiperSuite)
                 }
             }
-            fn to_u16(self) -> u16 {
+            fn into_u16(self) -> u16 {
                 match self {
                     $(CipherSuite::$e => $v1,)*
                 }
             }
             fn bytes(self) -> [u8; 2] {
-                Self::to_u16(self).to_be_bytes()
+                Self::into_u16(self).to_be_bytes()
             }
         }
     };
@@ -359,10 +359,10 @@ impl CompressionMethod {
             _ => Self::Undefined,
         }
     }
-    fn to_u8(self) -> u8 {
+    fn into_u8(self) -> u8 {
         match self {
             Self::Deflate => 1,
-            _ => 0
+            _ => 0,
         }
     }
 }
@@ -474,7 +474,7 @@ build_tls_extension! {
 #[derive(Debug)]
 pub struct HandshakeCertificate {
     pub certificate_length: u32,
-    pub certificates: Vec<Vec<u8>>
+    pub certificates: Vec<Vec<u8>>,
 }
 impl HandshakeCertificate {
     pub fn new_just_one_certificate(certificate: Vec<u8>) -> Self {
@@ -608,7 +608,7 @@ impl HandshakeServerHello {
             bytes.push(0);
         }
         bytes.extend(self.ciper_suite.bytes());
-        bytes.push(self.compression_method.to_u8());
+        bytes.push(self.compression_method.into_u8());
 
         bytes.push(0);
         bytes.push(5);
@@ -620,12 +620,12 @@ impl HandshakeServerHello {
 }
 #[derive(Debug)]
 pub enum CurveName {
-    X25519
+    X25519,
 }
 impl CurveName {
     fn bytes(self) -> (u8, u8) {
         match self {
-            Self::X25519 => (0, 0x001d)
+            Self::X25519 => (0, 0x001d),
         }
     }
 }
@@ -633,12 +633,12 @@ impl CurveName {
 pub struct HandshakeServerKeyExchange {
     pub curve_name: CurveName,
     pub public_key: Vec<u8>,
-    pub sha_sign: Vec<u8>
+    pub sha_sign: Vec<u8>,
 }
 impl HandshakeServerKeyExchange {
     pub fn bytes(self) -> Vec<u8> {
         let mut vec = vec![];
-        vec.push(03);
+        vec.push(3);
         let curve_name_bytes = self.curve_name.bytes();
         vec.push(curve_name_bytes.0);
         vec.push(curve_name_bytes.1);
@@ -655,10 +655,10 @@ impl HandshakeContent {
         match bytes.remove(0) {
             0 => Ok(HandshakeContent::HelloRequest),
             1 => Ok(HandshakeContent::ClientHello(HandshakeClientHello::new(
-                bytes
+                bytes,
             )?)),
             2 => Ok(HandshakeContent::ServerHello(HandshakeServerHello::new(
-                bytes
+                bytes,
             )?)),
             11 => todo!(),
             12 => todo!(),
@@ -699,7 +699,7 @@ impl HandshakeMessage {
                 vec.extend(&(bytes.len() as u32).to_be_bytes()[1..]);
                 vec.extend(bytes);
                 vec
-            },
+            }
             HandshakeContent::Certificate(a) => {
                 let mut vec = vec![];
                 vec.push(0x0b);
@@ -707,7 +707,7 @@ impl HandshakeMessage {
                 vec.extend(&(bytes.len() as u32).to_be_bytes()[1..]);
                 vec.extend(bytes);
                 vec
-            },
+            }
             HandshakeContent::ServerKeyExchange(a) => {
                 let mut vec = vec![];
                 vec.push(0x0c);
@@ -715,11 +715,9 @@ impl HandshakeMessage {
                 vec.extend(&(bytes.len() as u32).to_be_bytes()[1..]);
                 vec.extend(bytes);
                 vec
-            },
+            }
             HandshakeContent::CertificateRequest => todo!(),
-            HandshakeContent::HelloDone => {
-                [0x0e, 0, 0, 0].to_vec()
-            },
+            HandshakeContent::HelloDone => [0x0e, 0, 0, 0].to_vec(),
             HandshakeContent::CertificateVerify => todo!(),
             HandshakeContent::ClientKeyExchange => todo!(),
             HandshakeContent::Finished => todo!(),
@@ -740,7 +738,10 @@ pub fn parse(mut data: Vec<u8>) -> Result<TLSMessage, TLSError> {
         handshake_message: HandshakeMessage::new(data)?,
     })
 }
-pub fn parse_has_record(record_message: RecordMessage, extra: Vec<u8>) -> Result<TLSMessage, TLSError> {
+pub fn parse_has_record(
+    record_message: RecordMessage,
+    extra: Vec<u8>,
+) -> Result<TLSMessage, TLSError> {
     Ok(TLSMessage {
         record_message,
         handshake_message: HandshakeMessage::new(extra)?,
