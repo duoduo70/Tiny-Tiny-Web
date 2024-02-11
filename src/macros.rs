@@ -5,6 +5,8 @@
  * along with this program;
  * if not, see <https://www.gnu.org/licenses/>.
  */
+
+/// 该宏只为 log! 宏需要的参数服务
 macro_rules! lgconf {
     () => {
         (
@@ -17,6 +19,14 @@ macro_rules! lgconf {
 }
 pub(crate) use lgconf;
 
+/// 该宏是对 log() 函数的封装
+/// 使用例：
+/// ```
+/// import drop::log::LogLevel::*; // 这个引入是必须的
+/// import macros::*; // 示例宏被存储的地方
+/// 
+/// log!(Info, "This is a info.");
+/// ```
 macro_rules! log {
     ($lv:ident, $str:expr) => {
         crate::drop::log::log(
@@ -29,6 +39,7 @@ macro_rules! log {
 }
 pub(crate) use log;
 
+/// 用以处理一个 Result ，如果返回 Err(_) 会导致程序的无法再执行，可以使用本宏来创建一个附带 log 的 panic
 macro_rules! process_result {
     ($result:ident, $type:ident, $message:expr) => {{
         let res: $type;
@@ -44,6 +55,12 @@ macro_rules! process_result {
 }
 pub(crate) use process_result;
 
+/// 目前为止，专门用以创建 i18n.rs 中的 LOG 数组，它有待修改，但并不紧急
+/// 应该被修改成以有意义的字段表示本地化条目的方法，而非无意义的数字
+/// 例如：
+/// `LOG[0]` (即 "Tiny-Tiny-Web Started (Ver.")
+/// 应该被修改成：
+/// `LOG!(process_started)` 或类似的形式
 macro_rules! create_static_string_list {
     ($n:ident, $($e:literal),*)=>{
         pub const $n: [&str; [$($e,)*].len()] = [

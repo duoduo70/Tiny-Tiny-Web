@@ -169,7 +169,7 @@ fn result_http_request(mut stream: std::net::TcpStream, config: &Mutex<RouterCon
     }
     #[cfg(not(feature = "no-glisp"))]
     if enable_pipe {
-        if let Some(content) = response.get_content_unref() {
+        if let Some(content) = response.content_unref() {
             if let Ok(a) = std::str::from_utf8(&content) {
                 pipe(config, a, enable_debug, response)
             }
@@ -329,7 +329,7 @@ fn result_https_request(
 
 fn get_request<'a>(req_str: String) -> Result<HttpRequest<'a, TcpStream>, ()> {
     if crate::config::ENABLE_DEBUG.load(Ordering::Relaxed) {
-        match HttpRequest::from(req_str.clone()) {
+        match HttpRequest::from_string(req_str.clone()) {
             Ok(req) => {
                 log!(Debug, format!("{}{}\n", LOG[7], req_str));
                 Ok(req)
@@ -340,7 +340,7 @@ fn get_request<'a>(req_str: String) -> Result<HttpRequest<'a, TcpStream>, ()> {
             }
         }
     } else {
-        match HttpRequest::from(req_str) {
+        match HttpRequest::from_string(req_str) {
             Ok(req) => Ok(req),
             _ => Err(()),
         }

@@ -11,18 +11,27 @@ use std::sync::{atomic::Ordering, Arc, RwLock};
 #[allow(clippy::type_complexity)]
 static mut FILE_CACHE: Option<Arc<RwLock<(String, Vec<u8>)>>> = None;
 
+/// 这是一个回调函数，返回值说明了本函数是否修改了 `res` 
+/// 如果请求不符合任何规则，则该函数返回 false
+/// 
+/// req: 传入的请求
+/// res: 要被回调的相应
+/// config: 一些给 Router 的配置文件
+/// 
+/// TODO: 该函数应该被 config 尽量的惰性构造来加快运行速度
+/// TODO: 需要注释或重构
 pub fn router<'a>(
     req: HttpRequest<std::net::TcpStream>,
     res: &'a mut HttpResponse,
     config: &'a RouterConfig,
 ) -> bool {
     let serve_args = &config.serve_files_info;
-    if serve_args.contains_key(&req.get_url().to_owned()) {
+    if serve_args.contains_key(&req.url().to_owned()) {
         res.set_header(
             "Content-Type",
             config
                 .serve_files_info
-                .get(&req.get_url().to_owned())
+                .get(&req.url().to_owned())
                 .unwrap()
                 .content_type
                 .clone(),
@@ -30,14 +39,14 @@ pub fn router<'a>(
         let str = unsafe {
             match &FILE_CACHE {
                 Some(a) => {
-                    let str = if *req.get_url() == FILE_CACHE.get().0 {
+                    let str = if *req.url() == FILE_CACHE.get().0 {
                         FILE_CACHE.get().1
                     } else {
                         let _stream = match std::fs::read(
                             "export".to_owned()
                                 + &config
                                     .serve_files_info
-                                    .get(&req.get_url().to_owned())
+                                    .get(&req.url().to_owned())
                                     .unwrap()
                                     .file_path,
                         ) {
@@ -57,7 +66,7 @@ pub fn router<'a>(
                         "export".to_owned()
                             + &config
                                 .serve_files_info
-                                .get(&req.get_url().to_owned())
+                                .get(&req.url().to_owned())
                                 .unwrap()
                                 .file_path,
                     )
@@ -71,7 +80,7 @@ pub fn router<'a>(
             }
         };
 
-        if let Some(k) = serve_args.get(&req.get_url().to_owned()) {
+        if let Some(k) = serve_args.get(&req.url().to_owned()) {
             if let Some(replaces) = &k.replace {
                 return router_iftype_replace(
                     req,
@@ -95,7 +104,7 @@ pub fn router<'a>(
         res.set_content(str);
         log!(
             Debug,
-            format!("{}{}", LOG[14], "export".to_owned() + req.get_url())
+            format!("{}{}", LOG[14], "export".to_owned() + req.url())
         );
         return true;
     };
@@ -107,7 +116,7 @@ pub fn router<'a>(
             res.set_state("404 NOT FOUND");
             res.set_header(
                 "Content-Length",
-                res.get_content_ref().clone().unwrap().len().to_string(),
+                res.content_ref().clone().unwrap().len().to_string(),
             );
             return true;
         }
@@ -132,7 +141,7 @@ fn router_iftype_replace<'a>(
         "Content-Type",
         config
             .serve_files_info
-            .get(&req.get_url().to_owned())
+            .get(&req.url().to_owned())
             .unwrap()
             .content_type
             .clone(),

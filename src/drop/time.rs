@@ -9,6 +9,9 @@ use std::time::{SystemTime, SystemTimeError};
 
 // DONT USE crate::log in this module
 
+/// 时间结构体
+/// timestamp: 时间戳，以秒为单位
+/// 使用内置的 getter 来获取结构体内的成员
 pub struct Time {
     timestamp: Result<u64, SystemTimeError>,
     year: u32,
@@ -23,6 +26,10 @@ pub struct Time {
 }
 
 impl Time {
+    /// 由我和 min0911 为 Plant-OS 项目编写的 C 代码改写而来，原版本有注释
+    /// See: https://github.com/min0911Y/Plant-OS/blob/main/apps/libp/time.c
+    /// 2024 年 2 月为止，该实现有 bug ，所以请查看最原始版本：
+    /// https://github.com/ZhouZhihaos/Powerint-DOS-386/blob/31222fad9ae303daa35d27844cc335c87ee2f1c7/apps/src/time.c
     fn builder(timestamp: u64) -> Self {
         let mut y = 1970;
         let mut _timestamp = timestamp;
@@ -220,6 +227,8 @@ pub fn get_formatted_time(use_localtime: bool) -> Result<String, SystemTimeError
     ))
 }
 
+/// 用以计算时差
+/// 注意，这是 unsafe 的。
 pub mod time_difference {
     pub fn get() -> i8 {
         ((get_local_timestamp() - get_utc_timestamp()) / 3600)
@@ -233,14 +242,14 @@ pub mod time_difference {
         fn localtime(time_p: *const i64) -> *const i8;
     }
 
-    fn get_local_timestamp() -> i64 {
+    pub fn get_local_timestamp() -> i64 {
         unsafe {
             let now = time(std::ptr::null());
             mktime(localtime(&now)) - mktime(gmtime(&now)) + now
         }
     }
 
-    fn get_utc_timestamp() -> i64 {
+    pub fn get_utc_timestamp() -> i64 {
         unsafe { time(std::ptr::null()) }
     }
 }

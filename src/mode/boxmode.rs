@@ -32,6 +32,12 @@ struct StreamResultCounters {
 
 static mut THREADS_BOX: Option<Arc<Mutex<VecDeque<std::net::TcpStream>>>> = None;
 
+/// 在这个模式中，我们会构造一个计数器
+/// 计数器会统计 N 秒内的请求数量
+/// 然后，根据秒请求数量，我们提前创建一些线程进行等待，这样，在有新的请求时，我们等待中的线程可以直接转为活动状态去处理这些新的请求
+/// 当然，如果有过多的线程正在等待，就不会再创建更多等待线程了
+/// 具体算法可能会被经常更改，BOX MODE 应该永远是最激进的模式
+/// 所以，对于具体的算法实现，请参见定义正文
 pub fn start() -> ! {
     let config = config_init();
 
@@ -48,7 +54,7 @@ pub fn start() -> ! {
     let box_num_per_thread_mag = BOX_NUM_PER_THREAD_MAG.load(Ordering::Relaxed) as f32 / 1000.0;
     let box_num_per_thread_init_mag =
         BOX_NUM_PER_THREAD_INIT_MAG.load(Ordering::Relaxed) as f32 / 1000.0;
-    let xrps_predict_mag = XRPS_PREDICT_MAG.load(Ordering::Relaxed) as f32 / 1000.0;
+    let xrps_predict_mag = XRPS_PREDICT_MAG.load(Ordering::Relaxed) as f32 / 1000.0; // XRPS_PREDICT_MAG 的默认值根据正态分布被考虑出来
     let threads_num = THREADS_NUM.load(Ordering::Relaxed);
     let mut counters = StreamResultCounters {
         req_counter: ReqCounter::new(),
@@ -61,7 +67,7 @@ pub fn start() -> ! {
         new_stamp_timeout: Time::msec().result_timeerr_default(),
     };
     unsafe { THREADS_BOX = Some(Arc::new(Mutex::new(VecDeque::new()))) };
-    // TODO:The thread factory is not aligned based on the timeline, and the efficiency is not the highest
+
     for stream in listener.incoming() {
         match stream {
             Ok(stream) => {

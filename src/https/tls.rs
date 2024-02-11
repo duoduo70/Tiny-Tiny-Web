@@ -5,6 +5,13 @@
  * along with this program;
  * if not, see <https://www.gnu.org/licenses/>.
  */
+
+//! # 本模块的总则
+//! 原则上讲，本模块应该至少遵循国际规范
+//! 结构及其成员的命名应该遵循相关标准或论文中给定的标准论文（如果有）
+//! 本模块可能在很长一段时间内都不会被实际使用，但可靠性应该被首要考虑
+//! TODO: 在本模块的代码中插入对应标准或论文的链接的注释
+
 #[derive(Debug)]
 pub enum TLSError {
     RecodeTypeError(u8),

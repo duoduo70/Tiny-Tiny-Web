@@ -11,7 +11,6 @@ use crate::drop::tool::ShouldResult;
 use std::fs::read_to_string;
 use std::path::Path;
 use std::process::exit;
-
 use self::vars::method_set;
 
 pub struct MethodArgs<'a> {

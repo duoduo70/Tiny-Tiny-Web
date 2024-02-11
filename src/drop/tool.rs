@@ -5,6 +5,8 @@
  * along with this program;
  * if not, see <https://www.gnu.org/licenses/>.
  */
+
+/// 该 trait 让 result_shldfatal 函数可以同时作用于 Option<T>, Result<T, E> 和其它的类型上
 pub trait ShouldResult<T> {
     fn result_shldfatal(self, ret_code: i32, func: impl FnOnce() + std::marker::Send) -> T;
 }
@@ -31,6 +33,9 @@ impl<T, E> ShouldResult<T> for Result<T, E> {
     }
 }
 
+/// 快速处理一个和时间相关的错误
+/// 用以配合 time.rs
+/// 如果出现了时间相关的错误，不会直接发生 panic ，而是会调用传入的闭包，然后以 ret_code 为程序的退出码
 pub fn result_timeerr<T>(
     v: Result<T, std::time::SystemTimeError>,
     ret_code: i32,
