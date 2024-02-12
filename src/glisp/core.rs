@@ -55,7 +55,13 @@ pub struct Environment<'a> {
     pub outer: Option<&'a Environment<'a>>,
 }
 
-pub type Config<'a> = &'a Option<&'a mut crate::config::Config>; // 用引用包装 Option 是为了避免拷贝
+/// 使用 RefCell 包装是为了包装 `&'a mut crate::config::Config` 以使其可以被正确移动
+/// 使用 Rc 是为了解决在递归式解析中不可避免的循环可变引用
+/// 与其深拷贝一次 Config ，每次调用函数时多进行一次寻址在通常情况下可能更快
+/// 并且，为了保持代码的一致性和可维护性，最终决定保留 `&mut` 引用
+/// 
+/// 在未来的版本中，如果`&mut crate::config::Config` 不足以支撑 crate::config 包，会考虑全部换成 RefCell
+pub type Config<'a> = Option<Rc<std::cell::RefCell<&'a mut crate::config::Config>>>;
 
 pub fn func_lambda(args: &[Expression]) -> Result<Expression, GError> {
     let params = args
@@ -234,21 +240,21 @@ pub fn eval(exp: &Expression, env: &mut Environment, config: Config) -> Result<E
                 .ok_or(GError::Reason("expected a non-empty list".to_string()))?;
             let arg_forms = &list[1..];
 
-            match eval_built_in_form(first_form, arg_forms, env, config) {
+            match eval_built_in_form(first_form, arg_forms, env, config.clone()) {
                 Some(built_in_res) => built_in_res,
                 None => {
-                    let first_eval = eval(first_form, env, config)?;
+                    let first_eval = eval(first_form, env, config.clone())?;
                     match first_eval {
                         Expression::Func(f) => {
                             let args_eval = arg_forms
                                 .iter()
-                                .map(|x| eval(x, env, config))
+                                .map(|x| eval(x, env, config.clone()))
                                 .collect::<Result<Vec<Expression>, GError>>();
                             f(&args_eval?)
                         }
                         Expression::Lambda(lambda) => {
                             // ->  New
-                            let new_env = &mut env_for_lambda(lambda.params, arg_forms, env, config)?;
+                            let new_env = &mut env_for_lambda(lambda.params, arg_forms, env, config.clone())?;
                             eval(&lambda.body, new_env, config)
                         }
                         _ => Err(GError::Reason("first form must be a function".to_string())),
@@ -266,7 +272,7 @@ pub fn func_if(args: &[Expression], env: &mut Environment, config: Config) -> Re
     let test_form = args
         .first()
         .ok_or(GError::Reason("expected test form".to_string()))?;
-    let test_eval = eval(test_form, env, config)?;
+    let test_eval = eval(test_form, env, config.clone())?;
     match test_eval {
         Expression::Bool(b) => {
             let form_idx = if b { 1 } else { 2 };
@@ -335,7 +341,7 @@ fn env_for_lambda<'a>(
 }
 
 fn eval_forms(args: &[Expression], env: &mut Environment, config: Config) -> Result<Vec<Expression>, GError> {
-    args.iter().map(|x| eval(x, env, config)).collect()
+    args.iter().map(|x| eval(x, env, config.clone())).collect()
 }
 
 fn parse_list_of_symbol_strings(params: Rc<Expression>) -> Result<Vec<String>, GError> {

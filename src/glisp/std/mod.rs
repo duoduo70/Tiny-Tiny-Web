@@ -11,12 +11,14 @@ mod eval;
 mod io;
 mod macros;
 mod str;
+mod config;
 
 use super::core::*;
 use core::*;
 use eval::*;
 use io::*;
 use str::*;
+use config::*;
 
 pub fn eval_built_in_form(
     exp: &Expression,
@@ -73,6 +75,7 @@ pub fn eval_built_in_form(
             "for-each-eval" => Some(func_for_each_eval(other_args, env, config)),
             "eval" => Some(func_eval(other_args, env, config)),
             "run" => Some(func_run(other_args, env, config)),
+            "serve" => Some(serve(other_args, env, config)),
             _ => None,
         },
         _ => None,

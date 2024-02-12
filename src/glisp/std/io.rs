@@ -44,7 +44,7 @@ pub fn func_read_file(args: &[Expression], env: &mut Environment, config: Config
 pub fn func_write_file(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
     args_len_min!("write-file", args, 2);
     args_len_max!("write-file", args, 2);
-    let filename = check_type_onlyone!("write-file", &args[0], env, String, config)?;
+    let filename = check_type_onlyone!("write-file", &args[0], env, String, config.clone())?;
     let str = check_type_onlyone!("write-file", &args[1], env, String, config)?;
 
     match std::fs::write(filename, str) {
@@ -77,7 +77,7 @@ pub fn func_run(args: &[Expression], env: &mut Environment, config: Config) -> R
 
     use std::process::Command;
 
-    let mut command = Command::new(match eval(&args[0], env, config) {
+    let mut command = Command::new(match eval(&args[0], env, config.clone()) {
         Ok(a) => match a {
             Expression::String(s) => s,
             _ => return Err(GError::Reason("run: unsupport type".to_owned())),
@@ -88,7 +88,7 @@ pub fn func_run(args: &[Expression], env: &mut Environment, config: Config) -> R
         let args_ori = &args[1..];
         let mut _args = vec![];
         for e in args_ori {
-            match eval(e, env, config) {
+            match eval(e, env, config.clone()) {
                 Ok(a) => _args.push(match a {
                     Expression::String(s) => s,
                     _ => return Err(GError::Reason("run: unsupport type".to_owned())),

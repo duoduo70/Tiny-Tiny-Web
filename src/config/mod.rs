@@ -82,6 +82,18 @@ pub struct ReplaceData {
     pub line: u32,
 }
 
+/// 这是 Router 的配置文件，每个请求都有一份引用或拷贝
+/// 如果可能，应该尽量作为引用而非拷贝
+/// serve_file_info: 要挂载的文件，其中键是最终的 URL
+/// response_404: 404 NOT FOUND 响应，如果没有开启 404 状态码则不需要设置
+/// pipe: pipe 字符串（而非文件）的列表，会被从前往后的读取
+#[derive(Clone)]
+pub struct RouterConfig {
+    pub serve_files_info: HashMap<String, ServeFileData>,
+    pub response_404: Option<HttpResponse>,
+    pub pipe: Vec<String>,
+}
+
 /// 该结构体用以存储一个被托管的文件对应的元数据
 /// file_path: 被托管的文件的路径
 /// content_type: 被托管的文件的 MIME 类型，例如 `application/octet-stream`
@@ -94,6 +106,27 @@ pub struct ServeFileData {
     pub content_type: String,
     pub replace: Option<Vec<ReplaceData>>,
 }
+
+/// 这是总的配置文件，应该尽量避免拷贝，应该尽量保证唯一性，因为拷贝的代价很大
+/// use_localtime: 是否使用本地时间而非 UTC 时间
+/// enable_debug: 是否使用 debug 模式运行本程序，这主要跟日志的输出有关，debug 模式会极大的拖慢性能
+/// addr_bind: 所有 IP 绑定的集合，例如 ["127.0.0.1:80", "127.0.0.1:22397", "[fe80::0]:80"]
+/// mime_bind: 所有额外的 MIME 类型绑定的集合，键是文件后缀名，值的类型的标准名
+/// status_codes: 启用的所有状态码，例如 [400, 404]
+/// 
+/// 关于 MIME 类型的标准名，参见：https://datatracker.ietf.org/doc/html/rfc6838
+/// 关于所有的状态码，参见：https://datatracker.ietf.org/doc/html/rfc7231
+/// 但是，本程序不支持所有状态码，关于已经支持了的状态码，参见本程序的文档或代码
+#[derive(Clone)]
+pub struct Config {
+    pub use_localtime: bool,
+    pub enable_debug: bool,
+    pub addr_bind: Vec<String>,
+    pub router_config: RouterConfig,
+    pub mime_bind: HashMap<String, String>,
+    pub status_codes: Vec<u16>,
+}
+
 impl ServeFileData {
     pub fn from(file_path: String, config: &Config) -> Self {
         ServeFileData {
@@ -133,34 +166,6 @@ impl ServeFileData {
     }
 }
 
-/// 这是 Router 的配置文件，每个请求都有一份引用或拷贝
-/// 如果可能，应该尽量作为引用而非拷贝
-#[derive(Clone)]
-pub struct RouterConfig {
-    pub serve_files_info: HashMap<String, ServeFileData>,
-    pub response_404: Option<HttpResponse>,
-    pub pipe: Vec<String>,
-}
-
-/// 这是总的配置文件，应该尽量避免拷贝，应该尽量保证唯一性，因为拷贝的代价很大
-/// use_localtime: 是否使用本地时间而非 UTC 时间
-/// enable_debug: 是否使用 debug 模式运行本程序，这主要跟日志的输出有关，debug 模式会极大的拖慢性能
-/// addr_bind: 所有 IP 绑定的集合，例如 ["127.0.0.1:80", "127.0.0.1:22397", "[fe80::0]:80"]
-/// mime_bind: 所有额外的 MIME 类型绑定的集合，键是文件后缀名，值的类型的标准名
-/// status_codes: 启用的所有状态码，例如 [400, 404]
-/// 
-/// 关于 MIME 类型的标准名，参见：https://datatracker.ietf.org/doc/html/rfc6838
-/// 关于所有的状态码，参见：https://datatracker.ietf.org/doc/html/rfc7231
-/// 但是，本程序不支持所有状态码，关于已经支持了的状态码，参见本程序的文档或代码
-#[derive(Clone)]
-pub struct Config {
-    pub use_localtime: bool,
-    pub enable_debug: bool,
-    pub addr_bind: Vec<String>,
-    pub router_config: RouterConfig,
-    pub mime_bind: HashMap<String, String>,
-    pub status_codes: Vec<u16>,
-}
 impl Config {
     pub fn new() -> Self {
         Config {

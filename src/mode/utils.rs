@@ -376,7 +376,7 @@ fn pipe(
             "CONTENT".to_owned(),
             crate::glisp::core::Expression::String(content.to_owned()),
         );
-        match crate::glisp::core::parse_eval(e.to_string(), env, &None) {
+        match crate::glisp::core::parse_eval(e.to_string(), env, None) {
             Ok(crate::glisp::core::Expression::String(res)) => {
                 if enable_debug {
                     log!(Debug, format!("{}{}\n", LOG[8], res));
