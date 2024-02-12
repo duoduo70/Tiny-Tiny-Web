@@ -54,18 +54,6 @@ impl ReqCounter {
     }
 }
 
-pub fn config_init() -> Config {
-    let config: Config = match crate::config::read_config("main.gc".to_owned(), &mut Config::new())
-    {
-        Ok(config) => config.clone(),
-        Err(_) => Config::new(),
-    };
-    config.check();
-    config.sync_static_vars();
-
-    config
-}
-
 pub fn listener_init(config: Config) -> TcpListener {
     let socket_addresses: Vec<std::net::SocketAddr> = config
         .addr_bind
@@ -106,7 +94,8 @@ pub fn handle_connection(mut stream: std::net::TcpStream, config: &Mutex<RouterC
             if let Ok(a) = record {
                 result_https_request(&stream, config, a)
             }
-        } else if buf == "GET ".as_bytes() {
+        } else if buf == "GET /".as_bytes() {
+            // 因为读取 buf 时对原 Stream 进行了一次裁剪，所以在 get_request_str 函数中要把 "GET /" 加回去
             //http
             result_http_request(stream, config)
         }
@@ -364,7 +353,7 @@ fn get_request_str(lines: &mut std::io::Lines<std::io::BufReader<&mut TcpStream>
         break;
     }
     #[cfg(feature = "nightly")]
-    return "GET ".to_owned() + &str;
+    return "GET /".to_owned() + &str;
     #[cfg(not(feature = "nightly"))]
     return str;
 }
@@ -387,7 +376,7 @@ fn pipe(
             "CONTENT".to_owned(),
             crate::glisp::core::Expression::String(content.to_owned()),
         );
-        match crate::glisp::core::parse_eval(e.to_string(), env) {
+        match crate::glisp::core::parse_eval(e.to_string(), env, &None) {
             Ok(crate::glisp::core::Expression::String(res)) => {
                 if enable_debug {
                     log!(Debug, format!("{}{}\n", LOG[8], res));

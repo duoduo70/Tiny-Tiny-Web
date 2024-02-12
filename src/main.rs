@@ -16,6 +16,7 @@ mod utils;
 
 mod glisp;
 
+use config::Config;
 use drop::log::LogLevel::*;
 use i18n::LOG;
 use macros::*;
@@ -46,10 +47,23 @@ fn main() {
             format!("{}{}+nightly).", LOG[0], env!("CARGO_PKG_VERSION"))
         );
     }
+    let config = config_init();
 
     if config::BOX_MODE.load(std::sync::atomic::Ordering::Relaxed) {
-        mode::boxmode::start();
+        mode::boxmode::start(config);
     }
 
-    mode::normalmode::start();
+    mode::normalmode::start(config);
+}
+
+pub fn config_init() -> Config {
+    let config: Config = match crate::config::read_config("main.gc".to_owned(), &mut Config::new())
+    {
+        Ok(config) => config.clone(),
+        Err(_) => Config::new(),
+    };
+    config.check();
+    config.sync_static_vars();
+
+    config
 }

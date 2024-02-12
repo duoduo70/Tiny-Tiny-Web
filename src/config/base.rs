@@ -287,6 +287,7 @@ fn method_import_gl(args: MethodArgs) {
             read_to_string("config/".to_owned() + head2)
                 .result_shldfatal(-1, || log!(Fatal, format!("{}{}", LOG[22], head2))),
             env,
+           &Some(args.config)
         ) {
             Ok(res) => log!(Info, format!("[{}] {} {}", LOG[32], LOG[33], res)),
             Err(e) => match e {

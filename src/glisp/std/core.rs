@@ -18,11 +18,11 @@ pub fn func_quote(args: &[Expression]) -> Result<Expression, GError> {
     Ok(Expression::List(retfst))
 }
 
-pub fn func_atom(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
+pub fn func_atom(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
     args_len_min!("atom", args, 1);
     args_len_max!("atom", args, 1);
 
-    let fst = eval(&args[0], env)?;
+    let fst = eval(&args[0], env, config)?;
     match fst {
         Expression::Symbol(_) => Ok(Expression::Bool(true)),
         Expression::Number(_) => Ok(Expression::Bool(true)),
@@ -46,14 +46,14 @@ pub fn func_atom(args: &[Expression], env: &mut Environment) -> Result<Expressio
     }
 }
 
-pub fn func_eq(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
+pub fn func_eq(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
     args_len_min!("eq", args, 2);
     args_len_max!("eq", args, 2);
 
     let fst = &args[0];
     let snd = &args[1];
 
-    if eval(fst, env)?.to_string() == eval(snd, env)?.to_string() {
+    if eval(fst, env, config)?.to_string() == eval(snd, env, config)?.to_string() {
         Ok(Expression::Bool(true))
     } else {
         Ok(Expression::Bool(false))
@@ -99,7 +99,7 @@ pub fn func_cons(args: &[Expression]) -> Result<Expression, GError> {
     Ok(Expression::List(lst1))
 }
 
-pub fn func_cond(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
+pub fn func_cond(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
     args_len_min!("coud", args, 2);
 
     let mut i = 0;
@@ -108,23 +108,23 @@ pub fn func_cond(args: &[Expression], env: &mut Environment) -> Result<Expressio
             return Err(GError::Reason("cond: Error2".to_string()));
         }
 
-        let v = match eval(&args[i * 2].clone(), env) {
+        let v = match eval(&args[i * 2].clone(), env, config) {
             Ok(a) => a,
             _ => return Err(GError::Reason("cond: Error3".to_string())),
         };
         if let Expression::Bool(true) = v {
-            return eval(&args[i * 2 + 1].clone(), env);
+            return eval(&args[i * 2 + 1].clone(), env, config);
         }
         i += 1;
     }
 }
 
-pub fn func_set(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
+pub fn func_set(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
     args_len_min!("set", args, 2);
     args_len_max!("set", args, 2);
     let var_exp = &args[0];
     let val_res = &args[1];
-    let evaled_val = eval(val_res, env)?;
+    let evaled_val = eval(val_res, env, config)?;
 
     match var_exp {
         Expression::Symbol(ref var_name) => {
@@ -135,10 +135,10 @@ pub fn func_set(args: &[Expression], env: &mut Environment) -> Result<Expression
     }
 }
 
-pub fn func_car(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
+pub fn func_car(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
     args_len_min!("car", args, 1);
     args_len_max!("car", args, 1);
-    let list = check_type_onlyone!("car", &args[0], env, List)?;
+    let list = check_type_onlyone!("car", &args[0], env, List, config)?;
     if list.is_empty() {
         Ok(Expression::List(vec![]))
     } else {
@@ -146,10 +146,10 @@ pub fn func_car(args: &[Expression], env: &mut Environment) -> Result<Expression
     }
 }
 
-pub fn func_cdr(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
+pub fn func_cdr(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
     args_len_min!("cdr", args, 1);
     args_len_max!("cdr", args, 1);
-    let list = check_type_onlyone!("cdr", &args[0], env, List)?;
+    let list = check_type_onlyone!("cdr", &args[0], env, List, config)?;
     if list.len() <= 1 {
         Ok(Expression::List(vec![]))
     } else {
@@ -157,7 +157,7 @@ pub fn func_cdr(args: &[Expression], env: &mut Environment) -> Result<Expression
     }
 }
 
-pub fn func_loop(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
+pub fn func_loop(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
     args_len_min!("loop", args, 2);
 
     let mut i = 0;
@@ -165,7 +165,7 @@ pub fn func_loop(args: &[Expression], env: &mut Environment) -> Result<Expressio
         if i >= args.len() {
             i = 0
         }
-        let res = eval(&args[i], env)?;
+        let res = eval(&args[i], env, config)?;
         if res == Expression::Symbol("return".to_owned()) {
             break;
         }
@@ -180,33 +180,33 @@ pub fn func_loop(args: &[Expression], env: &mut Environment) -> Result<Expressio
     Ok(Expression::Bool(true))
 }
 
-pub fn func_do(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
+pub fn func_do(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
     args_len_min!("do", args, 1);
 
     let ret: &mut Expression = &mut Expression::List(vec![]);
     for e in args {
-        *ret = eval(e, env)?;
+        *ret = eval(e, env, config)?;
     }
     Ok(ret.clone())
 }
 
-pub fn func_or(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
+pub fn func_or(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
     args_len_min!("or", args, 2);
     args_len_max!("or", args, 2);
-    let bool1 = check_type_onlyone!("or", &args[0], env, Bool)?;
-    let bool2 = check_type_onlyone!("or", &args[1], env, Bool)?;
+    let bool1 = check_type_onlyone!("or", &args[0], env, Bool, config)?;
+    let bool2 = check_type_onlyone!("or", &args[1], env, Bool, config)?;
 
     Ok(Expression::Bool(bool1 || bool2))
 }
 
-pub fn func_and(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
+pub fn func_and(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
     args_len_min!("and", args, 2);
     args_len_max!("and", args, 2);
-    let bool1 = check_type_onlyone!("and", &args[0], env, Bool)?;
+    let bool1 = check_type_onlyone!("and", &args[0], env, Bool, config)?;
     if !bool1 {
         return Ok(Expression::Bool(false));
     }
-    let bool2 = check_type_onlyone!("and", &args[1], env, Bool)?;
+    let bool2 = check_type_onlyone!("and", &args[1], env, Bool, config)?;
 
     Ok(Expression::Bool(bool2))
 }

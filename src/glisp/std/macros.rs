@@ -33,8 +33,8 @@ macro_rules! args_len_min {
 pub(super) use args_len_min;
 
 macro_rules! check_type_onlyone {
-    ($fnname:expr, $value:expr, $env:ident, $_type:ident) => {
-        match eval($value, $env) {
+    ($fnname:expr, $value:expr, $env:ident, $_type:ident, $config:ident) => {
+        match eval($value, $env, $config) {
             Ok(Expression::$_type(a)) => Ok(a),
             _ => Err(GError::Reason(format!("{}: Unsupported type", $fnname))),
         }

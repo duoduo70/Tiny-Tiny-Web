@@ -10,7 +10,7 @@ use super::utils::*;
 use crate::drop::log::LogLevel::*;
 use crate::drop::thread::ThreadPool;
 use crate::macros::*;
-use crate::utils::{GlobalValue, TimeErr};
+use crate::utils::TimeErr;
 use crate::{config::*, drop::time::Time, i18n::LOG};
 use std::{
     collections::VecDeque,
@@ -38,8 +38,7 @@ static mut THREADS_BOX: Option<Arc<Mutex<VecDeque<std::net::TcpStream>>>> = None
 /// 当然，如果有过多的线程正在等待，就不会再创建更多等待线程了
 /// 具体算法可能会被经常更改，BOX MODE 应该永远是最激进的模式
 /// 所以，对于具体的算法实现，请参见定义正文
-pub fn start() -> ! {
-    let config = config_init();
+pub fn start(config: Config) -> ! {
 
     log!(Info, LOG[15]);
 
@@ -73,7 +72,7 @@ pub fn start() -> ! {
             Ok(stream) => {
                 ok_vars_init(&mut counters);
 
-                if let Err(()) = thread_box_add(&stream) {
+                if thread_box_add(&stream).is_err() {
                     continue;
                 }
 
@@ -87,7 +86,7 @@ pub fn start() -> ! {
                         {
                             handle_connection_s(
                                 unsafe { &THREADS_BOX.clone().unwrap() },
-                                &Arc::new(Mutex::new(unsafe { GLOBAL_ROUTER_CONFIG.get() })),
+                                &Arc::clone(unsafe { &GLOBAL_ROUTER_CONFIG.clone().unwrap() }),
                             );
                             i += 1;
                         }
@@ -109,7 +108,7 @@ pub fn start() -> ! {
                         {
                             handle_connection_s(
                                 unsafe { &THREADS_BOX.clone().unwrap() },
-                                &Arc::new(Mutex::new(unsafe { GLOBAL_ROUTER_CONFIG.get() })),
+                                &Arc::clone(unsafe { &GLOBAL_ROUTER_CONFIG.clone().unwrap() }),
                             );
                             i += 1;
                         }

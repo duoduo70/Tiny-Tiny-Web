@@ -15,7 +15,7 @@ pub fn run_repl() {
         print!("glisp > ");
         let _ = std::io::stdout().flush();
         let expr = slurp_expr();
-        match parse_eval(expr, env) {
+        match parse_eval(expr, env, &None) {
             Ok(res) => println!("; => {}", res),
             Err(e) => match e {
                 GError::Reason(msg) => println!("; => {}", msg),

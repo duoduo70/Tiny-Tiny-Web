@@ -10,14 +10,14 @@ use std::sync::{Arc, Mutex};
 use std::{process::exit, sync::atomic::Ordering};
 
 use super::utils::*;
+use crate::config::Config;
 use crate::drop::log::LogLevel::*;
 use crate::drop::thread::ThreadPool;
 use crate::i18n::LOG;
 use crate::macros::*;
 use crate::utils::GlobalValue;
 
-pub fn start() -> ! {
-    let config = config_init();
+pub fn start(config: Config) -> ! {
 
     log!(Info, LOG[15]);
 

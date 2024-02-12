@@ -69,7 +69,7 @@ impl Time {
 
         let mut tmp_time = Time {
             timestamp: Ok(timestamp),
-            year: y + 1,
+            year: y,
             month: _month as u32,
             day: (_timestamp / 86400 + 1) as u32,
             hour: (_timestamp % 86400 / 3600) as u32,
@@ -216,12 +216,12 @@ pub fn get_formatted_time(use_localtime: bool) -> Result<String, SystemTimeError
     let time = Time::new();
     Ok(format!(
         "{:0>2}:{:0>2}:{:0>2}",
-        time.hour()? as i8
+        (time.hour()? as i8
             + if !use_localtime {
                 0
             } else {
                 time_difference::get()
-            },
+            }) % 24,
         time.min()?,
         time.sec()?
     ))

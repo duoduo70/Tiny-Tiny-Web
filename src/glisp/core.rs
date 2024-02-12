@@ -55,6 +55,8 @@ pub struct Environment<'a> {
     pub outer: Option<&'a Environment<'a>>,
 }
 
+pub type Config<'a> = &'a Option<&'a mut crate::config::Config>; // 用引用包装 Option 是为了避免拷贝
+
 pub fn func_lambda(args: &[Expression]) -> Result<Expression, GError> {
     let params = args
         .first()
@@ -219,7 +221,7 @@ pub fn default_env<'a>() -> Environment<'a> {
     Environment { data, outer: None }
 }
 
-pub fn eval(exp: &Expression, env: &mut Environment) -> Result<Expression, GError> {
+pub fn eval(exp: &Expression, env: &mut Environment, config: Config) -> Result<Expression, GError> {
     match exp {
         Expression::Bool(_) => Ok(exp.clone()),
         Expression::Symbol(k) => env_get(k, env)
@@ -232,22 +234,22 @@ pub fn eval(exp: &Expression, env: &mut Environment) -> Result<Expression, GErro
                 .ok_or(GError::Reason("expected a non-empty list".to_string()))?;
             let arg_forms = &list[1..];
 
-            match eval_built_in_form(first_form, arg_forms, env) {
+            match eval_built_in_form(first_form, arg_forms, env, config) {
                 Some(built_in_res) => built_in_res,
                 None => {
-                    let first_eval = eval(first_form, env)?;
+                    let first_eval = eval(first_form, env, config)?;
                     match first_eval {
                         Expression::Func(f) => {
                             let args_eval = arg_forms
                                 .iter()
-                                .map(|x| eval(x, env))
+                                .map(|x| eval(x, env, config))
                                 .collect::<Result<Vec<Expression>, GError>>();
                             f(&args_eval?)
                         }
                         Expression::Lambda(lambda) => {
                             // ->  New
-                            let new_env = &mut env_for_lambda(lambda.params, arg_forms, env)?;
-                            eval(&lambda.body, new_env)
+                            let new_env = &mut env_for_lambda(lambda.params, arg_forms, env, config)?;
+                            eval(&lambda.body, new_env, config)
                         }
                         _ => Err(GError::Reason("first form must be a function".to_string())),
                     }
@@ -260,18 +262,18 @@ pub fn eval(exp: &Expression, env: &mut Environment) -> Result<Expression, GErro
     }
 }
 
-pub fn func_if(args: &[Expression], env: &mut Environment) -> Result<Expression, GError> {
+pub fn func_if(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
     let test_form = args
         .first()
         .ok_or(GError::Reason("expected test form".to_string()))?;
-    let test_eval = eval(test_form, env)?;
+    let test_eval = eval(test_form, env, config)?;
     match test_eval {
         Expression::Bool(b) => {
             let form_idx = if b { 1 } else { 2 };
             let res_form = args
                 .get(form_idx)
                 .ok_or(GError::Reason(format!("expected form idx={}", form_idx)))?;
-            eval(res_form, env)
+            eval(res_form, env, config)
         }
         _ => Err(GError::Reason(format!(
             "unexpected test form='{}'",
@@ -280,9 +282,9 @@ pub fn func_if(args: &[Expression], env: &mut Environment) -> Result<Expression,
     }
 }
 
-pub fn parse_eval(expr: String, env: &mut Environment) -> Result<Expression, GError> {
+pub fn parse_eval(expr: String, env: &mut Environment, config: Config) -> Result<Expression, GError> {
     let (parsed_exp, _) = parse(&tokenize(expr))?;
-    let evaled_exp = eval(&parsed_exp, env)?;
+    let evaled_exp = eval(&parsed_exp, env, config)?;
     Ok(evaled_exp)
 }
 
@@ -310,6 +312,7 @@ fn env_for_lambda<'a>(
     params: Rc<Expression>,
     args: &[Expression],
     outer_env: &'a mut Environment,
+    config: Config
 ) -> Result<Environment<'a>, GError> {
     let ks = parse_list_of_symbol_strings(params)?;
     if ks.len() != args.len() {
@@ -319,7 +322,7 @@ fn env_for_lambda<'a>(
             args.len()
         )));
     }
-    let vs = eval_forms(args, outer_env)?;
+    let vs = eval_forms(args, outer_env, config)?;
     let mut data: HashMap<String, Expression> = HashMap::new();
     for (k, v) in ks.iter().zip(vs.iter()) {
         data.insert(k.clone(), v.clone());
@@ -331,8 +334,8 @@ fn env_for_lambda<'a>(
     })
 }
 
-fn eval_forms(args: &[Expression], env: &mut Environment) -> Result<Vec<Expression>, GError> {
-    args.iter().map(|x| eval(x, env)).collect()
+fn eval_forms(args: &[Expression], env: &mut Environment, config: Config) -> Result<Vec<Expression>, GError> {
+    args.iter().map(|x| eval(x, env, config)).collect()
 }
 
 fn parse_list_of_symbol_strings(params: Rc<Expression>) -> Result<Vec<String>, GError> {
