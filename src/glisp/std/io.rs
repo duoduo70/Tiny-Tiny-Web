@@ -9,7 +9,11 @@
 use super::macros::*;
 use super::*;
 
-pub fn func_console_log(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
+pub fn func_console_log(
+    args: &[Expression],
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
     args_len_min!("log", args, 1);
     args_len_max!("log", args, 1);
 
@@ -29,7 +33,11 @@ pub fn func_console_log(args: &[Expression], env: &mut Environment, config: Conf
     Ok(Expression::Bool(true))
 }
 
-pub fn func_read_file(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
+pub fn func_read_file(
+    args: &[Expression],
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
     args_len_min!("read-file", args, 1);
     args_len_max!("read-file", args, 1);
     let filename = check_type_onlyone!("read-file", &args[0], env, String, config)?;
@@ -41,7 +49,11 @@ pub fn func_read_file(args: &[Expression], env: &mut Environment, config: Config
     }
 }
 
-pub fn func_write_file(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
+pub fn func_write_file(
+    args: &[Expression],
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
     args_len_min!("write-file", args, 2);
     args_len_max!("write-file", args, 2);
     let filename = check_type_onlyone!("write-file", &args[0], env, String, config.clone())?;
@@ -53,7 +65,11 @@ pub fn func_write_file(args: &[Expression], env: &mut Environment, config: Confi
     }
 }
 
-pub fn func_read_dir(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
+pub fn func_read_dir(
+    args: &[Expression],
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
     args_len_min!("read-dir", args, 1);
     args_len_max!("read-dir", args, 1);
     let str1 = check_type_onlyone!("read-dir", &args[0], env, String, config)?;
@@ -72,7 +88,11 @@ pub fn func_read_dir(args: &[Expression], env: &mut Environment, config: Config)
     }
 }
 
-pub fn func_run(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
+pub fn func_run(
+    args: &[Expression],
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
     args_len_min!("run", args, 1);
 
     use std::process::Command;

@@ -221,7 +221,8 @@ pub fn get_formatted_time(use_localtime: bool) -> Result<String, SystemTimeError
                 0
             } else {
                 time_difference::get()
-            }) % 24,
+            })
+            % 24,
         time.min()?,
         time.sec()?
     ))

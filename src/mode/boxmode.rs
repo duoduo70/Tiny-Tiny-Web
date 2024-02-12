@@ -39,7 +39,6 @@ static mut THREADS_BOX: Option<Arc<Mutex<VecDeque<std::net::TcpStream>>>> = None
 /// 具体算法可能会被经常更改，BOX MODE 应该永远是最激进的模式
 /// 所以，对于具体的算法实现，请参见定义正文
 pub fn start(config: Config) -> ! {
-
     log!(Info, LOG[15]);
 
     let listener = listener_init(config);

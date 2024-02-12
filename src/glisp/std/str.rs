@@ -8,7 +8,11 @@
 
 use super::macros::*;
 use super::*;
-pub fn func_length(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
+pub fn func_length(
+    args: &[Expression],
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
     args_len_min!("length", args, 1);
     args_len_max!("length", args, 1);
     let arg_res = check_type_onlyone!("length", &args[0], env, String, config.clone());
@@ -21,7 +25,11 @@ pub fn func_length(args: &[Expression], env: &mut Environment, config: Config) -
     }
 }
 
-pub fn func_str_eq(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
+pub fn func_str_eq(
+    args: &[Expression],
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
     args_len_min!("str.=", args, 2);
     args_len_max!("str.=", args, 2);
     let str1 = check_type_onlyone!("str.=", &args[0], env, String, config.clone())?;
@@ -30,7 +38,11 @@ pub fn func_str_eq(args: &[Expression], env: &mut Environment, config: Config) -
     Ok(Expression::Bool(str::eq(&str1, &str2)))
 }
 
-pub fn func_str_ne(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
+pub fn func_str_ne(
+    args: &[Expression],
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
     args_len_min!("str.!=", args, 2);
     args_len_max!("str.!=", args, 2);
     let str1 = check_type_onlyone!("str.!=", &args[0], env, String, config.clone())?;
@@ -39,7 +51,11 @@ pub fn func_str_ne(args: &[Expression], env: &mut Environment, config: Config) -
     Ok(Expression::Bool(str::ne(&str1, &str2)))
 }
 
-pub fn func_str_lt(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
+pub fn func_str_lt(
+    args: &[Expression],
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
     args_len_min!("str.<", args, 2);
     args_len_max!("str.<", args, 2);
     let str1 = check_type_onlyone!("str.<", &args[0], env, String, config.clone())?;
@@ -48,7 +64,11 @@ pub fn func_str_lt(args: &[Expression], env: &mut Environment, config: Config) -
     Ok(Expression::Bool(str::lt(&str1, &str2)))
 }
 
-pub fn func_str_le(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
+pub fn func_str_le(
+    args: &[Expression],
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
     args_len_min!("str.<=", args, 2);
     args_len_max!("str.<=", args, 2);
     let str1 = check_type_onlyone!("str.<=", &args[0], env, String, config.clone())?;
@@ -57,7 +77,11 @@ pub fn func_str_le(args: &[Expression], env: &mut Environment, config: Config) -
     Ok(Expression::Bool(str::le(&str1, &str2)))
 }
 
-pub fn func_str_gt(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
+pub fn func_str_gt(
+    args: &[Expression],
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
     args_len_min!("str.>", args, 2);
     args_len_max!("str.>", args, 2);
     let str1 = check_type_onlyone!("str.>", &args[0], env, String, config.clone())?;
@@ -66,7 +90,11 @@ pub fn func_str_gt(args: &[Expression], env: &mut Environment, config: Config) -
     Ok(Expression::Bool(str::gt(&str1, &str2)))
 }
 
-pub fn func_str_ge(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
+pub fn func_str_ge(
+    args: &[Expression],
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
     args_len_min!("str.>=", args, 2);
     args_len_max!("str.>=", args, 2);
     let str1 = check_type_onlyone!("str.>=", &args[0], env, String, config.clone())?;
@@ -75,7 +103,11 @@ pub fn func_str_ge(args: &[Expression], env: &mut Environment, config: Config) -
     Ok(Expression::Bool(str::ge(&str1, &str2)))
 }
 
-pub fn func_last(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
+pub fn func_last(
+    args: &[Expression],
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
     args_len_min!("last", args, 1);
     args_len_max!("last", args, 1);
     let str = check_type_onlyone!("last", &args[0], env, String, config)?;
@@ -85,7 +117,11 @@ pub fn func_last(args: &[Expression], env: &mut Environment, config: Config) -> 
     }
 }
 
-pub fn func_chars(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
+pub fn func_chars(
+    args: &[Expression],
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
     args_len_min!("chars", args, 1);
     args_len_max!("chars", args, 1);
     let str = check_type_onlyone!("chars", &args[0], env, String, config)?;
@@ -95,7 +131,11 @@ pub fn func_chars(args: &[Expression], env: &mut Environment, config: Config) ->
         .map(|x| Expression::String(x.to_string()))
         .collect::<Vec<_>>())))
 }
-pub fn func_find(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
+pub fn func_find(
+    args: &[Expression],
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
     args_len_min!("find", args, 2);
     args_len_max!("find", args, 2);
     let str1 = check_type_onlyone!("find", &args[0], env, String, config.clone())?;
@@ -107,7 +147,11 @@ pub fn func_find(args: &[Expression], env: &mut Environment, config: Config) -> 
         Expression::Bool(false)
     })
 }
-pub fn func_contains(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
+pub fn func_contains(
+    args: &[Expression],
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
     args_len_min!("contains", args, 2);
     args_len_max!("contains", args, 2);
     let str1 = check_type_onlyone!("contains", &args[0], env, String, config.clone())?;
@@ -115,7 +159,11 @@ pub fn func_contains(args: &[Expression], env: &mut Environment, config: Config)
 
     Ok(Expression::Bool(str1.contains(&str2)))
 }
-pub fn func_insert(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
+pub fn func_insert(
+    args: &[Expression],
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
     args_len_min!("insert", args, 3);
     args_len_max!("insert", args, 3);
     let mut str1 = check_type_onlyone!("insert", &args[0], env, String, config.clone())?;
@@ -126,7 +174,11 @@ pub fn func_insert(args: &[Expression], env: &mut Environment, config: Config) -
     Ok(Expression::String(str1))
 }
 
-pub fn func_begin(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
+pub fn func_begin(
+    args: &[Expression],
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
     args_len_min!("begin", args, 1);
     args_len_max!("begin", args, 1);
     let str1 = check_type_onlyone!("begin", &args[0], env, String, config)?;
@@ -138,7 +190,11 @@ pub fn func_begin(args: &[Expression], env: &mut Environment, config: Config) ->
     })
 }
 
-pub fn func_is_empty(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
+pub fn func_is_empty(
+    args: &[Expression],
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
     args_len_min!("is-empty", args, 1);
     args_len_max!("is-empty", args, 1);
     let str1 = check_type_onlyone!("is-empty", &args[0], env, String, config)?;
@@ -146,7 +202,11 @@ pub fn func_is_empty(args: &[Expression], env: &mut Environment, config: Config)
     Ok(Expression::Bool(str1.is_empty()))
 }
 
-pub fn func_remove(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
+pub fn func_remove(
+    args: &[Expression],
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
     args_len_min!("remove", args, 2);
     args_len_max!("remove", args, 3);
     let mut str1 = check_type_onlyone!("remove", &args[0], env, String, config.clone())?;
@@ -162,7 +222,11 @@ pub fn func_remove(args: &[Expression], env: &mut Environment, config: Config) -
     }
 }
 
-pub fn func_reverse(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
+pub fn func_reverse(
+    args: &[Expression],
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
     args_len_min!("reverse", args, 1);
     args_len_max!("reverse", args, 1);
     let str1 = check_type_onlyone!("reverse", &args[0], env, String, config)?;
@@ -170,7 +234,11 @@ pub fn func_reverse(args: &[Expression], env: &mut Environment, config: Config) 
     Ok(Expression::String(str1.chars().rev().collect::<String>()))
 }
 
-pub fn func_rfind(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
+pub fn func_rfind(
+    args: &[Expression],
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
     args_len_min!("rfind", args, 2);
     args_len_max!("rfind", args, 2);
     let str1 = check_type_onlyone!("rfind", &args[0], env, String, config.clone())?;
@@ -183,7 +251,11 @@ pub fn func_rfind(args: &[Expression], env: &mut Environment, config: Config) ->
     })
 }
 
-pub fn func_slice(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
+pub fn func_slice(
+    args: &[Expression],
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
     args_len_min!("slice", args, 3);
     args_len_max!("slice", args, 3);
     let str1 = check_type_onlyone!("slice", &args[0], env, String, config.clone())?;
@@ -206,7 +278,11 @@ pub fn func_slice(args: &[Expression], env: &mut Environment, config: Config) ->
     ))
 }
 
-pub fn func_str(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
+pub fn func_str(
+    args: &[Expression],
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
     args_len_min!("str", args, 1);
     args_len_max!("str", args, 1);
     let meta = check_type_onlyone!("str", &args[0], env, String, config)?;
@@ -220,7 +296,11 @@ pub fn func_str(args: &[Expression], env: &mut Environment, config: Config) -> R
     ))
 }
 
-pub fn func_str_plus(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
+pub fn func_str_plus(
+    args: &[Expression],
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
     args_len_min!("str.+", args, 2);
     args_len_max!("str.+", args, 2);
     let str1 = check_type_onlyone!("str.+", &args[0], env, String, config.clone())?;
@@ -229,7 +309,11 @@ pub fn func_str_plus(args: &[Expression], env: &mut Environment, config: Config)
     Ok(Expression::String(str1 + &str2))
 }
 
-pub fn func_lines(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
+pub fn func_lines(
+    args: &[Expression],
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
     args_len_min!("lines", args, 1);
     args_len_max!("lines", args, 1);
     let str1 = check_type_onlyone!("lines", &args[0], env, String, config)?;

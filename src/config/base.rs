@@ -6,12 +6,12 @@
  * if not, see <https://www.gnu.org/licenses/>.
  */
 
+use self::vars::method_set;
 use crate::config::*;
 use crate::drop::tool::ShouldResult;
 use std::fs::read_to_string;
 use std::path::Path;
 use std::process::exit;
-use self::vars::method_set;
 
 pub struct MethodArgs<'a> {
     pub config: &'a mut Config,
@@ -287,7 +287,7 @@ fn method_import_gl(args: MethodArgs) {
             read_to_string("config/".to_owned() + head2)
                 .result_shldfatal(-1, || log!(Fatal, format!("{}{}", LOG[22], head2))),
             env,
-           Some(std::cell::RefCell::new(args.config).into())
+            Some(std::cell::RefCell::new(args.config).into()),
         ) {
             Ok(res) => log!(Info, format!("[{}] {} {}", LOG[32], LOG[33], res)),
             Err(e) => match e {

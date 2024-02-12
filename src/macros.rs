@@ -24,7 +24,7 @@ pub(crate) use lgconf;
 /// ```
 /// import drop::log::LogLevel::*; // 这个引入是必须的
 /// import macros::*; // 示例宏被存储的地方
-/// 
+///
 /// log!(Info, "This is a info.");
 /// ```
 macro_rules! log {

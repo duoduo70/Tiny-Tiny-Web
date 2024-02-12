@@ -59,7 +59,7 @@ pub struct Environment<'a> {
 /// 使用 Rc 是为了解决在递归式解析中不可避免的循环可变引用
 /// 与其深拷贝一次 Config ，每次调用函数时多进行一次寻址在通常情况下可能更快
 /// 并且，为了保持代码的一致性和可维护性，最终决定保留 `&mut` 引用
-/// 
+///
 /// 在未来的版本中，如果`&mut crate::config::Config` 不足以支撑 crate::config 包，会考虑全部换成 RefCell
 pub type Config<'a> = Option<Rc<std::cell::RefCell<&'a mut crate::config::Config>>>;
 
@@ -254,7 +254,8 @@ pub fn eval(exp: &Expression, env: &mut Environment, config: Config) -> Result<E
                         }
                         Expression::Lambda(lambda) => {
                             // ->  New
-                            let new_env = &mut env_for_lambda(lambda.params, arg_forms, env, config.clone())?;
+                            let new_env =
+                                &mut env_for_lambda(lambda.params, arg_forms, env, config.clone())?;
                             eval(&lambda.body, new_env, config)
                         }
                         _ => Err(GError::Reason("first form must be a function".to_string())),
@@ -268,7 +269,11 @@ pub fn eval(exp: &Expression, env: &mut Environment, config: Config) -> Result<E
     }
 }
 
-pub fn func_if(args: &[Expression], env: &mut Environment, config: Config) -> Result<Expression, GError> {
+pub fn func_if(
+    args: &[Expression],
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
     let test_form = args
         .first()
         .ok_or(GError::Reason("expected test form".to_string()))?;
@@ -288,7 +293,11 @@ pub fn func_if(args: &[Expression], env: &mut Environment, config: Config) -> Re
     }
 }
 
-pub fn parse_eval(expr: String, env: &mut Environment, config: Config) -> Result<Expression, GError> {
+pub fn parse_eval(
+    expr: String,
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
     let (parsed_exp, _) = parse(&tokenize(expr))?;
     let evaled_exp = eval(&parsed_exp, env, config)?;
     Ok(evaled_exp)
@@ -318,7 +327,7 @@ fn env_for_lambda<'a>(
     params: Rc<Expression>,
     args: &[Expression],
     outer_env: &'a mut Environment,
-    config: Config
+    config: Config,
 ) -> Result<Environment<'a>, GError> {
     let ks = parse_list_of_symbol_strings(params)?;
     if ks.len() != args.len() {
@@ -340,7 +349,11 @@ fn env_for_lambda<'a>(
     })
 }
 
-fn eval_forms(args: &[Expression], env: &mut Environment, config: Config) -> Result<Vec<Expression>, GError> {
+fn eval_forms(
+    args: &[Expression],
+    env: &mut Environment,
+    config: Config,
+) -> Result<Vec<Expression>, GError> {
     args.iter().map(|x| eval(x, env, config.clone())).collect()
 }
 

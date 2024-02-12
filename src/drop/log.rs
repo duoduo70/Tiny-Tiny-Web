@@ -13,15 +13,15 @@ use super::time::get_formatted_time;
 /// enable_debug: 是否要开启 debug 模式，在 debug 模式下会额外打印方法名，行列号
 /// fn_line_col_lctime: enable_debug 如果开启，则前三个参数是 enable_debug 的参数三元组
 /// 第四个参数在不开启 enable_debug 的情况下也要使用，它控制着是否使用本地时间而非 UTC 时间
-/// 
+///
 /// 如果选择使用本地时间，需要注意：获得时差的函数是不安全的，由 C 函数封装而来
-/// 
+///
 /// 注：如果没有利用宏进行二次封装，则很难正常使用 debug 模式
 /// 只要使用函数封装而非宏封装，就可以使用非 debug 模式
-/// 
+///
 /// 如果没有开启 enable_debug ，就无法打印 Debug 级别的日志
 /// 如果没有开启 enable_debug ，则 Debug 级别以外的日志会缺少方法名，行列号
-/// 
+///
 /// 关于封装，Example:
 /// ```
 /// /* Tiny Tiny Web
@@ -54,7 +54,7 @@ use super::time::get_formatted_time;
 ///    };
 /// }
 /// pub(crate) use log;
-/// 
+///
 /// macro_rules! process_result {
 /// ($result:ident, $type:ident, $message:expr) => {{
 ///     let res: $type;
@@ -75,7 +75,7 @@ use super::time::get_formatted_time;
 /// ```
 /// import drop::log::LogLevel::*; // 这个引入是必须的
 /// import macros::*; // 示例宏被存储的地方
-/// 
+///
 /// log!(Info, "This is a info.");
 /// ```
 pub fn log(

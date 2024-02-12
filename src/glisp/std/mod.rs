@@ -6,25 +6,25 @@
  * if not, see <https://www.gnu.org/licenses/>.
  */
 
+mod config;
 mod core;
 mod eval;
 mod io;
 mod macros;
 mod str;
-mod config;
 
 use super::core::*;
+use config::*;
 use core::*;
 use eval::*;
 use io::*;
 use str::*;
-use config::*;
 
 pub fn eval_built_in_form(
     exp: &Expression,
     other_args: &[Expression],
     env: &mut Environment,
-    config: Config
+    config: Config,
 ) -> Option<Result<Expression, GError>> {
     match exp {
         Expression::Symbol(symbol) => match symbol.as_ref() {

@@ -12,15 +12,15 @@ use std::{collections::HashMap, time::SystemTimeError};
 pub struct HttpRequestError;
 
 /// 可以解析任意标准的 HTTP 请求字符串
-/// 
+///
 /// request_method: 请求方法, 可能性有 `GET`, `HEAD`, `POST`, 'PUT' 等
 /// url: 请求希望获取的页面的链接
 /// version: HTTP 协议的版本，例如 `1.1`
 /// headers: 该哈希表的键表示请求头的键，值表示请求头的值
 /// content: 可选的，请求的主体部分，以缓冲区的方式储存
-/// 
+///
 /// content 以缓冲区的方式储存的目的是避免过大的主体造成的一次性内存读取从而拖慢效率
-/// 
+///
 /// 一个请求头的例子: `Content-Length: 32`，`Content-Length` 是键，`32` 是值
 ///
 /// See: https://www.rfc-editor.org/rfc/rfc2616
@@ -107,18 +107,18 @@ impl<'a, T> HttpRequest<'a, T> {
 }
 
 /// 可以构造一个标准的 HTTP 响应字符串
-/// 
+///
 /// version: HTTP 相应的版本, 例如 `1.1`
 /// state: HTTP 相应的状态, 例如 `400 BAD REQUEST`
 /// header: 该哈希表的键表示相应头的键，值表示相应头的值
 /// content: 可选的，相应主体部分，以 Vec<u8> 的方式储存
-/// 
+///
 /// 和 HttpRequest 不同, HttpResponse 用 Vec<u8> 的方式储存的原因是：
 /// 1. 需要经常改变 content 的值以计算出最终的 content ，直接用 Vec<u8> 来储存可以避免转换和内存拷贝
 /// 2. 对于大的相应主体，可以将其分成多个相应
-/// 
+///
 /// See: https://www.rfc-editor.org/rfc/rfc2616
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct HttpResponse {
     version: String,
     state: String,

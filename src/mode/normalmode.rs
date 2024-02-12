@@ -18,7 +18,6 @@ use crate::macros::*;
 use crate::utils::GlobalValue;
 
 pub fn start(config: Config) -> ! {
-
     log!(Info, LOG[15]);
 
     let listener = listener_init(config);
