@@ -34,5 +34,165 @@
   "pass": {
     "prefix": ["pass"],
     "body": ["(pass)"]
+  },
+  "quote": {
+    "prefix": ["quote"],
+    "body": ["(quote $0)"]
+  },
+  "atom": {
+    "prefix": ["atom"],
+    "body": ["(atom $0)"]
+  },
+  "eq": {
+    "prefix": ["eq"],
+    "body": ["(eq $0)"]
+  },
+  "car": {
+    "prefix": ["car"],
+    "body": ["(car $0)"]
+  },
+  "cdr": {
+    "prefix": ["cdr"],
+    "body": ["(cdr $0)"]
+  },
+  "cons": {
+    "prefix": ["cons"],
+    "body": ["(cons $0)"]
+  },
+  "cond": {
+    "prefix": ["cond"],
+    "body": ["(cond $0)"]
+  },
+  "length": {
+    "prefix": ["length"],
+    "body": ["(length $0)"]
+  },
+  "streq": {
+    "prefix": ["streq"],
+    "body": ["(str.= $0)"]
+  },
+  "strne": {
+    "prefix": ["strne"],
+    "body": ["(str.!= $0)"]
+  },
+  "strlt": {
+    "prefix": ["strlt"],
+    "body": ["(str.< $0)"]
+  },
+  "strle": {
+    "prefix": ["strle"],
+    "body": ["(str.<= $0)"]
+  },
+  "strgt": {
+    "prefix": ["strgt"],
+    "body": ["(str.> $0)"]
+  },
+  "strge": {
+    "prefix": ["strge"],
+    "body": ["(str.>= $0)"]
+  },
+  "last": {
+    "prefix": ["last"],
+    "body": ["(last $0)"]
+  },
+  "chars": {
+    "prefix": ["chars"],
+    "body": ["(chars $0)"]
+  },
+  "find": {
+    "prefix": ["find"],
+    "body": ["(find $0)"]
+  },
+  "contains": {
+    "prefix": ["contains"],
+    "body": ["(contains $0)"]
+  },
+  "insert": {
+    "prefix": ["insert"],
+    "body": ["(insert $0)"]
+  },
+  "begin": {
+    "prefix": ["begin"],
+    "body": ["(begin $0)"]
+  },
+  "is-empty": {
+    "prefix": ["isempty"],
+    "body": ["(is-empty $0)"]
+  },
+  "remove": {
+    "prefix": ["remove"],
+    "body": ["(remove $0)"]
+  },
+  "reverse": {
+    "prefix": ["reverse"],
+    "body": ["(reverse $0)"]
+  },
+  "rfind": {
+    "prefix": ["rfind"],
+    "body": ["(rfind $0)"]
+  },
+  "slice": {
+    "prefix": ["slice"],
+    "body": ["(slice $0)"]
+  },
+  "log": {
+    "prefix": ["log"],
+    "body": ["(log $0)"]
+  },
+  "readfile": {
+    "prefix": ["readfile"],
+    "body": ["(read-file $0)"]
+  },
+  "writefile": {
+    "prefix": ["writefile"],
+    "body": ["(write-file $0)"]
+  },
+  "meta": {
+    "prefix": ["meta"],
+    "body": ["(meta $0)"]
+  },
+  "eval-atom": {
+    "prefix": ["evalatom"],
+    "body": ["(eval-atom $0)"]
+  },
+  "str": {
+    "prefix": ["str"],
+    "body": ["(str $0)"]
+  },
+  "strconcat": {
+    "prefix": ["strconcat"],
+    "body": ["(str.+ $0)"]
+  },
+  "or": {
+    "prefix": ["or"],
+    "body": ["(or $0)"]
+  },
+  "and": {
+    "prefix": ["and"],
+    "body": ["(and $0)"]
+  },
+  "lines": {
+    "prefix": ["lines"],
+    "body": ["(lines $0)"]
+  },
+  "read-dir": {
+    "prefix": ["readdir"],
+    "body": ["(read-dir $0)"]
+  },
+  "for-each-eval": {
+    "prefix": ["foreacheval"],
+    "body": ["(for-each-eval $1\n    $2)"]
+  },
+  "eval": {
+    "prefix": ["eval"],
+    "body": ["(eval $0)"]
+  },
+  "run": {
+    "prefix": ["run"],
+    "body": ["(run $0)"]
+  },
+  "serve": {
+    "prefix": ["serve"],
+    "body": ["(serve $0)"]
   }
 }
