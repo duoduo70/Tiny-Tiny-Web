@@ -131,8 +131,8 @@
                             (pass))
                         (set ret
                             (str.+ (str.+ (str.+ ret (str "<pre><code\bclass=\'language-"))
-                                (slice head 3 (- (length head) 1)))
-                                (str "\'>\n")))))
+                                                 (slice head 3 (- (length head) 1)))
+                                          (str "\'>\n")))))
                 (continue))
             (pass))
 
@@ -212,5 +212,6 @@
             (pass))
         ret)))
 
-    (for-each-eval (read-dir "markdown") 
-        (str "\[write-file\b\'temp/$$.html\'\b\[str\b\[markdown-parse\b\[lines\b\[read-file\b\'markdown/$$\'\]\]\]\]\]")))
+    (for-each-eval (read-dir "markdown")
+        (write-file (str.+ (str.+ "temp/" $$ ) ".html")
+                    (str (markdown-parse (lines (read-file (str.+ ("markdown/" $$)))))))))

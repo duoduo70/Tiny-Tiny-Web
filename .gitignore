@@ -9,6 +9,7 @@
 !docs/**
 !config
 !config/markdown-auto-compile.gl
+!config/auto-image-hosting.gl
 !icon.png
 
 

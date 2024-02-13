@@ -11,7 +11,15 @@
     "Programming Languages",
     "Snippets"
   ],
+  "main": "./src/extension.js",
   "contributes": {
+    "commands": [
+      {
+        "command": "ttwebrepl.start",
+        "title": "Start new Tiny-Tiny-Web REPL window",
+        "category": "Ghost Lisp"
+      }
+    ],
     "languages": [{
       "id": "glisp",
       "aliases": ["Ghost Lisp", "glisp"],

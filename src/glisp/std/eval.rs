@@ -17,12 +17,14 @@ pub fn func_for_each_eval(
     args_len_min!("for-each-eval", args, 2);
     args_len_max!("for-each-eval", args, 2);
     let from = check_type_onlyone!("for-each-eval", &args[0], env, List, config.clone())?;
-    let to = check_type_onlyone!("for-each-eval", &args[1], env, String, config.clone())?;
 
     for e in from {
         let e_str = e.to_string();
-        let (parsed_exp, _) = parse(&tokenize(to.replace("$$", &e_str[1..e_str.len() - 1])))?;
-        eval(&parsed_exp, env, config.clone())?;
+        env.data.insert(
+            "$$".to_owned(),
+            crate::glisp::core::Expression::String(e_str),
+        );
+        eval(&args[1], env, config.clone())?;
     }
     Ok(Expression::Bool(true))
 }

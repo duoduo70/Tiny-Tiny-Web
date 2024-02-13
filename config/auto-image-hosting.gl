@@ -1,0 +1,28 @@
+;;; Tiny Tiny Web
+;;; Copyright (C) 2024 Plasma (https://github.com/duoduo70/Tiny-Tiny-Web/).
+;;;
+;;; You should have received a copy of the GNU General Public License
+;;; along with this program;
+;;; if not, see <https://www.gnu.org/licenses/>.
+;;;
+
+(do
+    (set host "http://localhost:22397/")
+
+    (set get-pure-str (lambda (str)
+        (slice str 1 (- (length str) 2))))
+    (set search-in-mime-list (lambda (str) (do
+        (set type "image/jpeg")
+        (if (str.= str "gif") (set type "image/gif") (pass))
+        (if (str.= str "png") (set type "image/png") (pass))
+        (if (str.= str "jpg") (set type "image/jpeg") (pass))
+        (if (str.= str "jpeg") (set type "image/jpeg") (pass))
+        (if (str.= str "webp") (set type "image/webp") (pass))
+        (if (str.= str "svg") (set type "image/svg+xml") (pass))
+        type)))
+    (for-each-eval (read-dir "image-hosting")
+        (do 
+            (set pure-str (get-pure-str $$))
+            (serve (get-pure-str $$) (str.+ "image-hosting/" pure-str) (search-in-mime-list
+                (slice pure-str (+ (rfind pure-str ".") 1) (- (length pure-str) 1))))
+            (log (str.+ host pure-str)))))

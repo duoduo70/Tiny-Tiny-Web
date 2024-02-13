@@ -9,7 +9,7 @@
 use super::macros::*;
 use super::*;
 
-pub fn serve(
+pub fn func_serve(
     args: &[Expression],
     env: &mut Environment,
     config: Config,
@@ -21,7 +21,7 @@ pub fn serve(
     let file_path = check_type_onlyone!("serve", &args[1], env, String, config.clone())?;
     let content_type = check_type_onlyone!("serve", &args[2], env, String, config.clone())?;
 
-    if !std::path::Path::new(&("export/".to_owned() + &file_path)).is_file() {
+    if !std::path::Path::new(&file_path).is_file() {
         return Err(GError::Reason(
             "serve: The second arg is not a file".to_owned(),
         ));
@@ -30,9 +30,9 @@ pub fn serve(
     if let Some(_config) = config {
         let mut _config = _config.borrow_mut();
         _config.router_config.serve_files_info.insert(
-            url,
+            "/".to_owned() + &url,
             crate::config::ServeFileData {
-                file_path,
+                file_path: "/../".to_owned() + &file_path,
                 content_type,
                 replace: None,
             },
