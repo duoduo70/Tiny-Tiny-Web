@@ -48,6 +48,13 @@ If you want to build no-glisp version, use:
 cargo build --features no-glisp
 ```
 
+There is a shell script to publish release package. Include Linux version, Windows version, Glisp Example, Docs and so on. Generally there is no need to use it.  
+有一个可以生成用来发布的包的构建脚本，包含 Linux 版，Windows 版，Glisp 示例，文档等。一般不需要使用。
+```sh
+# In Linux and your system must include `zip`
+sh ./build.sh
+```
+
 ## Start / 启动
 Create `config` , `export` , `temp` directory in your program root directory.
 Create `main.gc` in `config` directory, and write:  

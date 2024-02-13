@@ -12,6 +12,7 @@
 !config/auto-image-hosting.gl
 !icon.png
 
+!build.sh
 
 !vscode-ghost-lisp-extension
 !vscode-ghost-lisp-extension/syntaxes
