@@ -571,7 +571,7 @@ pub fn eval_built_in_form(
 
     (for-each-eval (read-dir "markdown")
         (write-file (str.+ (str.+ "temp/" $$ ) ".html")
-                    (str (markdown-parse (lines (read-file (str.+ ("markdown/" $$)))))))))
+                    (str (markdown-parse (lines (read-file (str.+ ("markdown/" $$))))))))
 ```
 这个程序的作用是读取所有 `markdown/*.md` 文件，将其编译到 `temp/*.md.html`。
 
