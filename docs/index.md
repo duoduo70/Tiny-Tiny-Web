@@ -233,7 +233,7 @@ Glisp 是一门基于 Lisp 的编程语言。
 ```
 如果其中的一个表达式被解析后返回`return`，则退出循环。
 如果其中的一个表达式被解析后返回`continue`，则重新循环。
-所以，为什么这里的 `return` 要写作 `(return)` ？很简单，因为在 `loop` 函数的机制中欧，它的每个函数在每次循环中都要被解析一次。
+所以，为什么这里的 `return` 要写作 `(return)` ？很简单，因为在 `loop` 函数的机制中，它的每个函数在每次循环中都要被解析一次。
 不加括号的 `return` 是单纯的符号 (Symbol) ，所以无法被解析。（数字能被解析是因为数字的底层类型是 Number ，但符号不行，符号只能被括号括住作为函数被解析，但是如果一个高级函数不解析它的传入参数，则可以传入不加括号的符号。）
 在被解析一次之后，它返回作为符号的 `return` （默认来说，一个表达式只会被“完全解析”一次，而非“循环完全解析”，也就是说，例如`(+ (+ 1 1) (+ 1 1))`这种函数，在一次完全解析后得到 `1` ，它不会再对 `1` 做解析，否则会产生无限循环）。
 
@@ -265,7 +265,7 @@ Glisp 是一门基于 Lisp 的编程语言。
 )
 ```
 
-对于查看最新的所有的内置函数，应该查看[源代码存储库](https://github.com/duoduo70/Tiny-Tiny-Web)中的`src/glisp/std/mod.rs`文件（最好是你当前使用的 TTWeb 版本的拷贝而不是 Github 上的主分支），亦或者，这里有一份`2.0.0-beta3`版本的拷贝，它可能已经过时：
+对于查看最新的所有的内置函数，应该查看[源代码存储库](https://github.com/duoduo70/Tiny-Tiny-Web)中的`src/glisp/std/mod.rs`文件（最好是你当前使用的 TTWeb 版本的拷贝而不是 Github 上的主分支），亦或者，这里有一份`2.0.0-beta8`版本的拷贝，它可能已经过时：
 ```rust
 /* Tiny Tiny Web
  * Copyright (C) 2024 Plasma (https://github.com/duoduo70/Tiny-Tiny-Web/).
@@ -275,72 +275,76 @@ Glisp 是一门基于 Lisp 的编程语言。
  * if not, see <https://www.gnu.org/licenses/>.
  */
 
+mod config;
 mod core;
-mod str;
-mod macros;
-mod io;
 mod eval;
+mod io;
+mod macros;
+mod str;
 
 use super::core::*;
+use config::*;
 use core::*;
-use str::*;
-use io::*;
 use eval::*;
+use io::*;
+use str::*;
 
 pub fn eval_built_in_form(
     exp: &Expression,
     other_args: &[Expression],
     env: &mut Environment,
+    config: Config,
 ) -> Option<Result<Expression, GError>> {
     match exp {
         Expression::Symbol(symbol) => match symbol.as_ref() {
-            "if" => Some(func_if(other_args, env)),
-            "set" => Some(func_set(other_args, env)),
+            "if" => Some(func_if(other_args, env, config)),
+            "set" => Some(func_set(other_args, env, config)),
             "lambda" => Some(func_lambda(other_args)),
             "quote" => Some(func_quote(other_args)),
-            "atom" => Some(func_atom(other_args, env)),
-            "eq" => Some(func_eq(other_args, env)),
-            "car" => Some(func_car(other_args, env)),
-            "cdr" => Some(func_cdr(other_args, env)),
+            "atom" => Some(func_atom(other_args, env, config)),
+            "eq" => Some(func_eq(other_args, env, config)),
+            "car" => Some(func_car(other_args, env, config)),
+            "cdr" => Some(func_cdr(other_args, env, config)),
             "cons" => Some(func_cons(other_args)),
-            "cond" => Some(func_cond(other_args, env)),
-            "length" => Some(func_length(other_args, env)),
-            "str.=" => Some(func_str_eq(other_args, env)),
-            "str.!=" => Some(func_str_ne(other_args, env)),
-            "str.<" => Some(func_str_lt(other_args, env)),
-            "str.<=" => Some(func_str_le(other_args, env)),
-            "str.>" => Some(func_str_gt(other_args, env)),
-            "str.>=" => Some(func_str_ge(other_args, env)),
-            "last" => Some(func_last(other_args, env)),
-            "chars" => Some(func_chars(other_args, env)),
-            "find" => Some(func_find(other_args, env)),
-            "contains" => Some(func_contains(other_args, env)),
-            "insert" => Some(func_insert(other_args, env)),
-            "begin" => Some(func_begin(other_args, env)),
-            "is-empty" => Some(func_is_empty(other_args, env)),
-            "remove" => Some(func_remove(other_args, env)),
-            "reverse" => Some(func_reverse(other_args, env)),
-            "rfind" => Some(func_rfind(other_args, env)),
-            "slice" => Some(func_slice(other_args, env)),
-            "log" => Some(func_console_log(other_args, env)),
-            "loop" => Some(func_loop(other_args, env)),
-            "read-file" => Some(func_read_file(other_args, env)),
-            "write-file" => Some(func_write_file(other_args, env)),
-            "do" => Some(func_do(other_args, env)),
-            "meta" => Some(func_meta(other_args, env)),
-            "eval-atom" => Some(func_eval_atom(other_args, env)),
-            "str" => Some(func_str(other_args, env)),
-            "str.+" => Some(func_str_plus(other_args, env)),
-            "or" => Some(func_or(other_args, env)),
-            "and" => Some(func_and(other_args, env)),
-            "lines" => Some(func_lines(other_args, env)),
+            "cond" => Some(func_cond(other_args, env, config)),
+            "length" => Some(func_length(other_args, env, config)),
+            "str.=" => Some(func_str_eq(other_args, env, config)),
+            "str.!=" => Some(func_str_ne(other_args, env, config)),
+            "str.<" => Some(func_str_lt(other_args, env, config)),
+            "str.<=" => Some(func_str_le(other_args, env, config)),
+            "str.>" => Some(func_str_gt(other_args, env, config)),
+            "str.>=" => Some(func_str_ge(other_args, env, config)),
+            "last" => Some(func_last(other_args, env, config)),
+            "chars" => Some(func_chars(other_args, env, config)),
+            "find" => Some(func_find(other_args, env, config)),
+            "contains" => Some(func_contains(other_args, env, config)),
+            "insert" => Some(func_insert(other_args, env, config)),
+            "begin" => Some(func_begin(other_args, env, config)),
+            "is-empty" => Some(func_is_empty(other_args, env, config)),
+            "remove" => Some(func_remove(other_args, env, config)),
+            "reverse" => Some(func_reverse(other_args, env, config)),
+            "rfind" => Some(func_rfind(other_args, env, config)),
+            "slice" => Some(func_slice(other_args, env, config)),
+            "log" => Some(func_console_log(other_args, env, config)),
+            "loop" => Some(func_loop(other_args, env, config)),
+            "read-file" => Some(func_read_file(other_args, env, config)),
+            "write-file" => Some(func_write_file(other_args, env, config)),
+            "do" => Some(func_do(other_args, env, config)),
+            "meta" => Some(func_meta(other_args, env, config)),
+            "eval-atom" => Some(func_eval_atom(other_args, env, config)),
+            "str" => Some(func_str(other_args, env, config)),
+            "str.+" => Some(func_str_plus(other_args, env, config)),
+            "or" => Some(func_or(other_args, env, config)),
+            "and" => Some(func_and(other_args, env, config)),
+            "lines" => Some(func_lines(other_args, env, config)),
             "return" => Some(Ok(Expression::Symbol("return".to_owned()))),
             "continue" => Some(Ok(Expression::Symbol("continue".to_owned()))),
             "pass" => Some(Ok(Expression::Symbol("pass".to_owned()))),
-            "read-dir" => Some(func_read_dir(other_args, env)),
-            "for-each-eval" => Some(func_for_each_eval(other_args, env)),
-            "eval" => Some(func_eval(other_args, env)),
-            "run" => Some(func_run(other_args, env)),
+            "read-dir" => Some(func_read_dir(other_args, env, config)),
+            "for-each-eval" => Some(func_for_each_eval(other_args, env, config)),
+            "eval" => Some(func_eval(other_args, env, config)),
+            "run" => Some(func_run(other_args, env, config)),
+            "serve" => Some(func_serve(other_args, env, config)),
             _ => None,
         },
         _ => None,
@@ -349,7 +353,7 @@ pub fn eval_built_in_form(
 ```
 目前还没有实现函数签名和文档注释，所以你或许要查看源代码来了解函数的用法。
 
-或者，有一个用 Glisp 实现的 Markdown 编译器，它应该会包含在完整的二进制发布内：
+本章节的最后，有一个用 Glisp 实现的 Markdown 编译器，它应该会包含在完整的二进制发布内：
 ```scheme
 ;;; Tiny Tiny Web
 ;;; Copyright (C) 2024 Plasma (https://github.com/duoduo70/Tiny-Tiny-Web/).
@@ -359,290 +363,313 @@ pub fn eval_built_in_form(
 ;;; if not, see <https://www.gnu.org/licenses/>.
 ;;;
 (do
-
-    (set markdown-parse-line 
-        (lambda 
-            (str)
-            (do
-            (set str-length (length str))
+    (set markdown-parse-line (lambda (str) (do
+        (set str-length (length str))
+            (if (str.= (slice str 0 0) "#") 
+                (if (str.= (slice str 1 1) "#") 
+                    (if (str.= (slice str 2 2) "#") 
+                        (if (str.= (slice str 3 3) "#") 
+                            (if (str.= (slice str 4 4) "#") 
+                                (set str (str.+ (insert (remove str 0 5) 0 "<h5>") "</h5>"))
+                                (set str (str.+ (insert (remove str 0 4) 0 "<h4>") "</h4>")))
+                            (set str (str.+ (insert (remove str 0 3) 0 "<h3>") "</h3>")))
+                        (set str (str.+ (insert (remove str 0 2) 0 "<h2>") "</h2>")))
+                    (set str (str.+ (insert (remove str 0 1) 0 "<h1>") "</h1>")))
                 (if 
                     (str.= 
-                        (slice str 0 0) "#") 
-                    (if 
-                        (str.= 
-                            (slice str 1 1) "#") 
-                        (if 
-                            (str.= 
-                                (slice str 2 2) "#") 
-                            (if 
-                                (str.= 
-                                    (slice str 3 3) "#") 
-                                (if 
-                                    (str.= 
-                                        (slice str 4 4) "#") 
-                                    (set str (str.+ 
-                                        (insert 
-                                            (remove str 0 5) 0 "<h5>") "</h5>") )
-                                    (set str (str.+ 
-                                        (insert 
-                                            (remove str 0 4) 0 "<h4>") "</h4>")) )
-                               (set str (str.+ 
-                                    (insert 
-                                        (remove str 0 3) 0 "<h3>") "</h3>")) )
-                            (set str (str.+ 
-                                (insert 
-                                    (remove str 0 2) 0 "<h2>") "</h2>")) )
-                        (set str (str.+ 
-                            (insert 
-                                (remove str 0 1) 0 "<h1>") "</h1>")) )
-                    (if 
-                        (str.= 
-                            (slice str 
-                                (- 
-                                    str-length 2)
-                                (- 
-                                    str-length 1)) 
-                            (str "\b\b")) 
-                        (set str (str.+ str (str "<br\b/>"))) (pass)))
-    (set str-length (length str))
-    (set strong-flag false)
-    (set italic-flag false)
-    (set str (str.+ str "\n"))
-    (set i 0)
-    (loop
-    (if (>= i str-length) (return) (pass))
-    (set str-field (slice str i (+ i 1)))
-    (if (str.= str-field "**")
-        (if strong-flag (if italic-flag (pass) (do
-            (set strong-flag false)
-            (set str (remove str i (+ i 1)))
-            (set str (insert str i "</strong>"))
-            (set str-length (+ str-length 7))
-            (set i (+ i 8)))
-        ) (do
-            (set strong-flag true)
-            (set str (remove str i (+ i 1)))
-            (set str (insert str i "<strong>"))
-            (set str-length (+ str-length 6))
-            (set i (+ i 7))
-        ))
-     (pass))
-    (if (str.= str-field "__")
-        (if strong-flag (if italic-flag (pass) (do
-            (set strong-flag false)
-            (set str (remove str i (+ i 1)))
-            (set str (insert str i "</strong>"))
-            (set str-length (+ str-length 7))
-            (set i (+ i 8)))
-        ) (do
-            (set strong-flag true)
-            (set str (remove str i (+ i 1)))
-            (set str (insert str i "<strong>"))
-            (set str-length (+ str-length 6))
-            (set i (+ i 7))
-        ))
-     (pass))
-     (if (str.= (slice str i i) "*")
-        (if italic-flag (do
-            (set italic-flag false)
-            (set str (remove str i))
-            (set str (insert str i "</em>"))
-            (set str-length (+ str-length 4))
-            (set i (+ i 3))
-        ) (do
-            (set italic-flag true)
-            (set str (remove str i))
-            (set str (insert str i "<em>"))
-            (set str-length (+ str-length 3))
-            (set i (+ i 2))
-        ))
-     (pass))
-     (if (str.= (slice str i i) "_")
-        (if italic-flag (do
-            (set italic-flag false)
-            (set str (remove str i))
-            (set str (insert str i "</em>"))
-            (set str-length (+ str-length 4))
-            (set i (+ i 3))
-        ) (do
-            (set italic-flag true)
-            (set str (remove str i))
-            (set str (insert str i "<em>"))
-            (set str-length (+ str-length 3))
-            (set i (+ i 2))
-        ))
-     (pass))
-    (set i (+ i 1))
-    )
-    str
-)
-))
-
-    (set markdown-parse
-        (lambda 
-            (str) 
+                        (slice str (- str-length 2) (- str-length 1)) 
+                        (str "\b\b")) 
+                    (set str (str.+ str (str "<br\b/>"))) (pass)))
+        (set str-length (length str))
+        (set strong-flag false)
+        (set italic-flag false)
+        (set str (str.+ str "\n"))
+        (set i 0)
+        (loop
+        (if (>= i str-length) (return) (pass))
+        (set str-field (slice str i (+ i 1)))
+        (if (str.= str-field "**")
+            (if strong-flag (if italic-flag (pass) (do
+                (set strong-flag false)
+                (set str (remove str i (+ i 1)))
+                (set str (insert str i "</strong>"))
+                (set str-length (+ str-length 7))
+                (set i (+ i 8)))) 
             (do
-                (set flag_part false)
-                (set flag_part_start true)
-                (set flag_linelist false)
-                (set flag-codeblock false)
-                (set flag-dontparse false)
+                (set strong-flag true)
+                (set str (remove str i (+ i 1)))
+                (set str (insert str i "<strong>"))
+                (set str-length (+ str-length 6))
+                (set i (+ i 7))))
+        (pass))
+        (if (str.= str-field "__")
+            (if strong-flag (if italic-flag (pass) (do
+                (set strong-flag false)
+                (set str (remove str i (+ i 1)))
+                (set str (insert str i "</strong>"))
+                (set str-length (+ str-length 7))
+                (set i (+ i 8)))) 
+            (do
+                (set strong-flag true)
+                (set str (remove str i (+ i 1)))
+                (set str (insert str i "<strong>"))
+                (set str-length (+ str-length 6))
+                (set i (+ i 7))))
+        (pass))
+        (if (str.= (slice str i i) "*")
+            (if italic-flag (do
+                (set italic-flag false)
+                (set str (remove str i))
+                (set str (insert str i "</em>"))
+                (set str-length (+ str-length 4))
+                (set i (+ i 3))) 
+            (do
+                (set italic-flag true)
+                (set str (remove str i))
+                (set str (insert str i "<em>"))
+                (set str-length (+ str-length 3))
+                (set i (+ i 2))))
+        (pass))
+        (if (str.= (slice str i i) "_")
+            (if italic-flag (do
+                (set italic-flag false)
+                (set str (remove str i))
+                (set str (insert str i "</em>"))
+                (set str-length (+ str-length 4))
+                (set i (+ i 3))) 
+            (do
+                (set italic-flag true)
+                (set str (remove str i))
+                (set str (insert str i "<em>"))
+                (set str-length (+ str-length 3))
+                (set i (+ i 2))))
+        (pass))
+        (set i (+ i 1)))
+        str)))
 
-                (set head 0)
-                (set ret "")
-                (loop
-                    (if 
-                        (= 0 
-                            (length str)) 
-                        (return) 0)
-                    (set head 
-                        (car str))
-                    (set str 
-                        (cdr str))
+    (set markdown-parse (lambda (str) (do
+        (set flag_part false)
+        (set flag_part_start true)
+        (set flag_linelist false)
+        (set flag-codeblock false)
+        (set flag-dontparse false)
 
-                    (if 
-                        (and (> (length head) 2) (str.= (slice head 0 2) "```"))
-                        (do (if (= (length head) 3) (if flag-codeblock               
-                                (do
-                                    (set flag-codeblock true)
-                                    (set ret 
-                                        (str.+ ret  (str "</code></pre>\n")))
-                                    (if flag_part (do
-                                        (set ret 
-                                        (str.+ ret  (str "</p>\n")))
-                                        (set falg_part false)
-                                    ) (pass))
-                                )
-                                (do
-                                    (set flag-codeblock false)
-                                    (if flag_part (do
-                                        (set ret 
-                                        (str.+ ret  (str "</p>\n")))
-                                        (set falg_part false)
-                                    ) (pass))
-                                    (set ret 
-                                        (str.+ ret  (str "<pre><code>\n")))
-                                )
-                            )
-                            (do                                            
-                                (set flag-codeblock true)
-                                (if flag_part (do
-                                        (set ret 
-                                        (str.+ ret  (str "</p>\n")))
-                                        (set falg_part false)
-                                    ) (pass))
-                                (set ret
-                                    (str.+ (str.+ (str.+ ret (str "<pre><code\bclass=\'language-"))
-                                        (slice head 3 (- (length head) 1))
-                                    )
-                                        (str "\'>\n")
-                                    )
-                                )
-                            )
-                        )
-                        (continue))
-                    0)
-
-                    (if 
-                        (and (> (length head) 6) (str.= (slice head 0 6) "<style>"))
+        (set head 0)
+        (set ret "")
+        (loop
+            (if (= 0 (length str)) 
+                (return)
+                (pass))
+            (set head (car str))
+            (set str (cdr str))
+            (if 
+                (and (> (length head) 2) (str.= (slice head 0 2) "```"))
+                (do (if (= (length head) 3) (if flag-codeblock                         ; 开头或结尾
                         (do
+                            (set flag-codeblock true)
+                            (set ret (str.+ ret  (str "</code></pre>\n")))
                             (if flag_part (do
-                                        (set ret 
-                                        (str.+ ret  (str "</p>\n")))
-                                        (set falg_part false)
-                                    ) (pass))
-                            (set ret 
-                                        (str.+ ret  (str "<style>\n")))
-                            (set flag-dontparse true)
-                            (continue)
-                        )
-                    0)
-                    (if 
-                        (and (> (length head) 7) (str.= (slice head 0 7) "</style>"))
+                                (set ret (str.+ ret  (str "</p>\n")))
+                                (set falg_part false))
+                            (pass)))
                         (do
-                            (set flag-dontparse false)
-                            (set ret 
-                                        (str.+ ret  (str "</style>\n")))
-                            (continue)
-                        )
-                    0)
-                    (if 
-                        (= (length head) 0) 
-                        (do
-                            (if flag_linelist (do
-                                (set flag_linelist false)
-                                (set ret (str.+ ret "</ul>"))
-                                (if flag_part (set flag_part false) 0)
-                            )(pass))
-                        (if 
-                            (and (= flag_part false) (= flag-dontparse false))
-                            (do 
+                            (set flag-codeblock false)
+                            (if flag_part (do
+                                (set ret (str.+ ret  (str "</p>\n")))
+                                (set falg_part false)) 
+                            (pass))
+                            (set ret (str.+ ret  (str "<pre><code>\n")))))
+                    (do                                                ; 必定是开头
+                        (set flag-codeblock true)
+                        (if flag_part (do
                                 (set ret 
-                                    (str.+ ret 
-                                        (if flag_part_start 
-                                            (do 
-                                                (set flag_part_start false) "<p>\n" ) "</p><p>\n")))
-                                (set flag_part true)
-                                (continue)) 0)
-                        )
+                                (str.+ ret  (str "</p>\n")))
+                                (set falg_part false))
+                            (pass))
+                        (set ret
+                            (str.+ (str.+ (str.+ ret (str "<pre><code\bclass=\'language-"))
+                                                 (slice head 3 (- (length head) 1)))
+                                          (str "\'>\n")))))
+                (continue))
+            (pass))
+
+            (if 
+                (and (> (length head) 6) (str.= (slice head 0 6) "<style>"))
+                (do
+                    (if flag_part (do
+                                (set ret 
+                                (str.+ ret  (str "</p>\n")))
+                                (set falg_part false))
+                        (pass))
+                    (set ret (str.+ ret  (str "<style>\n")))
+                    (set flag-dontparse true)
+                    (continue))
+            (pass))
+            (if 
+                (and (> (length head) 7) (str.= (slice head 0 7) "</style>"))
+                (do
+                    (set flag-dontparse false)
+                    (set ret (str.+ ret  (str "</style>\n")))
+                    (continue)
+                )
+            (pass))
+            (if 
+                (= (length head) 0) 
+                (do
+                    (if flag_linelist (do
+                        (set flag_linelist false)
+                        (set ret (str.+ ret "</ul>"))
+                        (if flag_part (set flag_part false) 0))
                     (pass))
+                (if 
+                    (and (= flag_part false) (= flag-dontparse false))
+                    (do 
+                        (set ret (str.+ ret 
+                            (if flag_part_start 
+                                (do 
+                                    (set flag_part_start false) "<p>\n" ) "</p><p>\n")))
+                                    (set flag_part true)
+                                    (continue))
+                                (pass)))
+            (pass))
 
-                    (if 
-                            (= flag_part true) 
-                            (set flag_part false) 0)
+            (if 
+                    (= flag_part true) 
+                    (set flag_part false) 0)
 
-                    (if (and (> (length head) 1)(and (str.= (slice head 0 0) "-") (str.!= (slice head 1 1) "-"))) (do
-                        (if flag_linelist 
-                            (set ret (str.+ ret "</li><li>"))
-                             (do 
-                                 (set flag_linelist true)
-                                 (set ret (str.+ ret "<ul><li>"))
-                             )
-                        )
-                        (set head (remove head 0))
-                        )
-                    (pass))
-                    (if 
-                        (str.= head "---") 
-                        (do
-                            (if flag_part (do
-                                        (set ret 
-                                        (str.+ ret  (str "</p>\n")))
-                                    ) (pass))
-                            (set ret 
-                                (str.+ ret  (str "<hr\b/>\n")))
-                            (if flag_part (do
-                                        (set ret 
-                                        (str.+ ret  (str "<p>\n")))
-                                    ) (pass))
-                            (continue) )0)
-                    (if (or (= (length head) 0) (= flag-dontparse true))
-                        (set ret 
-                                (str.+ ret 
-                                    head))
-                        (set ret 
-                                (str.+ ret 
-                                    (markdown-parse-line head))))
-)
-    (if flag_part_start 0 
-        (set ret 
-            (str.+ ret 
-            "</p>")))
-    (set ret-length (length ret))
-    (if (str.= (slice ret (- ret-length 9) (- ret-length 1)) "<p>\n</p>") 
-        (set ret (remove ret (- ret-length 9) (- ret-length 1)))
-     (pass))
-    ret
-)
-)
-)
+            (if (and (> (length head) 1) (and (str.= (slice head 0 0) "-") (str.!= (slice head 1 1) "-"))) (do
+                (if flag_linelist 
+                    (set ret (str.+ ret "</li><li>"))
+                        (do 
+                            (set flag_linelist true)
+                            (set ret (str.+ ret "<ul><li>"))))
+                (set head (remove head 0)))
+            (pass))
+            (if 
+                (str.= head "---") 
+                (do
+                    (if flag_part (do
+                                (set ret (str.+ ret  (str "</p>\n"))))
+                        (pass))
+                    (set ret (str.+ ret  (str "<hr\b/>\n")))
+                    (if flag_part (do
+                                (set ret (str.+ ret  (str "<p>\n"))))
+                        (pass))
+                    (continue))
+            (pass))
+            (if (or (= (length head) 0) (= flag-dontparse true))
+                (set ret (str.+ ret head))
+                (set ret (str.+ ret (markdown-parse-line head)))))
+        ; LOOP END
 
-    (for-each-eval (read-dir "markdown") 
-        (str "\[write-file\b\'temp/$$.html\'\b\[str\b\[markdown-parse\b\[lines\b\[read-file\b\'markdown/$$\'\]\]\]\]\]")
-    )
-)
+        (if flag_part_start (pass) (set ret (str.+ ret "</p>")))
+        (set ret-length (length ret))
+        (if (str.= (slice ret (- ret-length 9) (- ret-length 1)) "<p>\n</p>") 
+            (set ret (remove ret (- ret-length 9) (- ret-length 1)))
+            (pass))
+        ret)))
+
+    (for-each-eval (read-dir "markdown")
+        (write-file (str.+ (str.+ "temp/" $$ ) ".html")
+                    (str (markdown-parse (lines (read-file (str.+ ("markdown/" $$)))))))))
 ```
 这个程序的作用是读取所有 `markdown/*.md` 文件，将其编译到 `temp/*.md.html`。
+
+## 如何上手 Glisp
+或许你被上面的示例震惊了（如果你是编程新手），但是我们可以先试着编写一些简单的 Glisp 配置。
+虽然我暂且无力提供一个完善的文档，但我们可以讨论下如何上手它。
+
+“列表”是 Glisp 中最基本的类型，列表有可能被求值，也有可能不被求值，为了保证它永远不被求值，你可能需要用:
+```
+(quote a b c)
+``` 
+这可以保证`a`, `b`, `c`永远不被求值，但你可能要在使用这个列表的时候把 `quote` 这个第一个元素除去。  
+为什么我要在这里讲“列表”的概念而非在前面一次性讲完？因为这和我们最基本的几个函数直接相关，想要编写 Glisp 代码，就目前为止，不可避免的要接触这些基本函数。  
+我们讲了 `quote` ，但如果你使用过 Lisp ，你会发现这和标准的 Lisp 完全不同，事实上，我做了一些考量，最后决定这样做。但其实，它可以和标准的 `quote` 类似的使用，所以你也可以理解为这是一种增加了语法糖的 `quote` 。  
+在上面的例子中，它会生成列表 `(quote a b c)`，也就是说实际上没有任何变化。但是想必你还记得“完全解析”。例如，我有这样一个“初等”函数（只是遵循一般的解析策略） `(func (quote a b c))` ，它的唯一一个参数只会被“完全解析”一次，也就是说，在唯一的一次解析后，它的参数不变，还是 `(quote a b c)`，可是它不会再进行第二次解析了。  
+一定要记住的是，诸如 `(+ (- 1 1) 1)` 这样的函数，实际上是 `+` 函数的解析需要解析 `(- 1 1)` 做为它的基础，所以这是一种递归解析，所以 `+` 函数实际上只被“完全解析”了一次。  
+我们可以很好的利用这个概念，来避免列表被求值。
+
+Lisp 的其它基本函数则没有遭到这种过大的“魔改”。  
+`(atom a)`函数当 `a` 是非空列表时返回 `true` ，否则返回 `false` ，因为我们称除了有元素的列表以外的任何什么东西为“原子”，而`atom`这个英文单词的意思就是“原子”。 
+`(eq 1 1)` 如果两个参数在求值后相等返回`true`，否则返回`false`。  
+`(car (quote a b))` 返回一个列表的第一个元素，例如在这个例子中，返回 `quote` 。
+`(cdr (quote a b))`同理，但它是返回除第一个元素以外的所有元素组成的列表，我们可以使用它来剔除 `quote` 。
+`(cons a b)`则是拼接两个列表。
+`(cond)`是一个相对复杂的函数：
+```
+(cond
+    (eq 1 2) 1
+    (eq 1 1) 2)
+```
+它会返回 `2` ，事实上，它会对第 奇数 个参数进行求值，如果为 `true` ，则对后一个参数进行求值并返回。
+例如在这个例子中，对 `(eq 1 2)`求值，显然，结果不为 `true` 。
+然后对 `(eq 1 1)` 求值，结果为 `true` ，所以返回对应的 `2` 。
+
+还有 `(and true true)` 和 `(or true true)` ，显然，前者是如果两个参数被求值后都为 `true` 就返回 `true` ，后者是只要其中有一个为 `true` 就为 `true`。  
+但是值得注意的是，有一种名为“短路”的机制，只存在于 `or` 当中，如果说第一个参数被求值后为 `true` ，则第二个参数的求值会被直接跳过，这和很多其它编程语言一致。
+
+事实上，Glisp 标准库有多个部分，截止 `2.0-beta8` 版本，有：
+1. core
+2. config
+3. eval
+4. io
+5. str
+我们目前只是介绍了 core ，其定义了 Lisp 语言的基本函数（虽然有所魔改）和 Glisp 的最基本函数，这构成了我们内置函数的最核心部分。
+嗯，事实上，加上 `io` 模块，它就图灵完备了，`io` 模块定义了诸如 `log` 和 `read-file` 函数。
+
+事实上，我们完全可以亲手写一个简单的 Glisp 配置了。
+这是另一个示例，我们将要逐行解析它。
+```scheme
+;;; Tiny Tiny Web
+;;; Copyright (C) 2024 Plasma (https://github.com/duoduo70/Tiny-Tiny-Web/).
+;;;
+;;; You should have received a copy of the GNU General Public License
+;;; along with this program;
+;;; if not, see <https://www.gnu.org/licenses/>.
+;;;
+
+(do
+    (set host "http://localhost:22397/")
+
+    (set get-pure-str (lambda (str)
+        (slice str 1 (- (length str) 2))))
+    (set search-in-mime-list (lambda (str) (do
+        (set type "image/jpeg")
+        (if (str.= str "gif") (set type "image/gif") (pass))
+        (if (str.= str "png") (set type "image/png") (pass))
+        (if (str.= str "jpg") (set type "image/jpeg") (pass))
+        (if (str.= str "jpeg") (set type "image/jpeg") (pass))
+        (if (str.= str "webp") (set type "image/webp") (pass))
+        (if (str.= str "svg") (set type "image/svg+xml") (pass))
+        type)))
+    (for-each-eval (read-dir "image-hosting")
+        (do 
+            (set pure-str (get-pure-str $$))
+            (serve pure-str (str.+ "image-hosting/" pure-str) (search-in-mime-list
+                (slice pure-str (+ (rfind pure-str ".") 1) (- (length pure-str) 1))))
+            (log (str.+ host pure-str)))))
+```
+`get-pure-str` 用来把 `"\'a\'"`转换成 `"a"`，`search-in-mime-list`通过文件扩展名搜索它对应的 MIME 类型，这些都很简单。  
+最重要的是 `for-each-eval` ，它的定义构成了很多 Glisp 配置的核心，是非常重要的语法糖。  
+它会首先求值`(read-dir "image-hosting")`，得到一个列表，这个列表包含该文件夹下所有文件的字符串。
+然后，`for-each-eval`会为该列表中每个元素都运行一遍 `do` 块的那个表达式。  
+假设该列表的值为 `("a.jpg", "b.jpg", "c.jpg")`，在第一次运行时，`do` 块的那个表达式实际上等于：
+```
+(do 
+    (set pure-str (get-pure-str (str "\'a.jpg\'")))
+    (serve pure-str (str.+ "image-hosting/" pure-str) (search-in-mime-list
+        (slice pure-str (+ (rfind pure-str ".") 1) (- (length pure-str) 1))))
+    (log (str.+ host pure-str)))
+```
+你可以看出来，`$$` 是一个形式变量，它被替换为了 `""a.jpg""` ，可是问题在于，为什么不是 `"a.jpg"`？
+事实上，由于技术原因，for-each-eval 获取到的列表中的每一个元素都会被强制转型成字符串，而因为 `read-dir` 的返回值本身就是字符串列表了，所以在字符串的基础上再嵌套字符串，就会产生这种略显尴尬的情况，在未来的版本中，我会尝试更改它。
+所以，这也是为什么我们需要额外定义 `get-pure-str` 函数，因为我们要提取真正的原始字符串。
+这样，`pure-str`实际上就是`"a.jpg"`也就是我们需要的原始字符串了。
+然后，我们将其挂载，最后打印日志，让我们能更方便的复制粘贴链接。  
+事实上，有意思的是，我们并没有所谓的“形式变量”的专门概念，所以`$$`就是一个长得比较奇怪的普通变量。
+
+就这样，只有 20 行代码，我们就实现了一个基本的图床功能。
 
 ## 如何为本项目做贡献
 
