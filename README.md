@@ -5,7 +5,7 @@ Power by rust.
 All platforms.  
 基于 Rust， 全平台。
 
-Lightweight web server creater.  
+Lightweight web server creator.  
 轻松创建 Web 服务器。
 
 ### About / 关于本项目
