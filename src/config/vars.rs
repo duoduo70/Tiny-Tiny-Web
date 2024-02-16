@@ -92,10 +92,10 @@ pub fn method_set(args: MethodArgs) {
                     ))) // TODO: Error log
                 };
                 return;
-            } else if head2 == "ssl-pravite-key" {
+            } else if head2 == "ssl-private-key" {
                 #[cfg(feature = "nightly")]
                 unsafe {
-                    SSL_PRAVITE_KEY = Some(std::sync::Arc::new(std::sync::RwLock::new(
+                    SSL_PRIVATE_KEY = Some(std::sync::Arc::new(std::sync::RwLock::new(
                         std::fs::read(head3.to_owned()).unwrap(),
                     ))) // TODO: Error log
                 };

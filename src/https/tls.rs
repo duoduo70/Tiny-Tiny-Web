@@ -380,14 +380,10 @@ pub struct Random {
     pub random_bytes: [u8; 28],
 }
 impl Random {
-    pub fn new_32bit_random((field1, field2): (u128, u128)) -> Self {
-        let field1_bytes = field1.to_be_bytes();
-        let mut field2_vec = field1_bytes[4..].to_vec();
-        field2_vec.extend_from_slice(&field2.to_be_bytes());
-        let timestamp_array: [u8; 4] = field1_bytes[0..4].try_into().unwrap();
+    pub fn new_32bit_random(random_bytes: [u8; 32]) -> Self {
         Random {
-            timestamp: u32::from_be_bytes(timestamp_array),
-            random_bytes: field2_vec.try_into().unwrap(),
+            timestamp: u32::from_be_bytes(random_bytes[0..4].try_into().unwrap()),
+            random_bytes: random_bytes[4..].try_into().unwrap(),
         }
     }
     pub fn bytes(self) -> [u8; 32] {
@@ -640,7 +636,7 @@ impl CurveName {
 pub struct HandshakeServerKeyExchange {
     pub curve_name: CurveName,
     pub public_key: Vec<u8>,
-    pub sha_sign: Vec<u8>,
+    pub sign: Vec<u8>,
 }
 impl HandshakeServerKeyExchange {
     pub fn bytes(self) -> Vec<u8> {
@@ -651,8 +647,10 @@ impl HandshakeServerKeyExchange {
         vec.push(curve_name_bytes.1);
         vec.push(self.public_key.len() as u8);
         vec.extend(self.public_key);
-        vec.extend([0x08, 0x07, 0x01, 0x00]);
-        vec.extend(self.sha_sign);
+        // 0503: secp256r1 曲线
+        // 0020: 32 字节
+        vec.extend([0x05, 0x03, 0x00, 0x20]);
+        vec.extend(self.sign);
         vec
     }
 }

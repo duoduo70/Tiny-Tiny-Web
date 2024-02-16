@@ -50,6 +50,16 @@ pub enum GError {
     Reason(String),
 }
 
+impl GError {
+    pub fn as_string(self) -> Result<String, GError> {
+        match self {
+            GError::Reason(string) => return Ok(string),
+            #[allow(unreachable_patterns)]
+            _ => return Err(GError::Reason("Can not get GError reason".to_owned()))
+        }
+    }
+}
+
 pub struct Environment<'a> {
     pub data: HashMap<String, Expression>,
     pub outer: Option<&'a Environment<'a>>,

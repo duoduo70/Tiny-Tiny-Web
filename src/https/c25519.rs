@@ -2151,10 +2151,10 @@ mod tests {
     #[test]
     fn test_x25519() {
         let public_key: *mut u8 = [0; 32].as_mut_ptr();
-        let pravite_key: *mut u8 = [0; 32].as_mut_ptr();
+        let private_key: *mut u8 = [0; 32].as_mut_ptr();
         unsafe {
             super::compact_x25519_keygen(
-                pravite_key,
+                private_key,
                 public_key,
                 [
                     11, 58, 224, 235, 223, 165, 29, 103, 20, 105, 48, 68, 189, 162, 49, 241, 2,
@@ -2164,13 +2164,13 @@ mod tests {
             )
         };
         println!("public_key: {:?}", super::key_to_vec(public_key, 32));
-        println!("pravite_key: {:?}", super::key_to_vec(pravite_key, 32));
+        println!("private_key: {:?}", super::key_to_vec(private_key, 32));
         if super::key_to_vec(public_key, 32)
             == [
                 89, 140, 130, 200, 210, 170, 31, 220, 69, 205, 146, 27, 220, 190, 10, 126, 197, 6,
                 201, 170, 106, 25, 111, 52, 241, 82, 93, 163, 28, 181, 227, 109,
             ]
-            && super::key_to_vec(pravite_key, 32)
+            && super::key_to_vec(private_key, 32)
                 == [
                     8, 58, 224, 235, 223, 165, 29, 103, 20, 105, 48, 68, 189, 162, 49, 241, 2, 152,
                     190, 37, 90, 135, 181, 155, 113, 143, 226, 123, 238, 210, 134, 111,

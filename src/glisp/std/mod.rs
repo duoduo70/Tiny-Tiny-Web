@@ -12,6 +12,7 @@ mod eval;
 mod io;
 mod macros;
 mod str;
+mod algorithm;
 
 use super::core::*;
 use config::*;
@@ -19,6 +20,7 @@ use core::*;
 use eval::*;
 use io::*;
 use str::*;
+use algorithm::*;
 
 pub fn eval_built_in_form(
     exp: &Expression,
@@ -76,6 +78,7 @@ pub fn eval_built_in_form(
             "eval" => Some(func_eval(other_args, env, config)),
             "run" => Some(func_run(other_args, env, config)),
             "serve" => Some(func_serve(other_args, env, config)),
+            "map" => Some(func_map(other_args, env, config)),
             _ => None,
         },
         _ => None,

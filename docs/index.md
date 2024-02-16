@@ -71,7 +71,7 @@ inject contents.html a.txt b.txt c.txt
 # 导入一个 DER 格式的 CA 证书
 $ ssl-certificate ca.der
 # 导入一个 DER 格式的私钥
-$ ssl-pravite-key pravite_key.der
+$ ssl-private-key private_key.der
 ```
 ```
 # 以下全部是对一个内部变量进行设置，且全部都展示了默认设置

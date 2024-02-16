@@ -67,7 +67,7 @@ pub static ENABLE_CODE_BAD_REQUEST: AtomicBool = AtomicBool::new(false); // 参�
 pub static ENABLE_CODE_NOT_FOUND: AtomicBool = AtomicBool::new(false); // 参见引用之处
 pub static mut GLOBAL_ROUTER_CONFIG: Option<Arc<Mutex<RouterConfig>>> = None; //每一个请求都会收到一个对其的引用
 pub static mut SSL_CERTIFICATE: Option<Arc<RwLock<Vec<u8>>>> = None; //CA证书，这是 nightly 版本的一部分，仍在开发
-pub static mut SSL_PRAVITE_KEY: Option<Arc<RwLock<Vec<u8>>>> = None; //公钥，这是nightly版本的一部分，以后会被移除
+pub static mut SSL_PRIVATE_KEY: Option<Arc<RwLock<Vec<u8>>>> = None; //公钥，这是nightly版本的一部分，以后会被移除
 
 /// 该结构体用以存储一个 `$_grflags` 及其对应的元数据
 /// 一个 OriginResponse 可能需要多个 ReplaceData ，因为这与 `$_grflags` 是一一对应的
