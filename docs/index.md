@@ -1,6 +1,6 @@
 # Tiny Tiny Web 2 temporary Documentation/临时文档
 
-Tiny-Tiny-Web, A fress software that concentrate on rapidly and easily create web server, which use Rust as development language, publish under GPLv3 License. In following texts, we call it TTWeb for short.
+Tiny-Tiny-Web, A free software that concentrate on rapidly and easily create web server, which use Rust as development language, publish under GPLv3 License. In following texts, we call it TTWeb for short.
 
 这是一个用以简单创建Web服务器的软件，使用 Rust 语言开发， GPLv3 开源，以下简称 TTWeb 。
 
@@ -117,35 +117,49 @@ $ ssl-certificate ca.der
 $ ssl-private-key private_key.der
 ```
 ```
+# This following command is all for varibale settings, and all shows default config
 # 以下全部是对一个内部变量进行设置，且全部都展示了默认设置
+# All the config item related to float number, you should use less three unit after point
 # 在所有涉及小数的配置中，最多使用三位小数
 
+# Set local time instead of world time priciple
 # 设置是否使用本地时间而非世界标准时间
 $ localtime yes
 
+# If enable debug mode, it will produce more information but the speed will slow down.
 # 是否开启 Debug 模式，这会产生更详细的日志输出，但会大幅拖慢程序运行
 $ debug no
 
+# Set the thread amount.
 # 设置程序将以多少线程运行，在 box-mode 中该选项也会影响一些算法细节
 $ threads 2
 
+# Weather use box-mode
 # 配置是否使用 box-mode
+# Box-mode could let the programme throughput, but the CPU would be full
 # box-mode可以时程序吞吐量大幅提升，但代价是 CPU 会一直全速运转
+# Because of the problem of Windows' self, it would produce a great side effect, must use extra configs.
 # 因为 Windows 系统本身的问题，这在 Windows 上会有严重的副作用，或必须使用特殊设置
+# Linux can it.
 # Linux 或类似操作系统应该可以正常使用
 $ box-mode no
 
+# These variables configure some algorithmic details of box-mode
 # 这些变量设置 box-mode 的一些算法细节
 $ xrps-counter-cache-size 8
 $ box-num-per-thread-mag 1.0
 $ box-num-per-thread-init-mag 1.0
 $ xrps-predict-mag 1.1
 
+# If a request is to be input into Pipe and an error occurs in that Pipe, whether to terminate the current request directly instead of the default setting
 # 如果一个请求要被输入 Pipe ，且该 Pipe 出现错误，是否以直接结束当前请求代替默认设置
+# Default setting: return the original data that has not been input into the erroneous pipe (just the current erroneous pipe, not all pipes)
 # 默认设置：返回没有输入该错误管道的原始数据（仅仅是当前错误管道，而非全部管道）
 $ return-if-pipe-err no
 
+# Register a new default MIME type, which will be used automatically based on file extension when mounting files in the future
 # 注册一个新的默认 MIME 类型，以后在挂载文件时会根据文件扩展名自动使用注册的 MIME 类型
+# Automatically registered types:
 # 自动注册的类型：
 $ +mime html text/html
 $ +mime css text/css
@@ -157,7 +171,9 @@ $ +mime jpeg image/jpeg
 $ +mime webp image/webp
 $ +mime svg image/svg+xml
 
+# Enable a status code, which is off by default
 # 启用一个状态码，默认皆是关闭状态
+# Below are all the statuses that can be enabled, according to the RFC7231 standard
 # 以下是所有可以启用的状态，根据 RFC7231 标准
 $ +code 400
 $ +code 404
@@ -175,15 +191,19 @@ Config-->Pipe
 ```
 
 ### Inject 的使用
+In current version, Inject is run in Router, but in the future, you can set when to inject.
 在目前的版本中，Inject 是在 Router 中被运作的，但在未来的版本中，何时进行 Inject 会变得可以配置。
 
+In other words, we have following example:
 也就是说，我们有如下例子：
 ```
 compile template.html
 + template.html a
 inject a index.html
 ```
-可以从这个配置文件中得知，我们编译了 `template.html` 这个模板，然后将其挂在到 `a` 这个 URI 上，最后挂载：一旦我们请求 `a` ，它就会将 `index.html` 注入进 a 。
+Known from the config file, we compiled `template.html`, and mounted it on URL `a`. As soon as we request `a`, it will inject `index.html` into a.
+可以从这个配置文件中得知，我们编译了 `template.html` 这个模板，然后将其挂在到 `a` 这个 URL 上，最后挂载：一旦我们请求 `a` ，它就会将 `index.html` 注入进 a 。
+`template.html` and `a` can be understanded as different source. When it get required, we firstly copy a `template.html` and we called it as `a`, and inject `index.html` into `a`, and in the end, we return `a`.
 这里的 `template.html` 和 `a` 可以理解为指代不同的资源，在收到请求时，我们先复制一份 `template.html` ，将这个克隆体称为 `a` ，然后再将 `index.html` 注入 `a` 这个克隆体。
 最终，我们返回 `a` 。
 但是要注意，这个说法只是为了方便理解，实现上做了一些优化。
