@@ -1,108 +1,165 @@
-# Tiny Tiny Web 2 临时文档
+# Tiny Tiny Web 2 temporary Documentation/临时文档
+
+Tiny-Tiny-Web, A free software that concentrate on rapidly and easily create web server, which use Rust as development language, publish under GPLv3 License. In following texts, we call it TTWeb for short.
 
 这是一个用以简单创建Web服务器的软件，使用 Rust 语言开发， GPLv3 开源，以下简称 TTWeb 。
 
+This version may not approperiately be with the latest version (In other words, it may be not comprehensive)
+
 本文档所述内容可能不适合最新版本或对于最新版本而言不全面。
+
+This version is based on version 2.0.0-beta6
+
 当前文档基于版本 2.0.0-beta6。
 
+For the language of twice-development - Ghost Lisp, we call it Glisp for short.
+
 对于二次开发所使用的 Ghost Lisp 语言，以下简称 Glisp 。
+
+This documentation can choice CC_BY_SA or GFDL license
 
 本文档可以选择 CC-BY-SA 或 GFDL 协议。
 
 [TOC]
 
-## 开始使用：
-首先，在程序根目录下创建文件夹：config、export、temp。
+## Getting start/开始使用：
+
+First of foremost, create `config`, `export`, `temp` in the root of project
+
+首先，在程序根目录下创建文件夹: `config`, `export`, `temp`。
+
+Usage:
+1. `config`: Put up the config files of programme
+2. `export`: Set up the source code of web pages
+3. `temp`: Set up temporary files
 
 用处：
-1. config：存放程序的配置文件
-2. export：存放网页的源代码
-3. temp：存放临时文件
+1. `config`：存放程序的配置文件
+2. `export`：存放网页的源代码
+3. `temp`：存放临时文件
 
-然后，在config目录下创建 main.gc 文件，配置文件的读取从这里开始。
+And than, create `main.gc`
 
-在 main.gc 文件中写入如下内容：
+然后，在config目录下创建 `main.gc` 文件，配置文件的读取从这里开始。
+
+Write following content in `main.gc`
+
+在 `main.gc` 文件中写入如下内容：
 ```
 $ +addr 127.0.0.1:22397
 + index.html /
 ```
-然后，在 export 文件下创建 index.html 文件
-在里面写入如下内容：
+
+Create `index.html` in `export`, and input following codes:
+
+然后，在 export 文件下创建 index.html 文件，在里面写入如下内容：
 ```
 Hello, World!
 ```
+Now, run it and visit `http://127.0.0.1:22397`
+If everything is okay, you will see:
+
 然后启动程序，在浏览器内打开 http://127.0.0.1:22397/
 如果一切顺利，你应该会看到打印：
 ```
 Hello, World!
 ```
 
-## 所有指令
+## Command List/指令列表
 
 ```
-# 挂载一个文件到一个URL,后两个选项是可选的，如果要挂载到根路径，应该使用“/”
+# Mount a file to a URL, the latest two option is optional. If Mounting on root, you should use `/`
+# 挂载一个文件到一个URL,后两个选项是可选的，如果要挂载到根路径，应该使用`/`
 + index.html index.html text/html;charset=utf-8 
 
+# Delete a URL. In this Instance, we deleted the bounds for `index.html`, but didn't delete the file.
 # 删除一个URL，这个示例删除了对 index.html 路径的绑定，但是并没有删除 index.html 文件
 - index.html
 
+# Add a listener location
 # 添加一个监听地址
 $ +addr 127.0.0.1:80
 $ +addr [fe80::1]:80
 
+# Setup a error page based on error code. Currently, we can only setup 404 page.
 # 设置一个错误页面，随错误码返回，目前仅支持 404
 $ +errpage 404 404.html
 
+# Import and load a config file
 # 导入并加载一个配置文件
 @ a.gc
 
+# Import and load a Glisp config file (If the module has been compiled)
 # 导入并加载一个 GLisp 配置文件 (如果 GLisp 模块 被编译)
 @gl a.gl
 
+# Import a Pipe to await a using
 # 导入一个 Pipe 待用
 @pipe pipe.gl
 
-# 编译一个文件，与下面的加载命令要一起使用，对于要替换的位置，使用 $_gcflag 占位符
+# Compile a file, which must be used with following loading command. For the position that need replace, use replacing code - `$_gcflag`
+# 编译一个文件，与下面的加载命令要一起使用，对于要替换的位置，使用 `$_gcflag` 占位符
 compile contents.html
+
+# Inject a file (Use a.txt, b.txt, c.txt to replace `$_gcflag`s in contents.html)
 # 注入一个文件（用 a.txt, b.txt, c.txt 中的内容替换 contents.html 中的 $_gcflag 占位符）
 inject contents.html a.txt b.txt c.txt
 
+# Even though TTWeb has not support HTTPS, we has coded many, and reserved:
 # 虽然本项目还没有准备好支持 HTTPS ，但是已经预先编写了很多代码 ，并且预留了：
+
+# Import a CA certificate of DER
 # 导入一个 DER 格式的 CA 证书
 $ ssl-certificate ca.der
+
+# Import a private key of DER
 # 导入一个 DER 格式的私钥
 $ ssl-private-key private_key.der
 ```
 ```
+# This following command is all for varibale settings, and all shows default config
 # 以下全部是对一个内部变量进行设置，且全部都展示了默认设置
+# All the config item related to float number, you should use less three unit after point
 # 在所有涉及小数的配置中，最多使用三位小数
 
+# Set local time instead of world time priciple
 # 设置是否使用本地时间而非世界标准时间
 $ localtime yes
 
+# If enable debug mode, it will produce more information but the speed will slow down.
 # 是否开启 Debug 模式，这会产生更详细的日志输出，但会大幅拖慢程序运行
 $ debug no
 
+# Set the thread amount.
 # 设置程序将以多少线程运行，在 box-mode 中该选项也会影响一些算法细节
 $ threads 2
 
+# Weather use box-mode
 # 配置是否使用 box-mode
+# Box-mode could let the programme throughput, but the CPU would be full
 # box-mode可以时程序吞吐量大幅提升，但代价是 CPU 会一直全速运转
+# Because of the problem of Windows' self, it would produce a great side effect, must use extra configs.
 # 因为 Windows 系统本身的问题，这在 Windows 上会有严重的副作用，或必须使用特殊设置
+# Linux can it.
 # Linux 或类似操作系统应该可以正常使用
 $ box-mode no
 
+# These variables configure some algorithmic details of box-mode
 # 这些变量设置 box-mode 的一些算法细节
 $ xrps-counter-cache-size 8
 $ box-num-per-thread-mag 1.0
 $ box-num-per-thread-init-mag 1.0
 $ xrps-predict-mag 1.1
 
+# If a request is to be input into Pipe and an error occurs in that Pipe, whether to terminate the current request directly instead of the default setting
 # 如果一个请求要被输入 Pipe ，且该 Pipe 出现错误，是否以直接结束当前请求代替默认设置
+# Default setting: return the original data that has not been input into the erroneous pipe (just the current erroneous pipe, not all pipes)
 # 默认设置：返回没有输入该错误管道的原始数据（仅仅是当前错误管道，而非全部管道）
 $ return-if-pipe-err no
 
+# Register a new default MIME type, which will be used automatically based on file extension when mounting files in the future
 # 注册一个新的默认 MIME 类型，以后在挂载文件时会根据文件扩展名自动使用注册的 MIME 类型
+# Automatically registered types:
 # 自动注册的类型：
 $ +mime html text/html
 $ +mime css text/css
@@ -114,7 +171,9 @@ $ +mime jpeg image/jpeg
 $ +mime webp image/webp
 $ +mime svg image/svg+xml
 
+# Enable a status code, which is off by default
 # 启用一个状态码，默认皆是关闭状态
+# Below are all the statuses that can be enabled, according to the RFC7231 standard
 # 以下是所有可以启用的状态，根据 RFC7231 标准
 $ +code 400
 $ +code 404
@@ -132,15 +191,19 @@ Config-->Pipe
 ```
 
 ### Inject 的使用
+In current version, Inject is run in Router, but in the future, you can set when to inject.
 在目前的版本中，Inject 是在 Router 中被运作的，但在未来的版本中，何时进行 Inject 会变得可以配置。
 
+In other words, we have following example:
 也就是说，我们有如下例子：
 ```
 compile template.html
 + template.html a
 inject a index.html
 ```
-可以从这个配置文件中得知，我们编译了 `template.html` 这个模板，然后将其挂在到 `a` 这个 URI 上，最后挂载：一旦我们请求 `a` ，它就会将 `index.html` 注入进 a 。
+Known from the config file, we compiled `template.html`, and mounted it on URL `a`. As soon as we request `a`, it will inject `index.html` into a.
+可以从这个配置文件中得知，我们编译了 `template.html` 这个模板，然后将其挂在到 `a` 这个 URL 上，最后挂载：一旦我们请求 `a` ，它就会将 `index.html` 注入进 a 。
+`template.html` and `a` can be understanded as different source. When it get required, we firstly copy a `template.html` and we called it as `a`, and inject `index.html` into `a`, and in the end, we return `a`.
 这里的 `template.html` 和 `a` 可以理解为指代不同的资源，在收到请求时，我们先复制一份 `template.html` ，将这个克隆体称为 `a` ，然后再将 `index.html` 注入 `a` 这个克隆体。
 最终，我们返回 `a` 。
 但是要注意，这个说法只是为了方便理解，实现上做了一些优化。
