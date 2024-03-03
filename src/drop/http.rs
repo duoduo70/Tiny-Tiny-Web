@@ -44,15 +44,18 @@ impl<'a, T> HttpRequest<'a, T> {
     /// 从一个字符串解析到 HttpRequest
     /// 传入的字符串不能包含 content ，而只可以包含请求行的请求头行
     /// 目前，需要使用 set_content 函数来设置请求主体
-    /// TODO: 这个算法应该更改成不需要 flag 的形式
+    ///
     /// TODO：这个算法应该能支持 content
     pub fn from_string(str: String) -> Result<Self, HttpRequestError> {
+        if str.is_empty() {
+            return Err(HttpRequestError);
+        }
+
         let mut request = HttpRequest::new();
-        let mut req_line_flag = true; // 是否为请求行（即第一行）
-        for line in str.lines() {
-            // 如果是第一行，则按请求行解析
-            if req_line_flag {
-                let mut req_line = line.split(' ');
+        let mut lines = str.lines();
+
+        // 请求行
+        let mut req_line = lines.next().unwrap().split(' ');
                 match req_line.next() {
                     Some(a) => request.request_method = a.to_string(),
                     _ => return Err(HttpRequestError),
@@ -65,11 +68,9 @@ impl<'a, T> HttpRequest<'a, T> {
                     Some(a) => request.version = a.to_string(),
                     _ => return Err(HttpRequestError),
                 }
-                req_line_flag = false;
-                continue;
-            }
 
-            // 如果不是第一行，则按请求头行解析
+        // 其它头部行
+        for line in lines {
             let (k, v) = match line.split_once(':') {
                 Some((k, v)) => (k, v),
                 _ => match line.split_once(": ") {
@@ -175,7 +176,7 @@ impl HttpResponse {
         res
     }
     /// 在初始化后，随时为相应追加默认的相应头
-    /// TODO：设计名为 set_default_headers_unstable 的函数来更快的追加默认相应头
+    /// TODO：设计名为 set_default_headers_unstable 的函数来更快的追加默认响应头
     pub fn set_default_headers(&mut self, server: &str) -> Result<(), SystemTimeError> {
         let time = super::time::Time::new();
         self.headers.insert(

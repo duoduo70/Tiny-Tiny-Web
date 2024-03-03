@@ -12,6 +12,8 @@
     unused_mut,
     clippy::all
 )]
+
+use std::ptr::{addr_of, addr_of_mut};
 mod libc {
     pub type c_void = *mut u8;
     pub type c_ulong = u32;
@@ -1831,7 +1833,7 @@ unsafe extern "C" fn ed25519_smult(
         z: [0; 32],
     };
     let mut i: libc::c_int = 0;
-    ed25519_copy(&mut r, &ed25519_neutral);
+    ed25519_copy(&mut r, addr_of!(ed25519_neutral));
     i = 255 as libc::c_int;
     while i >= 0 as libc::c_int {
         let bit: uint8_t = (*e.offset((i >> 3 as libc::c_int) as isize) as libc::c_int
@@ -1919,7 +1921,7 @@ unsafe fn sm_pack(r: *mut uint8_t, k: *const uint8_t) {
         t: [0; 32],
         z: [0; 32],
     };
-    ed25519_smult(r as *mut ed25519_pt, &mut ed25519_base, k);
+    ed25519_smult(r as *mut ed25519_pt, addr_of_mut!(ed25519_base), k);
     pp(r, &p);
 }
 unsafe fn edsign_sec_to_pub(_pub: *mut u8, secret: *const u8) {

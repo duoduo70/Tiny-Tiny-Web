@@ -6,17 +6,20 @@
  * if not, see <https://www.gnu.org/licenses/>.
  */
 
-//! pub mod http
+//! ## http
 //! HttpRequest: 可以解析任意标准的 HTTP 请求字符串
 //! HttpResponse: 可以构造一个标准的 HTTP 响应字符串
 //! 关于标准，See: https://www.rfc-editor.org/rfc/rfc2616
 //!
-//! pub mod log
+//! ## log
 //! 提供打印日志的方法，但通常需要进行二次封装
 //! 至于如何二次封装，参见 log 函数的注释
 //!
-//! pub mod random
-//! 生成随机数，谨慎使用
+//! ## random
+//! 生成随机数，基于微型梅森旋转(Tiny-MT)算法
+//!
+//! ## mempool
+//! 一个内存池库，用以在高并发下避免过多的重新内存分配
 
 pub mod http;
 pub mod log;
@@ -24,3 +27,5 @@ pub mod random;
 pub mod thread;
 pub mod time;
 pub mod tool;
+pub mod base64;
+pub mod mempool;

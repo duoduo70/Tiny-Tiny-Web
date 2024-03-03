@@ -66,9 +66,10 @@ pub fn router<'a>(
     res.set_content(str);
     log!(
         Debug,
-        format!("{}{}", LOG[14], "export".to_owned() + &req.url())
+        format!("{}{}", LOG[14], "export".to_owned() + req.url())
     );
-    return true;
+    
+    true
 }
 
 fn get_response_content<'a>(

@@ -51,11 +51,11 @@ pub enum GError {
 }
 
 impl GError {
-    pub fn as_string(self) -> Result<String, GError> {
+    pub fn into_string(self) -> Result<String, GError> {
         match self {
-            GError::Reason(string) => return Ok(string),
+            GError::Reason(string) => Ok(string),
             #[allow(unreachable_patterns)]
-            _ => return Err(GError::Reason("Can not get GError reason".to_owned()))
+            _ => Err(GError::Reason("Can not get GError reason".to_owned()))
         }
     }
 }
@@ -241,8 +241,7 @@ pub fn eval(exp: &Expression, env: &mut Environment, config: Config) -> Result<E
     match exp {
         Expression::Bool(_) => Ok(exp.clone()),
         Expression::Symbol(k) => env_get(k, env)
-            .ok_or(GError::Reason(format!("unexpected symbol k={}", k)))
-            .map(|x| x.clone()),
+            .ok_or(GError::Reason(format!("unexpected symbol k={}", k))),
         Expression::Number(_a) => Ok(exp.clone()),
         Expression::List(list) => {
             let first_form = list

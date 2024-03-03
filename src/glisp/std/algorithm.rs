@@ -28,7 +28,7 @@ use super::macros::*;
                 vec.push(element);
             }
             Err(error) => {
-                if let Ok(string) = error.as_string() {
+                if let Ok(string) = error.into_string() {
                     return Err(GError::Reason("map: Error while mapping ".to_owned()+&i.to_string()+"th element: " + &string))
                 } else {
                     return Err(GError::Reason("map: Error while mapping ".to_owned()+&i.to_string()+"th element and cannot get the error message"))

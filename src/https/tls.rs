@@ -647,9 +647,9 @@ impl HandshakeServerKeyExchange {
         vec.push(curve_name_bytes.1);
         vec.push(self.public_key.len() as u8);
         vec.extend(self.public_key);
-        // 0503: secp256r1 曲线
-        // 0020: 32 字节
-        vec.extend([0x05, 0x03, 0x00, 0x20]);
+        // 0403: secp256r1 曲线 配合 SHA256 哈希算法
+        // 0040: 64 字节
+        vec.extend([0x04, 0x03, 0x00, 0x40]);
         vec.extend(self.sign);
         vec
     }

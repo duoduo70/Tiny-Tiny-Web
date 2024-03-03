@@ -7,7 +7,7 @@
  */
 
 use std::{
-    io::Read, net::{TcpListener, TcpStream}, process::exit, sync::{atomic::Ordering, Mutex}
+    io::Read, net::{TcpListener, TcpStream}, process::exit, sync::atomic::Ordering
 };
 
 use crate::{
@@ -78,7 +78,7 @@ pub fn listener_init(config: Config) -> TcpListener {
 }
 
 #[allow(unused_mut)]
-pub fn handle_connection(mut stream: std::net::TcpStream, config: &Mutex<RouterConfig>) {
+pub fn handle_connection(mut stream: std::net::TcpStream, config: &RouterConfig) {
     #[cfg(feature = "nightly")]
     {
         let mut buf = [0; 5];
@@ -102,8 +102,9 @@ pub fn handle_connection(mut stream: std::net::TcpStream, config: &Mutex<RouterC
     result_http_request(stream, config)
 }
 
-fn result_http_request(mut stream: std::net::TcpStream, config: &Mutex<RouterConfig>) {
-    let buf_reader = std::io::BufReader::new(&mut stream);
+fn result_http_request(mut stream: std::net::TcpStream, config: &RouterConfig) {
+    let buf_reader = 
+    std::io::BufReader::with_capacity(64, &mut stream);
 
     let mut lines = std::io::BufRead::lines(buf_reader);
 
@@ -137,7 +138,7 @@ fn result_http_request(mut stream: std::net::TcpStream, config: &Mutex<RouterCon
     response
         .set_default_headers("Tiny-Tiny-Web/2")
         .result_timeerr_default();
-    if !crate::router::router(request, response, &config.lock().unwrap()) {
+    if !crate::router::router(request, response, config) {
         return;
     }
 
@@ -195,7 +196,7 @@ fn get_tls_keys() -> (Vec<u8>, Vec<u8>) {
 #[allow(dead_code)]
 fn result_https_request(
     mut stream: &std::net::TcpStream,
-    _config: &Mutex<RouterConfig>,
+    _config: &RouterConfig,
     record: RecordMessage,
 ) {
     let extra_length = record.length;
@@ -221,7 +222,7 @@ fn result_https_request(
                             version: crate::https::tls::TLSVersion::TLS1_2,
                             random: serverhello_random,
                             session_id: client_msg.session_id,
-                            ciper_suite: CipherSuite::TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384,
+                            ciper_suite: CipherSuite::TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
                             compression_method: CompressionMethod::Null,
                             extenssions_length: 0,
                         }),
@@ -244,18 +245,16 @@ fn result_https_request(
                         certificate.len().try_into().unwrap(),
                     ));
                     retvec.extend(certificate);
-                    println!("{:#?}", retvec.len());
-                    let (_private_key, public_key) = get_tls_keys();
+                    let (_temp_private_key, temp_public_key) = get_tls_keys();
                     let sign = unsafe {
-                        let mut private_key = SSL_PRIVATE_KEY.get();
-
+                        let mut ca_private_key = SSL_PRIVATE_KEY.get();
                         let mut origin_data = client_msg.random.bytes().to_vec();
                         origin_data.extend(serverhello_random.bytes());
                         origin_data.extend([0x03, 0x00, 0x1d]); // X25519
-                        origin_data.extend(public_key.clone());
+                        origin_data.extend(temp_public_key.clone());
                         let mut data = sha256::Sha256::digest(&origin_data);
-                        let mut sign = [0; 32];
-                        ecdsa_sign(private_key.as_mut_ptr(), data.as_mut_ptr(), sign.as_mut_ptr());
+                        let mut sign = [0; 64];
+                        ecdsa_sign(ca_private_key.as_mut_ptr(), data.as_mut_ptr(), sign.as_mut_ptr());
                         sign.to_vec()
                     };
 
@@ -263,7 +262,7 @@ fn result_https_request(
                         handshake_content: HandshakeContent::ServerKeyExchange(
                             HandshakeServerKeyExchange {
                                 curve_name: crate::https::tls::CurveName::X25519,
-                                public_key,
+                                public_key: temp_public_key,
                                 sign,
                             },
                         ),
@@ -358,12 +357,12 @@ fn write_stream(mut stream: TcpStream, response: &mut HttpResponse) {
 }
 
 fn pipe(
-    config: &Mutex<RouterConfig>,
+    config: &RouterConfig,
     content: &str,
     enable_debug: bool,
     response: &mut HttpResponse,
 ) {
-    for e in &config.lock().unwrap().pipe {
+    for e in &config.pipe {
         let env = &mut crate::glisp::core::default_env();
         env.data.insert(
             "CONTENT".to_owned(),

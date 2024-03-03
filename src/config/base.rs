@@ -333,11 +333,11 @@ fn method_inject_haserr(args: &mut MethodArgs) -> Result<(), ()> {
         return Err(());
     };
     let filename = &conf_serve_value.file_path;
-    if !Path::new(&("temp/".to_string() + &filename)).is_file() {
+    if !Path::new(&("temp/".to_string() + filename)).is_file() {
         return Err(());
     }
 
-    let lines = if let Ok(a) = read_lines("temp/".to_owned() + &filename) {
+    let lines = if let Ok(a) = read_lines("temp/".to_owned() + filename) {
         a
     } else {
         return Err(());

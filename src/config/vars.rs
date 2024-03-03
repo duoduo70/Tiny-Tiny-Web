@@ -6,9 +6,7 @@
  * if not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::sync::atomic::Ordering;
-
-use crate::{drop::http::HttpResponse, drop::log::LogLevel::*, i18n::LOG, macros::*};
+use crate::{drop::log::LogLevel::*, macros::*};
 
 use super::*;
 
@@ -96,7 +94,7 @@ pub fn method_set(args: MethodArgs) {
                 #[cfg(feature = "nightly")]
                 unsafe {
                     SSL_PRIVATE_KEY = Some(std::sync::Arc::new(std::sync::RwLock::new(
-                        std::fs::read(head3.to_owned()).unwrap(),
+                        crate::drop::base64::decode_unchecked(head3)[4..36].to_vec(),
                     ))) // TODO: Error log
                 };
                 return;

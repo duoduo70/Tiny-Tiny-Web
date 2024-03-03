@@ -1,5 +1,8 @@
-#![allow(dead_code, mutable_transmutes, non_camel_case_types, non_snake_case, non_upper_case_globals, unused_assignments, unused_mut)]
-use crate::drop::random::random_init;
+#![allow(dead_code, mutable_transmutes, non_camel_case_types, non_snake_case, non_upper_case_globals, unused_assignments, unused_mut, clippy::all)]
+use std::ptr::addr_of_mut;
+
+use crate::drop::random;
+use crate::drop::time;
 
 mod libc {
     pub type c_char = i8;
@@ -54,8 +57,13 @@ static mut curve_n: [uint64_t; 4] = [
     0xffffffffffffffff,
     0xffffffff00000000,
 ];
+/// FIXME: 更改种子，并且随机数内部状态结构体应该是全局的
+/// 这个函数只是临时的
 unsafe extern "C" fn getRandomNumber(p_vli: *mut uint64_t) -> libc::c_int {
-    random_init(*p_vli as u32).next_u32() as libc::c_int
+    let mut bytes = [0; 32];
+    random::random_init(time::Time::nsec().unwrap().into()).fill_bytes(&mut bytes);
+    p_vli.copy_from(bytes.as_mut_ptr() as *const uint64_t, 4);
+    1
 }
 unsafe extern "C" fn vli_clear(mut p_vli: *mut uint64_t) {
     let mut i: uint = 0;
@@ -246,7 +254,6 @@ unsafe extern "C" fn vli_square(mut p_result: *mut uint64_t, mut p_left: *mut ui
     let mut r2: uint64_t = 0 as libc::c_int as uint64_t;
     let mut i: uint = 0;
     let mut k: uint = 0;
-    k = 0 as libc::c_int as uint;
     while k
         < (32 as libc::c_int / 8 as libc::c_int * 2 as libc::c_int - 1 as libc::c_int)
             as uint
@@ -264,7 +271,7 @@ unsafe extern "C" fn vli_square(mut p_result: *mut uint64_t, mut p_left: *mut ui
             if i < k.wrapping_sub(i) {
                 r2 = (r2 as uint128_t).wrapping_add(l_product >> 127 as libc::c_int)
                     as uint64_t as uint64_t;
-                l_product = l_product * 2 as libc::c_int as uint128_t;
+                l_product = l_product.wrapping_mul(2);
             }
             r01 = r01.wrapping_add(l_product);
             r2 = r2.wrapping_add((r01 < l_product) as libc::c_int as uint64_t);
@@ -281,6 +288,7 @@ unsafe extern "C" fn vli_square(mut p_result: *mut uint64_t, mut p_left: *mut ui
                 as isize,
         ) = r01 as uint64_t;
 }
+
 unsafe extern "C" fn vli_modAdd(
     mut p_result: *mut uint64_t,
     mut p_left: *mut uint64_t,
@@ -541,7 +549,8 @@ unsafe extern "C" fn EccPoint_isZero(mut p_point: *mut EccPoint) -> libc::c_int 
 unsafe extern "C" fn EccPoint_double_jacobian(
     mut X1: *mut uint64_t,
     mut Y1: *mut uint64_t,
-    mut Z1: *mut uint64_t,
+    mut Z1: *
+    mut uint64_t,
 ) {
     let mut t4: [uint64_t; 4] = [0; 4];
     let mut t5: [uint64_t; 4] = [0; 4];
@@ -867,7 +876,7 @@ pub unsafe extern "C" fn ecc_make_key(
             }
             EccPoint_mult(
                 &mut l_public,
-                &mut curve_G,
+                addr_of_mut!(curve_G),
                 l_private.as_mut_ptr(),
                 0 as *mut uint64_t,
             );
@@ -1044,7 +1053,7 @@ pub unsafe extern "C" fn ecdsa_sign(
             if vli_cmp(curve_n.as_mut_ptr(), k.as_mut_ptr()) != 1 as libc::c_int {
                 vli_sub(k.as_mut_ptr(), k.as_mut_ptr(), curve_n.as_mut_ptr());
             }
-            EccPoint_mult(&mut p, &mut curve_G, k.as_mut_ptr(), 0 as *mut uint64_t);
+            EccPoint_mult(&mut p, addr_of_mut!(curve_G), k.as_mut_ptr(), 0 as *mut uint64_t);
             if vli_cmp(curve_n.as_mut_ptr(), (p.x).as_mut_ptr()) != 1 as libc::c_int {
                 vli_sub((p.x).as_mut_ptr(), (p.x).as_mut_ptr(), curve_n.as_mut_ptr());
             }
@@ -1135,7 +1144,7 @@ pub unsafe extern "C" fn ecdsa_verify(
     apply_z((l_sum.x).as_mut_ptr(), (l_sum.y).as_mut_ptr(), z.as_mut_ptr());
     let mut l_points: [*mut EccPoint; 4] = [
         0 as *mut EccPoint,
-        &mut curve_G,
+        addr_of_mut!(curve_G),
         &mut l_public,
         &mut l_sum,
     ];

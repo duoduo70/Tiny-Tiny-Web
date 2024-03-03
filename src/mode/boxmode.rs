@@ -85,7 +85,7 @@ pub fn start(config: Config) -> ! {
                         {
                             handle_connection_s(
                                 unsafe { &THREADS_BOX.clone().unwrap() },
-                                &Arc::clone(unsafe { &GLOBAL_ROUTER_CONFIG.clone().unwrap() }),
+                                unsafe { &GLOBAL_ROUTER_CONFIG.as_ref().unwrap().clone() },
                             );
                             i += 1;
                         }
@@ -107,7 +107,7 @@ pub fn start(config: Config) -> ! {
                         {
                             handle_connection_s(
                                 unsafe { &THREADS_BOX.clone().unwrap() },
-                                &Arc::clone(unsafe { &GLOBAL_ROUTER_CONFIG.clone().unwrap() }),
+                                unsafe { &GLOBAL_ROUTER_CONFIG.as_ref().unwrap().clone() },
                             );
                             i += 1;
                         }
@@ -126,7 +126,7 @@ pub fn start(config: Config) -> ! {
 
 fn handle_connection_s(
     streams: &Mutex<VecDeque<std::net::TcpStream>>,
-    config: &Mutex<RouterConfig>,
+    config: &RouterConfig,
 ) {
     let stream = match streams.lock().unwrap().pop_front() {
         Some(a) => a,
@@ -160,7 +160,7 @@ fn if_new_tick_start(counters: &mut StreamResultCounters, xrps_predict_mag: f32)
 fn thread_box_add(stream: &TcpStream) -> Result<(), ()> {
     unsafe {
         THREADS_BOX
-            .clone()
+            .as_ref()
             .unwrap()
             .clone()
             .lock()

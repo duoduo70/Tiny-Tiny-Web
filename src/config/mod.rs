@@ -50,7 +50,6 @@ use std::collections::HashMap;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::AtomicU32;
 use std::sync::Arc;
-use std::sync::Mutex;
 use std::sync::RwLock;
 
 pub static USE_LOCALTIME: AtomicBool = AtomicBool::new(true);
@@ -65,7 +64,7 @@ pub static BOX_MODE: AtomicBool = AtomicBool::new(false); // 是否使用 box-mo
 pub static ENABLE_RETURN_IF_PIPE_ERR: AtomicBool = AtomicBool::new(true); // 参见引用之处
 pub static ENABLE_CODE_BAD_REQUEST: AtomicBool = AtomicBool::new(false); // 参见引用之处
 pub static ENABLE_CODE_NOT_FOUND: AtomicBool = AtomicBool::new(false); // 参见引用之处
-pub static mut GLOBAL_ROUTER_CONFIG: Option<Arc<Mutex<RouterConfig>>> = None; //每一个请求都会收到一个对其的引用
+pub static mut GLOBAL_ROUTER_CONFIG: Option<Arc<RouterConfig>> = None; //每一个请求都会收到一个对其的引用
 pub static mut SSL_CERTIFICATE: Option<Arc<RwLock<Vec<u8>>>> = None; //CA证书，这是 nightly 版本的一部分，仍在开发
 pub static mut SSL_PRIVATE_KEY: Option<Arc<RwLock<Vec<u8>>>> = None; //公钥，这是nightly版本的一部分，以后会被移除
 
@@ -187,7 +186,7 @@ impl Config {
     pub fn sync_static_vars(&self) {
         USE_LOCALTIME.store(self.use_localtime, Ordering::Relaxed);
         ENABLE_DEBUG.store(self.enable_debug, Ordering::Relaxed);
-        unsafe { GLOBAL_ROUTER_CONFIG = Some(Arc::new(Mutex::new(self.clone().router_config))) };
+        unsafe { GLOBAL_ROUTER_CONFIG = Some(Arc::new(self.clone().router_config)) };
         if !self.router_config.pipe.is_empty() {
             ENABLE_PIPE.store(true, Ordering::Relaxed)
         }
