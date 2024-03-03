@@ -70,7 +70,7 @@ use super::time::get_formatted_time;
 /// }
 /// pub(crate) use process_result;
 /// ```
-/// 该示例存档于: https://github.com/duoduo70/Tiny-Tiny-Web/blob/ba0923fbe5a4c996f213e328ce2e0719fb93aaf0/src/macros.rs
+/// [该示例存档](https://github.com/duoduo70/Tiny-Tiny-Web/blob/ba0923fbe5a4c996f213e328ce2e0719fb93aaf0/src/macros.rs)
 /// 在这个示例中，如果希望使用该宏:
 /// ```
 /// import drop::log::LogLevel::*; // 这个引入是必须的

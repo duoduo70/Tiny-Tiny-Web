@@ -23,7 +23,7 @@ pub struct HttpRequestError;
 ///
 /// 一个请求头的例子: `Content-Length: 32`，`Content-Length` 是键，`32` 是值
 ///
-/// See: https://www.rfc-editor.org/rfc/rfc2616
+/// 参见[此文档](https://www.rfc-editor.org/rfc/rfc2616)
 pub struct HttpRequest<'a, T> {
     request_method: String,
     url: String,
@@ -109,16 +109,16 @@ impl<'a, T> HttpRequest<'a, T> {
 
 /// 可以构造一个标准的 HTTP 响应字符串
 ///
-/// version: HTTP 相应的版本, 例如 `1.1`
-/// state: HTTP 相应的状态, 例如 `400 BAD REQUEST`
-/// header: 该哈希表的键表示相应头的键，值表示相应头的值
-/// content: 可选的，相应主体部分，以 Vec<u8> 的方式储存
+/// version: HTTP 相应的版本, 例如 `1.1`  
+/// state: HTTP 相应的状态, 例如 `400 BAD REQUEST`  
+/// header: 该哈希表的键表示相应头的键，值表示相应头的值  
+/// content: 可选的，相应主体部分，以 `Vec<u8>` 的方式储存
 ///
-/// 和 HttpRequest 不同, HttpResponse 用 Vec<u8> 的方式储存的原因是：
-/// 1. 需要经常改变 content 的值以计算出最终的 content ，直接用 Vec<u8> 来储存可以避免转换和内存拷贝
-/// 2. 对于大的相应主体，可以将其分成多个相应
+/// 和 HttpRequest 不同, HttpResponse 用 `Vec<u8>` 的方式储存的原因是：  
+/// 1. 需要经常改变 content 的值以计算出最终的 content ，直接用 `Vec<u8>` 来储存可以避免转换和内存拷贝  
+/// 2. 对于大的相应主体，可以将其分成多个响应
 ///
-/// See: https://www.rfc-editor.org/rfc/rfc2616
+/// 参见[此文档](https://www.rfc-editor.org/rfc/rfc2616)
 #[derive(Clone, Default)]
 pub struct HttpResponse {
     version: String,
@@ -155,7 +155,7 @@ impl HttpResponse {
     pub fn content_unref(&self) -> Option<Vec<u8>> {
         self.content.clone()
     }
-    /// 以 Vec<u8> 的形式返回响应流
+    /// 以 `Vec<u8>` 的形式返回响应流
     /// 不使用 string 的原因是可以直接兼容标准库相关函数
     pub fn get_stream(&self) -> Vec<u8> {
         let mut res: Vec<u8> = format!("{} {}\r\n", self.version, self.state)

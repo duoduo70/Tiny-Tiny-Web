@@ -6,10 +6,11 @@
  * if not, see <https://www.gnu.org/licenses/>.
  */
 
+//! # Drop 综合功能库
 //! ## http
 //! HttpRequest: 可以解析任意标准的 HTTP 请求字符串
 //! HttpResponse: 可以构造一个标准的 HTTP 响应字符串
-//! 关于标准，See: https://www.rfc-editor.org/rfc/rfc2616
+//! 关于标准，参见[此文档](https://www.rfc-editor.org/rfc/rfc2616)
 //!
 //! ## log
 //! 提供打印日志的方法，但通常需要进行二次封装

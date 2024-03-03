@@ -85,17 +85,17 @@ pub fn method_set(args: MethodArgs) {
             } else if head2 == "ssl-certificate" {
                 #[cfg(feature = "nightly")]
                 unsafe {
-                    SSL_CERTIFICATE = Some(std::sync::Arc::new(std::sync::RwLock::new(
+                    SSL_CERTIFICATE = Some(std::sync::Arc::new(
                         std::fs::read(head3.to_owned()).unwrap(),
-                    ))) // TODO: Error log
+                    )) // TODO: Error log
                 };
                 return;
             } else if head2 == "ssl-private-key" {
                 #[cfg(feature = "nightly")]
                 unsafe {
-                    SSL_PRIVATE_KEY = Some(std::sync::Arc::new(std::sync::RwLock::new(
+                    SSL_PRIVATE_KEY = Some(std::sync::Arc::new(
                         crate::drop::base64::decode_unchecked(head3)[4..36].to_vec(),
-                    ))) // TODO: Error log
+                    )) // TODO: Error log
                 };
                 return;
             } else if head2 == "xrps-counter-cache-size" {

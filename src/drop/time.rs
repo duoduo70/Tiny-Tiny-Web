@@ -27,9 +27,9 @@ pub struct Time {
 
 impl Time {
     /// 由我和 min0911 为 Plant-OS 项目编写的 C 代码改写而来，原版本有注释
-    /// See: https://github.com/min0911Y/Plant-OS/blob/main/apps/libp/time.c
-    /// 2024 年 2 月为止，该实现有 bug ，所以请查看最原始版本：
-    /// https://github.com/ZhouZhihaos/Powerint-DOS-386/blob/31222fad9ae303daa35d27844cc335c87ee2f1c7/apps/src/time.c
+    /// 参见[此文档](https://github.com/min0911Y/Plant-OS/blob/main/apps/libp/time.c)
+    /// 2024 年 2 月为止，该实现有 bug ，所以请查看[最原始版本](
+    /// https://github.com/ZhouZhihaos/Powerint-DOS-386/blob/31222fad9ae303daa35d27844cc335c87ee2f1c7/apps/src/time.c)
     fn builder(timestamp: u64) -> Self {
         let mut y = 1970;
         let mut _timestamp = timestamp;

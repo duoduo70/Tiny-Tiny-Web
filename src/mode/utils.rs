@@ -23,7 +23,7 @@ use crate::{
     https::{ecc::ecdsa_sign, sha256, tls::*},
     i18n::LOG,
     macros::*,
-    utils::{GlobalValue, TimeErr},
+    utils::TimeErr,
 };
 use std::collections::VecDeque;
 
@@ -235,7 +235,7 @@ fn result_https_request(
                     let certificate = HandshakeMessage {
                         handshake_content: HandshakeContent::Certificate(
                             HandshakeCertificate::new_just_one_certificate(unsafe {
-                                SSL_CERTIFICATE.get().to_vec()
+                                SSL_CERTIFICATE.as_ref().unwrap().to_vec() // TODO: result panic function
                             }),
                         ),
                         length: 0,
@@ -247,14 +247,14 @@ fn result_https_request(
                     retvec.extend(certificate);
                     let (_temp_private_key, temp_public_key) = get_tls_keys();
                     let sign = unsafe {
-                        let mut ca_private_key = SSL_PRIVATE_KEY.get();
+                        let ca_private_key = &SSL_PRIVATE_KEY.as_ref().unwrap().clone();
                         let mut origin_data = client_msg.random.bytes().to_vec();
                         origin_data.extend(serverhello_random.bytes());
                         origin_data.extend([0x03, 0x00, 0x1d]); // X25519
                         origin_data.extend(temp_public_key.clone());
                         let mut data = sha256::Sha256::digest(&origin_data);
                         let mut sign = [0; 64];
-                        ecdsa_sign(ca_private_key.as_mut_ptr(), data.as_mut_ptr(), sign.as_mut_ptr());
+                        ecdsa_sign(ca_private_key.as_ptr(), data.as_mut_ptr(), sign.as_mut_ptr());
                         sign.to_vec()
                     };
 

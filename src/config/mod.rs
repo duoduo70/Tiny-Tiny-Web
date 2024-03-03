@@ -7,35 +7,35 @@
  */
 
 //! # 本模块的总则
-//! Ghost Code 是一门致力于以最简单方式做配置的标记语言
-//! 所以，任何高级语法都是不必要的
-//! 所以，我们采用递归的方式来解析一个命令
+//! Ghost Code 是一门致力于以最简单方式做配置的标记语言  
+//! 所以，任何高级语法都是不必要的  
+//! 所以，我们采用递归的方式来解析一个命令  
 //!
-//! 例如：
-//! 我们有命令: `$ +addr 127.0.0.1` ，它会被 compile 函数在传入的字符串（配置文件的整个字符串）中被发现
-//! 然后，该命令会被递交给 parse_line 函数，该函数用来解析一个个配置文件行
-//! 因为它发现了该命令的第一项是 `$` ，该命令会被递交给相对应的 method_set 函数
-//! 并将一些“相关数据”一并交给 method_set 函数
-//! method_set 函数再将该命令附带“相关数据”传递给 pas_bool_option
-//! MethodArgs 存储的就是这些“相关数据”，其中 config 和 line_splitted 是可变引用
+//! 例如：  
+//! 我们有命令: `$ +addr 127.0.0.1` ，它会被 compile 函数在传入的字符串（配置文件的整个字符串）中被发现  
+//! 然后，该命令会被递交给 parse_line 函数，该函数用来解析一个个配置文件行  
+//! 因为它发现了该命令的第一项是 `$` ，该命令会被递交给相对应的 method_set 函数  
+//! 并将一些“相关数据”一并交给 method_set 函数  
+//! method_set 函数再将该命令附带“相关数据”传递给 pas_bool_option  
+//! MethodArgs 存储的就是这些“相关数据”，其中 config 和 line_splitted 是可变引用  
 //! 这样就可以直接在递归的内部修改 config ，而非使用很长的回调链造成性能问题和代码的可维护性问题
 //!
-//! MethodArgs:
-//! config: 需要被构造的配置文件
-//! line_splitted: 分割后的参数字符串，例如在上面的那个例子里，是 `["+addr", "127.0.0.1"]`
-//! file: 配置文件的文件名，主要用于报错信息的输出（如果最后发现一行配置包含一个错误，可以让报错输出更详细）
+//! MethodArgs:  
+//! config: 需要被构造的配置文件  
+//! line_splitted: 分割后的参数字符串，例如在上面的那个例子里，是 `["+addr", "127.0.0.1"]`  
+//! file: 配置文件的文件名，主要用于报错信息的输出（如果最后发现一行配置包含一个错误，可以让报错输出更详细）  
 //! line_number: 同 file ，是该行配置之于配置文件的行号
 //!
 //! 到此为止，我们阐明了整个模块的原理
 //!
 //! ## 关于为本模块增加或删改功能
-//! 原则上讲，应该尽可能遵循递归式处理的理念
-//! 应该尽量使用 MethodArgs 而非额外定义
+//! 原则上讲，应该尽可能遵循递归式处理的理念  
+//! 应该尽量使用 MethodArgs 而非额外定义  
 //!
-//! 因为 Ghost Code 不适用于复杂的功能
+//! 因为 Ghost Code 不适用于复杂的功能  
 //! 如果要增加复杂的功能，应该为 Ghost Lisp 编程语言增加功能，然后增加 Ghost Code 语法作为接口
 //!
-//! Ghost Code 和 Ghost Lisp 应该能被良好的对接
+//! Ghost Code 和 Ghost Lisp 应该能被良好的对接  
 //! 事实上，完全可以将 Ghost Code 当作 Ghost Lisp 代码的“管理器”，让我们一眼就能明白该服务器有什么功能
 mod base;
 mod vars;
@@ -50,7 +50,6 @@ use std::collections::HashMap;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::AtomicU32;
 use std::sync::Arc;
-use std::sync::RwLock;
 
 pub static USE_LOCALTIME: AtomicBool = AtomicBool::new(true);
 pub static ENABLE_DEBUG: AtomicBool = AtomicBool::new(true);
@@ -65,14 +64,14 @@ pub static ENABLE_RETURN_IF_PIPE_ERR: AtomicBool = AtomicBool::new(true); // 参
 pub static ENABLE_CODE_BAD_REQUEST: AtomicBool = AtomicBool::new(false); // 参见引用之处
 pub static ENABLE_CODE_NOT_FOUND: AtomicBool = AtomicBool::new(false); // 参见引用之处
 pub static mut GLOBAL_ROUTER_CONFIG: Option<Arc<RouterConfig>> = None; //每一个请求都会收到一个对其的引用
-pub static mut SSL_CERTIFICATE: Option<Arc<RwLock<Vec<u8>>>> = None; //CA证书，这是 nightly 版本的一部分，仍在开发
-pub static mut SSL_PRIVATE_KEY: Option<Arc<RwLock<Vec<u8>>>> = None; //公钥，这是nightly版本的一部分，以后会被移除
+pub static mut SSL_CERTIFICATE: Option<Arc<Vec<u8>>> = None; //CA证书，这是 nightly 版本的一部分，仍在开发
+pub static mut SSL_PRIVATE_KEY: Option<Arc<Vec<u8>>> = None; //公钥，这是nightly版本的一部分，以后会被移除
 
-/// 该结构体用以存储一个 `$_grflags` 及其对应的元数据
-/// 一个 OriginResponse 可能需要多个 ReplaceData ，因为这与 `$_grflags` 是一一对应的
-/// 通常来说，OriginResponse = 文件
-/// content: 要被替换的内容
-/// column: `$_grflags` 在文件中的列号
+/// 该结构体用以存储一个 `$_grflags` 及其对应的元数据  
+/// 一个 OriginResponse 可能需要多个 ReplaceData ，因为这与 `$_grflags` 是一一对应的  
+/// 通常来说，OriginResponse = 文件  
+/// content: 要被替换的内容  
+/// column: `$_grflags` 在文件中的列号  
 /// line: `$_grflags` 在文件中的行号
 #[derive(Clone)]
 pub struct ReplaceData {
@@ -81,10 +80,10 @@ pub struct ReplaceData {
     pub line: u32,
 }
 
-/// 这是 Router 的配置文件，每个请求都有一份引用或拷贝
-/// 如果可能，应该尽量作为引用而非拷贝
-/// serve_file_info: 要挂载的文件，其中键是最终的 URL
-/// response_404: 404 NOT FOUND 响应，如果没有开启 404 状态码则不需要设置
+/// 这是 Router 的配置文件，每个请求都有一份引用或拷贝  
+/// 如果可能，应该尽量作为引用而非拷贝  
+/// serve_file_info: 要挂载的文件，其中键是最终的 URL  
+/// response_404: 404 NOT FOUND 响应，如果没有开启 404 状态码则不需要设置  
 /// pipe: pipe 字符串（而非文件）的列表，会被从前往后的读取
 #[derive(Clone, Default)]
 pub struct RouterConfig {
@@ -93,12 +92,12 @@ pub struct RouterConfig {
     pub pipe: Vec<String>,
 }
 
-/// 该结构体用以存储一个被托管的文件对应的元数据
-/// file_path: 被托管的文件的路径
-/// content_type: 被托管的文件的 MIME 类型，例如 `application/octet-stream`
+/// 该结构体用以存储一个被托管的文件对应的元数据  
+/// file_path: 被托管的文件的路径  
+/// content_type: 被托管的文件的 MIME 类型，例如 `application/octet-stream`  
 /// replace: 可选的，如果该文件里包含 `$_grflags` ，则存储它们及其对应的元数据
 ///
-/// 关于 MIME 类型的标准名，参见：https://datatracker.ietf.org/doc/html/rfc6838
+/// 关于 MIME 类型的标准名，参见[此文档](https://datatracker.ietf.org/doc/html/rfc6838)
 #[derive(Clone)]
 pub struct ServeFileData {
     pub file_path: String,
@@ -106,15 +105,15 @@ pub struct ServeFileData {
     pub replace: Option<Vec<ReplaceData>>,
 }
 
-/// 这是总的配置文件，应该尽量避免拷贝，应该尽量保证唯一性，因为拷贝的代价很大
-/// use_localtime: 是否使用本地时间而非 UTC 时间
-/// enable_debug: 是否使用 debug 模式运行本程序，这主要跟日志的输出有关，debug 模式会极大的拖慢性能
-/// addr_bind: 所有 IP 绑定的集合，例如 ["127.0.0.1:80", "127.0.0.1:22397", "[fe80::0]:80"]
-/// mime_bind: 所有额外的 MIME 类型绑定的集合，键是文件后缀名，值的类型的标准名
+/// 这是总的配置文件，应该尽量避免拷贝，应该尽量保证唯一性，因为拷贝的代价很大  
+/// use_localtime: 是否使用本地时间而非 UTC 时间  
+/// enable_debug: 是否使用 debug 模式运行本程序，这主要跟日志的输出有关，debug 模式会极大的拖慢性能  
+/// addr_bind: 所有 IP 绑定的集合，例如 ["127.0.0.1:80", "127.0.0.1:22397", "\[fe80::0\]:80"]  
+/// mime_bind: 所有额外的 MIME 类型绑定的集合，键是文件后缀名，值的类型的标准名  
 /// status_codes: 启用的所有状态码，例如 [400, 404]
 ///
-/// 关于 MIME 类型的标准名，参见：https://datatracker.ietf.org/doc/html/rfc6838
-/// 关于所有的状态码，参见：https://datatracker.ietf.org/doc/html/rfc7231
+/// 关于 MIME 类型的标准名，参见[此文档](https://datatracker.ietf.org/doc/html/rfc6838)  
+/// 关于所有的状态码，参见[此文档](https://datatracker.ietf.org/doc/html/rfc7231)  
 /// 但是，本程序不支持所有状态码，关于已经支持了的状态码，参见本程序的文档或代码
 #[derive(Clone, Default)]
 pub struct Config {

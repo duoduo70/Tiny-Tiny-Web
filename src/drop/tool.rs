@@ -6,7 +6,7 @@
  * if not, see <https://www.gnu.org/licenses/>.
  */
 
-/// 该 trait 让 result_shldfatal 函数可以同时作用于 Option<T>, Result<T, E> 和其它的类型上
+/// 该 trait 让 result_shldfatal 函数可以同时作用于 `Option<T>`, `Result<T, E>` 和其它的类型上
 pub trait ShouldResult<T> {
     fn result_shldfatal(self, ret_code: i32, func: impl FnOnce() + std::marker::Send) -> T;
 }

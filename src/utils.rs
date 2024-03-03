@@ -16,17 +16,3 @@ impl<T> TimeErr<T> for Result<T, std::time::SystemTimeError> {
         crate::drop::tool::result_timeerr(self, -1, || log!(Fatal, crate::i18n::LOG[29]))
     }
 }
-
-pub trait GlobalValue<T> {
-    fn get(self) -> T;
-}
-impl<T: Clone> GlobalValue<T> for &Option<std::sync::Arc<std::sync::Mutex<T>>> {
-    fn get(self) -> T {
-        self.clone().unwrap().lock().unwrap().clone()
-    }
-}
-impl<T: Clone> GlobalValue<T> for &Option<std::sync::Arc<std::sync::RwLock<T>>> {
-    fn get(self) -> T {
-        self.clone().unwrap().read().unwrap().clone()
-    }
-}

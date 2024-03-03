@@ -36,9 +36,9 @@
 //! ed25519 (基于 c25519 的算法，在本模块中同样有实现) 是非标准的签名算法
 //! ed25519 虽然不能直接在浏览器和服务器间的数据通信中使用，但它可以在部分服务器间的数据通信中使用
 //! 因为它比标准方法更加快速和安全，所以，本项目选择将 ed25519 的支持作为目标的一部分
-//! 转写自 C 语言 项目：https://github.com/DavyLandman/compact25519
-//! 本 Rust 转写的 Github 仓库：https://github.com/duoduo70/Compact-C25519-rs
-//! 原始的 Python 实现和该算法的相关论文，参见：https://www.dlbeer.co.nz/oss/c25519.html
+//! 转写自 [C 语言项目](https://github.com/DavyLandman/compact25519)
+//! 本 Rust 转写的 [Github 仓库](https://github.com/duoduo70/Compact-C25519-rs)
+//! 原始的 Python 实现和该算法的相关论文，参见[此文档](https://www.dlbeer.co.nz/oss/c25519.html)
 //!
 
 pub mod c25519;
