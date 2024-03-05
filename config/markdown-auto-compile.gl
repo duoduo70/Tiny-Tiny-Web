@@ -212,6 +212,9 @@
             (pass))
         ret)))
 
-    (for-each-eval (read-dir "markdown")
-        (write-file (str.+ (str.+ "temp/" $$ ) ".html")
-                    (str (markdown-parse (lines (read-file (str.+ ("markdown/" $$)))))))))
+    (set get-pure-str (lambda (str)
+        (slice str 1 (- (length str) 2))))
+
+    (for-each (read-dir "markdown")
+        (write-file (str.+ (str.+ "temp/" (get-pure-str $$)) ".html")
+                    (str (markdown-parse (lines (read-file (str.+ "markdown/" (get-pure-str $$)))))))))

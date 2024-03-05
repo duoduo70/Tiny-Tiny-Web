@@ -36,7 +36,11 @@ macro_rules! check_type_onlyone {
     ($fnname:expr, $value:expr, $env:ident, $_type:ident, $config:expr) => {
         match eval($value, $env, $config) {
             Ok(Expression::$_type(a)) => Ok(a),
-            _ => Err(GError::Reason(format!("{}: Unsupported type", $fnname))),
+            Ok(a) => Err(GError::Reason(format!(
+                "{}: Expression of a unsupported type: {}",
+                $fnname, a
+            ))),
+            Err(e) => Err(e),
         }
     };
 }

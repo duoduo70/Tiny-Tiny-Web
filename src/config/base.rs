@@ -283,6 +283,10 @@ fn method_inject(mut args: MethodArgs) {
 fn method_import_gl(args: MethodArgs) {
     if let Some(head2) = args.line_splitted.next() {
         let env = &mut crate::glisp::core::default_env();
+        if GLISP_ENABLE_STACK.load(Ordering::Relaxed) {
+            crate::glisp::core::enable_stack();
+        }
+
         match crate::glisp::core::parse_eval(
             read_to_string("config/".to_owned() + head2)
                 .result_shldfatal(-1, || log!(Fatal, format!("{}{}", LOG[22], head2))),
@@ -296,6 +300,8 @@ fn method_import_gl(args: MethodArgs) {
                 }
             },
         }
+
+        crate::glisp::core::disable_stack();
     }
 }
 #[cfg(not(feature = "no-glisp"))]

@@ -6,21 +6,25 @@
  * if not, see <https://www.gnu.org/licenses/>.
  */
 
+mod algorithm;
 mod config;
 mod core;
 mod eval;
 mod io;
 mod macros;
 mod str;
-mod algorithm;
+
+use crate::config::GLISP_DEBUG;
+use crate::drop::log::LogLevel::*;
+use crate::macros::*;
 
 use super::core::*;
+use algorithm::*;
 use config::*;
 use core::*;
 use eval::*;
 use io::*;
 use str::*;
-use algorithm::*;
 
 pub fn eval_built_in_form(
     exp: &Expression,
@@ -28,7 +32,23 @@ pub fn eval_built_in_form(
     env: &mut Environment,
     config: Config,
 ) -> Option<Result<Expression, GError>> {
-    match exp {
+    if let Some(stack) = unsafe { STACK.as_ref() } {
+        let stack = std::rc::Rc::clone(&stack);
+        stack.as_ref().borrow_mut().push(exp.to_string());
+        if GLISP_DEBUG.load(std::sync::atomic::Ordering::Relaxed) {
+            log!(
+                Info,
+                format!(
+                    "[glisp-debugger] [stack] {} {}",
+                    std::iter::repeat("--")
+                        .take(stack.as_ref().borrow().len() - 1)
+                        .collect::<String>(),
+                    exp
+                )
+            );
+        }
+    }
+    let ret = match exp {
         Expression::Symbol(symbol) => match symbol.as_ref() {
             "if" => Some(func_if(other_args, env, config)),
             "set" => Some(func_set(other_args, env, config)),
@@ -74,7 +94,7 @@ pub fn eval_built_in_form(
             "continue" => Some(Ok(Expression::Symbol("continue".to_owned()))),
             "pass" => Some(Ok(Expression::Symbol("pass".to_owned()))),
             "read-dir" => Some(func_read_dir(other_args, env, config)),
-            "for-each-eval" => Some(func_for_each_eval(other_args, env, config)),
+            "for-each" => Some(func_for_each(other_args, env, config)),
             "eval" => Some(func_eval(other_args, env, config)),
             "run" => Some(func_run(other_args, env, config)),
             "serve" => Some(func_serve(other_args, env, config)),
@@ -82,5 +102,13 @@ pub fn eval_built_in_form(
             _ => None,
         },
         _ => None,
+    }?;
+    if ret.is_ok() {
+        if let Some(stack) = unsafe { STACK.as_ref() } {
+            let stack = std::rc::Rc::clone(&stack);
+            stack.as_ref().borrow_mut().pop();
+        }
     }
+
+    Some(ret)
 }

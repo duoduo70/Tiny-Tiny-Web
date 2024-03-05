@@ -54,6 +54,8 @@ use std::sync::Arc;
 pub static USE_LOCALTIME: AtomicBool = AtomicBool::new(true);
 pub static ENABLE_DEBUG: AtomicBool = AtomicBool::new(true);
 pub static ENABLE_PIPE: AtomicBool = AtomicBool::new(false);
+pub static GLISP_DEBUG: AtomicBool = AtomicBool::new(false);
+pub static GLISP_ENABLE_STACK: AtomicBool = AtomicBool::new(true);
 pub static THREADS_NUM: AtomicU32 = AtomicU32::new(2);
 pub static XRPS_COUNTER_CACHE_SIZE: AtomicU32 = AtomicU32::new(8); // 参见引用之处
 pub static BOX_NUM_PER_THREAD_MAG: AtomicU32 = AtomicU32::new(1000); // 参见引用之处

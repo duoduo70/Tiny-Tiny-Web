@@ -28,12 +28,12 @@ pub fn start(config: Config) -> ! {
         match stream {
             Ok(req) => {
                 threadpool.add(threads_num.try_into().unwrap(), || {
-                    handle_connection(
-                        req,
-                        unsafe {
-                            &crate::config::GLOBAL_ROUTER_CONFIG.as_ref().unwrap().clone()
-                        },
-                    )
+                    handle_connection(req, unsafe {
+                        &crate::config::GLOBAL_ROUTER_CONFIG
+                            .as_ref()
+                            .unwrap()
+                            .clone()
+                    })
                 });
             }
             Err(_) => {

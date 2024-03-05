@@ -19,11 +19,15 @@ pub fn try_start() {
     }
 }
 
-fn parse(fst: String, _args: Vec<String>) {
+fn parse(fst: String, args: Vec<String>) {
     match fst.as_str() {
         #[cfg(not(feature = "no-glisp"))]
         "repl" => {
-            run_repl();
+            if !args.is_empty() && (args[2] == "-d" || args[2] == "--debug") {
+                run_repl(true);
+            } else {
+                run_repl(false);
+            }
         }
         "-v" | "--version" => {
             #[cfg(not(feature = "no-glisp"))]
@@ -48,7 +52,7 @@ fn parse(fst: String, _args: Vec<String>) {
             println!(
                 r"Usage:
     ttweb
-    ttweb repl
+    ttweb repl [-d | --debug]
     ttweb -h | --help
     ttweb -v | --version"
             );

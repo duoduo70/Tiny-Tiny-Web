@@ -168,6 +168,16 @@ pub fn method_set(args: MethodArgs) {
                 pas_bool_option(&mut value, head3, args.file, args.line_number);
                 ENABLE_RETURN_IF_PIPE_ERR.store(value, Ordering::Relaxed);
                 return;
+            } else if head2 == "gl-debug" {
+                let mut value = false;
+                pas_bool_option(&mut value, head3, args.file, args.line_number);
+                GLISP_DEBUG.store(value, Ordering::Relaxed);
+                return;
+            } else if head2 == "gl-stack" {
+                let mut value = true;
+                pas_bool_option(&mut value, head3, args.file, args.line_number);
+                GLISP_ENABLE_STACK.store(value, Ordering::Relaxed);
+                return;
             } else {
                 syntax_error(
                     args.file,

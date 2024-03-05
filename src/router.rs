@@ -68,7 +68,7 @@ pub fn router<'a>(
         Debug,
         format!("{}{}", LOG[14], "export".to_owned() + req.url())
     );
-    
+
     true
 }
 

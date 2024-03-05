@@ -7,9 +7,9 @@
  */
 
 use super::macros::*;
- use super::*;
+use super::*;
 
- pub fn func_map(
+pub fn func_map(
     args: &[Expression],
     env: &mut Environment,
     config: Config,
@@ -29,13 +29,22 @@ use super::macros::*;
             }
             Err(error) => {
                 if let Ok(string) = error.into_string() {
-                    return Err(GError::Reason("map: Error while mapping ".to_owned()+&i.to_string()+"th element: " + &string))
+                    return Err(GError::Reason(
+                        "map: Error while mapping ".to_owned()
+                            + &i.to_string()
+                            + "th element: "
+                            + &string,
+                    ));
                 } else {
-                    return Err(GError::Reason("map: Error while mapping ".to_owned()+&i.to_string()+"th element and cannot get the error message"))
+                    return Err(GError::Reason(
+                        "map: Error while mapping ".to_owned()
+                            + &i.to_string()
+                            + "th element and cannot get the error message",
+                    ));
                 }
             }
         }
-        i+=1;
+        i += 1;
     }
 
     Ok(Expression::List(vec))

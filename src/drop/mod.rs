@@ -22,11 +22,11 @@
 //! ## mempool
 //! 一个内存池库，用以在高并发下避免过多的重新内存分配
 
+pub mod base64;
 pub mod http;
 pub mod log;
+pub mod mempool;
 pub mod random;
 pub mod thread;
 pub mod time;
 pub mod tool;
-pub mod base64;
-pub mod mempool;

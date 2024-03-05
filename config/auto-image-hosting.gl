@@ -20,7 +20,7 @@
         (if (str.= str "webp") (set type "image/webp") (pass))
         (if (str.= str "svg") (set type "image/svg+xml") (pass))
         type)))
-    (for-each-eval (read-dir "image-hosting")
+    (for-each (read-dir "image-hosting")
         (do 
             (set pure-str (get-pure-str $$))
             (serve pure-str (str.+ "image-hosting/" pure-str) (search-in-mime-list

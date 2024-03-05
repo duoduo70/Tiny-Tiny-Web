@@ -76,9 +76,13 @@ Hello, World!
 ```
 
 ### Document / 文档
-[Chinese / 中文](https://github.com/duoduo70/Tiny-Tiny-Web/blob/master/docs/index.md)
+[User document / 用户文档](https://github.com/duoduo70/Tiny-Tiny-Web/blob/master/docs/index.md)
+
+You can use `cargo doc` to build project document (Unlike the user document, it makes you to understand the code of this project and it contains the development specifications of this project)  
+你可以使用 `cargo doc` 命令来构建项目文档（和用户文档不同的是，它让你理解本项目的代码以及它包含了本项目的开发规范）
 
 ### Thanks / 致谢
-Thank for all.
-Enjoy.  
-感谢你们所有人。
+Thanks to Acbox for helping me translate and proofread the English document.
+感谢 [Acbox](https://github.com/sheepbox8646) 帮我翻译和校对了英文版文档。
+
+Enjoy.

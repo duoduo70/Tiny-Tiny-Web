@@ -7,7 +7,10 @@
  */
 
 use std::{
-    io::Read, net::{TcpListener, TcpStream}, process::exit, sync::atomic::Ordering
+    io::Read,
+    net::{TcpListener, TcpStream},
+    process::exit,
+    sync::atomic::Ordering,
 };
 
 use crate::{
@@ -18,7 +21,8 @@ use crate::{
     drop::{
         http::{HttpRequest, HttpResponse},
         log::LogLevel::*,
-        random::*, time::Time,
+        random::*,
+        time::Time,
     },
     https::{ecc::ecdsa_sign, sha256, tls::*},
     i18n::LOG,
@@ -103,8 +107,7 @@ pub fn handle_connection(mut stream: std::net::TcpStream, config: &RouterConfig)
 }
 
 fn result_http_request(mut stream: std::net::TcpStream, config: &RouterConfig) {
-    let buf_reader = 
-    std::io::BufReader::with_capacity(64, &mut stream);
+    let buf_reader = std::io::BufReader::with_capacity(64, &mut stream);
 
     let mut lines = std::io::BufRead::lines(buf_reader);
 
@@ -168,17 +171,20 @@ fn result_http_request(mut stream: std::net::TcpStream, config: &RouterConfig) {
 }
 
 fn get_random_32bytes() -> [u8; 32] {
-     // FIXME: 复用 TinyMT32 实例以达到更高的性能和安全性
-     let mut random = random_init((Time::nsec().result_timeerr_default() as u32) << 16 | Time::msec().result_timeerr_default() as u32);
-     let mut random_array: [u8; 32] = [0; 32];
-     random.fill_bytes(&mut random_array);
-     random_array
+    // FIXME: 复用 TinyMT32 实例以达到更高的性能和安全性
+    let mut random = random_init(
+        (Time::nsec().result_timeerr_default() as u32) << 16
+            | Time::msec().result_timeerr_default() as u32,
+    );
+    let mut random_array: [u8; 32] = [0; 32];
+    random.fill_bytes(&mut random_array);
+    random_array
 }
 
 fn get_tls_keys() -> (Vec<u8>, Vec<u8>) {
     let public_key: *mut u8 = [0; 32].as_mut_ptr();
     let private_key: *mut u8 = [0; 32].as_mut_ptr();
-   
+
     unsafe {
         crate::https::c25519::compact_x25519_keygen(
             private_key,
@@ -214,9 +220,7 @@ fn result_https_request(
                 crate::https::tls::HandshakeContent::HelloRequest => todo!(),
                 crate::https::tls::HandshakeContent::ClientHello(client_msg) => {
                     println!("{:#?}", client_msg);
-                    let serverhello_random = Random::new_32bit_random(
-                        get_random_32bytes(),
-                    );
+                    let serverhello_random = Random::new_32bit_random(get_random_32bytes());
                     let serverhello = HandshakeMessage {
                         handshake_content: HandshakeContent::ServerHello(HandshakeServerHello {
                             version: crate::https::tls::TLSVersion::TLS1_2,
@@ -254,7 +258,11 @@ fn result_https_request(
                         origin_data.extend(temp_public_key.clone());
                         let mut data = sha256::Sha256::digest(&origin_data);
                         let mut sign = [0; 64];
-                        ecdsa_sign(ca_private_key.as_ptr(), data.as_mut_ptr(), sign.as_mut_ptr());
+                        ecdsa_sign(
+                            ca_private_key.as_ptr(),
+                            data.as_mut_ptr(),
+                            sign.as_mut_ptr(),
+                        );
                         sign.to_vec()
                     };
 
@@ -356,12 +364,7 @@ fn write_stream(mut stream: TcpStream, response: &mut HttpResponse) {
     }
 }
 
-fn pipe(
-    config: &RouterConfig,
-    content: &str,
-    enable_debug: bool,
-    response: &mut HttpResponse,
-) {
+fn pipe(config: &RouterConfig, content: &str, enable_debug: bool, response: &mut HttpResponse) {
     for e in &config.pipe {
         let env = &mut crate::glisp::core::default_env();
         env.data.insert(

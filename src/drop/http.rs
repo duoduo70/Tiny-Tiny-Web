@@ -56,18 +56,18 @@ impl<'a, T> HttpRequest<'a, T> {
 
         // 请求行
         let mut req_line = lines.next().unwrap().split(' ');
-                match req_line.next() {
-                    Some(a) => request.request_method = a.to_string(),
-                    _ => return Err(HttpRequestError),
-                }
-                match req_line.next() {
-                    Some(a) => request.url = a.to_string(),
-                    _ => return Err(HttpRequestError),
-                }
-                match req_line.next() {
-                    Some(a) => request.version = a.to_string(),
-                    _ => return Err(HttpRequestError),
-                }
+        match req_line.next() {
+            Some(a) => request.request_method = a.to_string(),
+            _ => return Err(HttpRequestError),
+        }
+        match req_line.next() {
+            Some(a) => request.url = a.to_string(),
+            _ => return Err(HttpRequestError),
+        }
+        match req_line.next() {
+            Some(a) => request.version = a.to_string(),
+            _ => return Err(HttpRequestError),
+        }
 
         // 其它头部行
         for line in lines {

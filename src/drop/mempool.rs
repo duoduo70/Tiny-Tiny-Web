@@ -20,13 +20,11 @@ use std::sync::atomic::AtomicU16;
 pub static CURRENT_THREAD_NUM: AtomicU16 = AtomicU16::new(0);
 
 pub struct HttpRequestMemModel {
-    req_str: String
+    req_str: String,
 }
 
 #[cfg(test)]
 mod test {
     #[test]
-    fn test(){
-        
-    }
+    fn test() {}
 }

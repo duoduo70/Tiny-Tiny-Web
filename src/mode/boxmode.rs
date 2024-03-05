@@ -83,10 +83,9 @@ pub fn start(config: Config) -> ! {
                         while i
                             != (counters.box_num_per_thread as f32 * box_num_per_thread_mag) as u32
                         {
-                            handle_connection_s(
-                                unsafe { &THREADS_BOX.clone().unwrap() },
-                                unsafe { &GLOBAL_ROUTER_CONFIG.as_ref().unwrap().clone() },
-                            );
+                            handle_connection_s(unsafe { &THREADS_BOX.clone().unwrap() }, unsafe {
+                                &GLOBAL_ROUTER_CONFIG.as_ref().unwrap().clone()
+                            });
                             i += 1;
                         }
                     };
@@ -105,10 +104,9 @@ pub fn start(config: Config) -> ! {
                         while i
                             != (counters.box_num_per_thread as f32 * box_num_per_thread_mag) as u32
                         {
-                            handle_connection_s(
-                                unsafe { &THREADS_BOX.clone().unwrap() },
-                                unsafe { &GLOBAL_ROUTER_CONFIG.as_ref().unwrap().clone() },
-                            );
+                            handle_connection_s(unsafe { &THREADS_BOX.clone().unwrap() }, unsafe {
+                                &GLOBAL_ROUTER_CONFIG.as_ref().unwrap().clone()
+                            });
                             i += 1;
                         }
                     };
@@ -124,10 +122,7 @@ pub fn start(config: Config) -> ! {
     exit(0);
 }
 
-fn handle_connection_s(
-    streams: &Mutex<VecDeque<std::net::TcpStream>>,
-    config: &RouterConfig,
-) {
+fn handle_connection_s(streams: &Mutex<VecDeque<std::net::TcpStream>>, config: &RouterConfig) {
     let stream = match streams.lock().unwrap().pop_front() {
         Some(a) => a,
         _ => return,

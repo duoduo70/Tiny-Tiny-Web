@@ -55,7 +55,7 @@ impl GError {
         match self {
             GError::Reason(string) => Ok(string),
             #[allow(unreachable_patterns)]
-            _ => Err(GError::Reason("Can not get GError reason".to_owned()))
+            _ => Err(GError::Reason("Can not get GError reason".to_owned())),
         }
     }
 }
@@ -65,15 +65,25 @@ pub struct Environment<'a> {
     pub outer: Option<&'a Environment<'a>>,
 }
 
+pub(super) static mut STACK: Option<Rc<std::cell::RefCell<Vec<String>>>> = None;
+
+pub fn enable_stack() {
+    unsafe { STACK = Some(Rc::new(std::cell::RefCell::new(Vec::with_capacity(20)))) };
+}
+
+pub fn disable_stack() {
+    unsafe { STACK = None };
+}
+
 /// 使用 RefCell 包装是为了包装 `&'a mut crate::config::Config` 以使其可以被正确移动
 /// 使用 Rc 是为了解决在递归式解析中不可避免的循环可变引用
 /// 与其深拷贝一次 Config ，每次调用函数时多进行一次寻址在通常情况下可能更快
 /// 并且，为了保持代码的一致性和可维护性，最终决定保留 `&mut` 引用
 ///
 /// 在未来的版本中，如果`&mut crate::config::Config` 不足以支撑 crate::config 包，会考虑全部换成 RefCell
-pub type Config<'a> = Option<Rc<std::cell::RefCell<&'a mut crate::config::Config>>>;
+pub(super) type Config<'a> = Option<Rc<std::cell::RefCell<&'a mut crate::config::Config>>>;
 
-pub fn func_lambda(args: &[Expression]) -> Result<Expression, GError> {
+pub(super) fn func_lambda(args: &[Expression]) -> Result<Expression, GError> {
     let params = args
         .first()
         .ok_or(GError::Reason("unexpected args form".to_string()))?;
@@ -89,7 +99,7 @@ pub fn func_lambda(args: &[Expression]) -> Result<Expression, GError> {
     }))
 }
 
-pub fn tokenize(expr: String) -> Vec<String> {
+pub(super) fn tokenize(expr: String) -> Vec<String> {
     let lines = expr.lines();
     let mut new_expr = String::new();
     for line in lines {
@@ -107,7 +117,7 @@ pub fn tokenize(expr: String) -> Vec<String> {
         .collect()
 }
 
-pub fn parse(tokens: &[String]) -> Result<(Expression, &[String]), GError> {
+pub(super) fn parse(tokens: &[String]) -> Result<(Expression, &[String]), GError> {
     let (token, rest) = tokens
         .split_first()
         .ok_or(GError::Reason("could not get token".to_string()))?;
@@ -118,7 +128,7 @@ pub fn parse(tokens: &[String]) -> Result<(Expression, &[String]), GError> {
     }
 }
 
-pub fn read_seq(tokens: &[String]) -> Result<(Expression, &[String]), GError> {
+pub(super) fn read_seq(tokens: &[String]) -> Result<(Expression, &[String]), GError> {
     let mut res: Vec<Expression> = vec![];
     let mut xs = tokens;
     loop {
@@ -134,7 +144,7 @@ pub fn read_seq(tokens: &[String]) -> Result<(Expression, &[String]), GError> {
     }
 }
 
-pub fn parse_atom(token: &str) -> Expression {
+pub(super) fn parse_atom(token: &str) -> Expression {
     if token.len() >= 2
         && token.as_bytes()[0] == b'\"'
         && token.as_bytes()[token.len() - 1] == b'\"'
@@ -237,11 +247,16 @@ pub fn default_env<'a>() -> Environment<'a> {
     Environment { data, outer: None }
 }
 
-pub fn eval(exp: &Expression, env: &mut Environment, config: Config) -> Result<Expression, GError> {
+pub(super) fn eval(
+    exp: &Expression,
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
     match exp {
         Expression::Bool(_) => Ok(exp.clone()),
-        Expression::Symbol(k) => env_get(k, env)
-            .ok_or(GError::Reason(format!("unexpected symbol k={}", k))),
+        Expression::Symbol(k) => {
+            env_get(k, env).ok_or(GError::Reason(format!("unexpected symbol k={}", k)))
+        }
         Expression::Number(_a) => Ok(exp.clone()),
         Expression::List(list) => {
             let first_form = list
@@ -278,7 +293,7 @@ pub fn eval(exp: &Expression, env: &mut Environment, config: Config) -> Result<E
     }
 }
 
-pub fn func_if(
+pub(super) fn func_if(
     args: &[Expression],
     env: &mut Environment,
     config: Config,

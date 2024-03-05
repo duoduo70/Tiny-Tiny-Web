@@ -9,14 +9,20 @@
 use super::macros::*;
 use super::*;
 
-pub fn func_for_each_eval(
+pub fn func_for_each(
     args: &[Expression],
     env: &mut Environment,
     config: Config,
 ) -> Result<Expression, GError> {
-    args_len_min!("for-each-eval", args, 2);
-    args_len_max!("for-each-eval", args, 2);
-    let from = check_type_onlyone!("for-each-eval", &args[0], env, List, config.clone())?;
+    args_len_min!("for-each", args, 2);
+    args_len_max!("for-each", args, 2);
+    let from = check_type_onlyone!("for-each", &args[0], env, List, config.clone())?;
+
+    if GLISP_DEBUG.load(std::sync::atomic::Ordering::Relaxed) {
+        if from.is_empty() {
+            log!(Info, format!("[glisp-debugger] [lint] for-each got a empty list, so no any expression will construct"));
+        }
+    }
 
     for e in from {
         let e_str = e.to_string();

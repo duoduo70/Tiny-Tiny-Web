@@ -1,4 +1,4 @@
-# Tiny Tiny Web 2 temporary Documentation/临时文档
+# Tiny Tiny Web 2 User Documentation / Tiny Tiny Web 2 用户文档
 
 Tiny-Tiny-Web, A free software that concentrate on rapidly and easily create web server, which use Rust as development language, publish under GPLv3 License. In following texts, we call it TTWeb for short.
 
@@ -8,9 +8,9 @@ This version may not approperiately be with the latest version (In other words, 
 
 本文档所述内容可能不适合最新版本或对于最新版本而言不全面。
 
-This version is based on version 2.0.0-beta6
+This version is based on version 2.0.0-beta10
 
-当前文档基于版本 2.0.0-beta6。
+当前文档基于版本 2.0.0-beta10。
 
 For the language of twice-development - Ghost Lisp, we call it Glisp for short.
 
@@ -19,8 +19,6 @@ For the language of twice-development - Ghost Lisp, we call it Glisp for short.
 This documentation can choice CC_BY_SA or GFDL license
 
 本文档可以选择 CC-BY-SA 或 GFDL 协议。
-
-[TOC]
 
 ## Getting start/开始使用：
 
@@ -45,7 +43,7 @@ And than, create `main.gc`
 Write following content in `main.gc`
 
 在 `main.gc` 文件中写入如下内容：
-```
+```ghostcode
 $ +addr 127.0.0.1:22397
 + index.html /
 ```
@@ -53,7 +51,7 @@ $ +addr 127.0.0.1:22397
 Create `index.html` in `export`, and input following codes:
 
 然后，在 export 文件下创建 index.html 文件，在里面写入如下内容：
-```
+```ghostcode
 Hello, World!
 ```
 Now, run it and visit `http://127.0.0.1:22397`
@@ -61,13 +59,13 @@ If everything is okay, you will see:
 
 然后启动程序，在浏览器内打开 http://127.0.0.1:22397/
 如果一切顺利，你应该会看到打印：
-```
+```ghostcode
 Hello, World!
 ```
 
 ## Command List/指令列表
 
-```
+```ghostcode
 # Mount a file to a URL, the latest two option is optional. If Mounting on root, you should use `/`
 # 挂载一个文件到一个URL,后两个选项是可选的，如果要挂载到根路径，应该使用`/`
 + index.html index.html text/html;charset=utf-8 
@@ -134,6 +132,13 @@ $ debug no
 # 设置程序将以多少线程运行，在 box-mode 中该选项也会影响一些算法细节
 $ threads 2
 
+# 是否为 GL 解释器启用调试，这会极大影响性能，并且可能不适用于较大的脚本
+$ gl-debug no
+
+# 是否为 GL 解释器启用栈相关功能，关闭它可能会优化性能，但程序设计可能会丧失一定灵活性
+# 如果希望为调试器启用堆栈跟踪，则不能关闭该功能
+$ gl-stack yes
+
 # Weather use box-mode
 # 配置是否使用 box-mode
 # Box-mode could let the programme throughput, but the CPU would be full
@@ -196,7 +201,7 @@ In current version, Inject is run in Router, but in the future, you can set when
 
 In other words, we have following example:
 也就是说，我们有如下例子：
-```
+```ghostcode
 compile template.html
 + template.html a
 inject a index.html
@@ -212,15 +217,15 @@ Known from the config file, we compiled `template.html`, and mounted it on URL `
 此时，`a` 便是上述架构图中的 `OriginResponse` 。
 
 假设 `template.html` 文件中有：
-```
+```scheme
 a $_gcflag c
 ```
 而 `index.html` 中有：
-```
+```scheme
 b
 ```
 那么 `OriginResponse` 是：
-```
+```scheme
 a b c
 ```
 由于它是被单独实现和优化的，它比用 Pipe 来执行替换快很多。
@@ -247,7 +252,7 @@ Glisp 是一门基于 Lisp 的编程语言。
 ```
 
 表达式的概念类似其它大多数编程语言，是嵌套的。
-```
+```scheme
 (+ (+ 1 2) 1)
 ```
 在最高的层面看，此为一个表达式。`+`函数传入了两个表达式。递归的看，它有很多子表达式，要注意的是一般认为一个表达式本身也是它自己的子表达式。
@@ -404,7 +409,7 @@ pub fn eval_built_in_form(
             "continue" => Some(Ok(Expression::Symbol("continue".to_owned()))),
             "pass" => Some(Ok(Expression::Symbol("pass".to_owned()))),
             "read-dir" => Some(func_read_dir(other_args, env, config)),
-            "for-each-eval" => Some(func_for_each_eval(other_args, env, config)),
+            "for-each" => Some(func_for_each(other_args, env, config)),
             "eval" => Some(func_eval(other_args, env, config)),
             "run" => Some(func_run(other_args, env, config)),
             "serve" => Some(func_serve(other_args, env, config)),
@@ -632,9 +637,12 @@ pub fn eval_built_in_form(
             (pass))
         ret)))
 
-    (for-each-eval (read-dir "markdown")
-        (write-file (str.+ (str.+ "temp/" $$ ) ".html")
-                    (str (markdown-parse (lines (read-file (str.+ ("markdown/" $$)))))))))
+    (set get-pure-str (lambda (str)
+        (slice str 1 (- (length str) 2))))
+
+    (for-each (read-dir "markdown")
+        (write-file (str.+ (str.+ "temp/" (get-pure-str $$)) ".html")
+                    (str (markdown-parse (lines (read-file (str.+ "markdown/" (get-pure-str $$)))))))))
 ```
 这个程序的作用是读取所有 `markdown/*.md` 文件，将其编译到 `temp/*.md.html`。
 
@@ -643,7 +651,7 @@ pub fn eval_built_in_form(
 虽然我暂且无力提供一个完善的文档，但我们可以讨论下如何上手它。
 
 “列表”是 Glisp 中最基本的类型，列表有可能被求值，也有可能不被求值，为了保证它永远不被求值，你可能需要用:
-```
+```scheme
 (quote a b c)
 ``` 
 这可以保证`a`, `b`, `c`永远不被求值，但你可能要在使用这个列表的时候把 `quote` 这个第一个元素除去。  
@@ -660,7 +668,7 @@ Lisp 的其它基本函数则没有遭到这种过大的“魔改”。
 `(cdr (quote a b))`同理，但它是返回除第一个元素以外的所有元素组成的列表，我们可以使用它来剔除 `quote` 。
 `(cons a b)`则是拼接两个列表。
 `(cond)`是一个相对复杂的函数：
-```
+```scheme
 (cond
     (eq 1 2) 1
     (eq 1 1) 2)
@@ -706,7 +714,7 @@ Lisp 的其它基本函数则没有遭到这种过大的“魔改”。
         (if (str.= str "webp") (set type "image/webp") (pass))
         (if (str.= str "svg") (set type "image/svg+xml") (pass))
         type)))
-    (for-each-eval (read-dir "image-hosting")
+    (for-each (read-dir "image-hosting")
         (do 
             (set pure-str (get-pure-str $$))
             (serve pure-str (str.+ "image-hosting/" pure-str) (search-in-mime-list
@@ -714,11 +722,11 @@ Lisp 的其它基本函数则没有遭到这种过大的“魔改”。
             (log (str.+ host pure-str)))))
 ```
 `get-pure-str` 用来把 `"\'a\'"`转换成 `"a"`，`search-in-mime-list`通过文件扩展名搜索它对应的 MIME 类型，这些都很简单。  
-最重要的是 `for-each-eval` ，它的定义构成了很多 Glisp 配置的核心，是非常重要的语法糖。  
+最重要的是 `for-each` ，它的定义构成了很多 Glisp 配置的核心，是非常重要的语法糖。  
 它会首先求值`(read-dir "image-hosting")`，得到一个列表，这个列表包含该文件夹下所有文件的字符串。
-然后，`for-each-eval`会为该列表中每个元素都运行一遍 `do` 块的那个表达式。  
+然后，`for-each`会为该列表中每个元素都运行一遍 `do` 块的那个表达式。  
 假设该列表的值为 `("a.jpg", "b.jpg", "c.jpg")`，在第一次运行时，`do` 块的那个表达式实际上等于：
-```
+```scheme
 (do 
     (set pure-str (get-pure-str (str "\'a.jpg\'")))
     (serve pure-str (str.+ "image-hosting/" pure-str) (search-in-mime-list
@@ -726,7 +734,7 @@ Lisp 的其它基本函数则没有遭到这种过大的“魔改”。
     (log (str.+ host pure-str)))
 ```
 你可以看出来，`$$` 是一个形式变量，它被替换为了 `""a.jpg""` ，可是问题在于，为什么不是 `"a.jpg"`？
-事实上，由于技术原因，for-each-eval 获取到的列表中的每一个元素都会被强制转型成字符串，而因为 `read-dir` 的返回值本身就是字符串列表了，所以在字符串的基础上再嵌套字符串，就会产生这种略显尴尬的情况，在未来的版本中，我会尝试更改它。
+事实上，由于技术原因，for-each 获取到的列表中的每一个元素都会被强制转型成字符串，而因为 `read-dir` 的返回值本身就是字符串列表了，所以在字符串的基础上再嵌套字符串，就会产生这种略显尴尬的情况，在未来的版本中，我会尝试更改它。
 所以，这也是为什么我们需要额外定义 `get-pure-str` 函数，因为我们要提取真正的原始字符串。
 这样，`pure-str`实际上就是`"a.jpg"`也就是我们需要的原始字符串了。
 然后，我们将其挂载，最后打印日志，让我们能更方便的复制粘贴链接。  
@@ -734,7 +742,9 @@ Lisp 的其它基本函数则没有遭到这种过大的“魔改”。
 
 就这样，只有 20 行代码，我们就实现了一个基本的图床功能。
 
-## 集成开发环境 (IDE) 支持
+## 附录
+
+### 集成开发环境 (IDE) 支持
 我开发了一个 VSCode 插件可以让你更快速的编写 Glisp 代码，目前，只要输入内置函数的名称并回车，就能自动补全括号，附带一定的自动排版功能。
 参见 [源代码仓库](https://github.com/duoduo70/Tiny-Tiny-Web/tree/master/vscode-ghost-lisp-extension) (同样，最好是你当前使用的程序版本的存储库拷贝，因为最新的代码可能不兼容旧的主程序)  
 我们打开一个 .gl 文件，然后输入：`do` 并回车，它会为我们自动生成代码片段。
@@ -743,7 +753,13 @@ Lisp 的其它基本函数则没有遭到这种过大的“魔改”。
 然后在插件项目的根目录下使用命令：`vsce package`。  
 现在，你应该能在 VSCode 中导入该插件。
 
-## 如何为本项目做贡献
+### 关于命令行参数与 GLISP-REPL
+你可以通过 `ttweb --help` 来查看命令行参数，其中最重要的是 GLISP-REPL 。
+
+你可以通过它来尝试 glisp ，而不需要频繁更改软件的配置文件。
+它也可以看作一个调试器，可以用来灵活的调试一些 glisp 代码。
+
+### 如何为本项目做贡献
 
 如果你发现了一个 Bug，欢迎将其报告到[ Github 上的源代码存储库](https://github.com/duoduo70/Tiny-Tiny-Web)。
 尽管如此，根据 GPLv3 开源协议，我不对程序的运行做任何担保，换句话说，我不保证一定会修复 Bug 。
@@ -754,7 +770,7 @@ Lisp 的其它基本函数则没有遭到这种过大的“魔改”。
 
 欢迎你翻译本项目到其它语言，请不要硬编码（简单的把英文文本替换成其它语言文本）的翻译本项目的程序部分，而是应该让用户选择他想要使用的语言，然后把你的翻译做为拉取请求来提交。
 
-### 关于多语言支持
+#### 关于多语言支持
 原则上讲，对于成文的总结性注释应该尽量使用中文。
 其它注释应该尽量使用英文。
 这样做是为了防止语言转换造成的失真。
@@ -764,11 +780,9 @@ README.md 应该保持中英双语。
 Github 仓库描述应该保持中英双语。
 本文档以中文版为准，但可以有翻译。
 
-### 关于本项目中的注释
+#### 关于本项目中的注释
 注释在可以被理解的情况下应该尽可能少。
 注释的格式应该遵循惯例。
-
-## 其它
 
 ### HTTPS
 
@@ -781,7 +795,7 @@ Github 仓库描述应该保持中英双语。
 我不作任何适用性担保和支持担保。
 
 因为我对自己的代码没有足够的信心，所以目前为止尽量不要将本项目构建出的程序直接暴露在公网上。
-尽管如此，在不久的将来，我会提供一种强制将其使用 HTTPS 协议暴露在公网上的方法和一种安全的连接 CDN 的方法。
+尽管如此，在不久的将来，我会提供一种强制将其使用 HTTPS 协议暴露在公网上的方法和一种更安全的连接 CDN 的方法。
 
 BOX 模式目前无法处理过高的并发，但这与你的电脑配置有关。
 我的电脑搭载了一颗 6 线程的低频 CPU ，它最多可以接受包含 20000 个 HTTP 请求的瞬时并发。
