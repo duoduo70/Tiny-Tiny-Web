@@ -180,8 +180,8 @@
     "body": ["(read-dir $0)"]
   },
   "for-each-eval": {
-    "prefix": ["foreacheval"],
-    "body": ["(for-each-eval $1\n    $2)"]
+    "prefix": ["foreach"],
+    "body": ["(for-each $1\n    $2)"]
   },
   "eval": {
     "prefix": ["eval"],
@@ -194,5 +194,17 @@
   "serve": {
     "prefix": ["serve"],
     "body": ["(serve $0)"]
+  },
+  "map": {
+    "prefix": ["map"],
+    "body": ["(map $0 $1)"]
+  },
+  "repl": {
+    "prefix": ["repl"],
+    "body": ["(repl :debug)"]
+  },
+  "input": {
+    "prefix": ["input"],
+    "body": ["(input $0)"]
   }
 }

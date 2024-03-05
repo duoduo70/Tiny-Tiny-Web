@@ -99,6 +99,8 @@ pub fn eval_built_in_form(
             "run" => Some(func_run(other_args, env, config)),
             "serve" => Some(func_serve(other_args, env, config)),
             "map" => Some(func_map(other_args, env, config)),
+            "repl" => Some(func_repl(other_args, env, config)),
+            "input" => Some(func_input(other_args, env, config)),
             _ => None,
         },
         _ => None,

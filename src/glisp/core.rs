@@ -331,8 +331,8 @@ pub fn slurp_expr() -> String {
     let mut expr = String::new();
     loop {
         std::io::stdin()
-        .read_line(&mut expr)
-        .expect("Failed to read line");
+            .read_line(&mut expr)
+            .expect("Failed to read line");
 
         // 允许使用反斜杠来续行
         if expr.ends_with("\\\n") {

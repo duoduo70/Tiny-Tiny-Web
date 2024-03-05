@@ -127,3 +127,29 @@ pub fn func_run(
         Err(_) => Ok(Expression::Bool(false)),
     }
 }
+
+pub fn func_input(
+    args: &[Expression],
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
+    args_len_max!("input", args, 1);
+
+    if args.is_empty() {
+        let mut content = String::new();
+        std::io::stdin()
+            .read_line(&mut content)
+            .expect("Failed to read line");
+        return Ok(Expression::String(content));
+    }
+
+    let tip = check_type_onlyone!("input", &args[0], env, String, config)?;
+    print!("{}", tip);
+    let _ = std::io::Write::flush(&mut std::io::stdout());
+    let mut content = String::new();
+    std::io::stdin()
+        .read_line(&mut content)
+        .expect("Failed to read line");
+
+    Ok(Expression::String(content))
+}

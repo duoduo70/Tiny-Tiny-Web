@@ -41,13 +41,13 @@
 		"keywords": {
 			"patterns": [{
 				"name": "keyword.control",
-				"match": "((str\\.\\+|str\\.\\=|str\\.\\!\\=|str\\.\\<|str\\.\\<\\=|str\\.\\>|str\\.\\>\\=|\\+\\s|\\-\\s|\\*\\s|\\/\\s|\\>\\s|\\<\\s|\\>=\\s|\\<=\\s|\\=\\s|\\!=\\s)|((?<=\\()\\b(if|set|quote|atom|eq|car|cdr|cons|cond|length|last|chars|find|contains|insert|begin|is-empty|remove|reverse|rfind|slice|loop|read-file|write|file|meta|eval-atom|or|and|lines|read-dir|for-each-eval|eval|run|serve)\\b))"
+				"match": "((str\\.\\+|str\\.\\=|str\\.\\!\\=|str\\.\\<|str\\.\\<\\=|str\\.\\>|str\\.\\>\\=|\\+\\s|\\-\\s|\\*\\s|\\/\\s|\\>\\s|\\<\\s|\\>=\\s|\\<=\\s|\\=\\s|\\!=\\s)|((?<=\\()\\b(if|set|quote|atom|eq|car|cdr|cons|cond|length|last|chars|find|contains|insert|begin|is-empty|remove|reverse|rfind|slice|loop|read-file|write|file|meta|eval-atom|or|and|lines|read-dir|for-each|eval|run|serve|map|repl|input)\\b))"
 			}]
 		},
 		"entities": {
 			"patterns": [{
 				"name": "entity.name.type",
-				"match": "(?<=\\()\\b(log|str|do|return|continue|pass|lambda)\\b"
+				"match": "(?<=\\()\\b(log|str|do|return|continue|pass|lambda|\\:debug)\\b"
 			},{
 				"name": "entity.name.function",
 				"match": "(?<=\\()\\b(\\S)*\\b"

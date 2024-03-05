@@ -250,3 +250,23 @@ pub fn func_and(
 
     Ok(Expression::Bool(bool2))
 }
+
+pub fn func_repl(
+    args: &[Expression],
+    _env: &mut Environment,
+    _config: Config,
+) -> Result<Expression, GError> {
+    args_len_max!("repl", args, 1);
+    if args.is_empty() {
+        crate::glisp::repl::run_repl(false);
+        return Ok(Expression::Bool(true));
+    }
+    if let Expression::List(list) = &args[0] {
+        if list.len() == 1 && list[0].to_string() == ":debug" {
+            crate::glisp::repl::run_repl(true);
+            return Ok(Expression::Bool(true));
+        }
+    }
+
+    Ok(Expression::Bool(false))
+}
