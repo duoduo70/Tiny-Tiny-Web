@@ -1,0 +1,14 @@
+Usage:
+    ttweb
+    ttweb repl [-d | --debug]
+    ttweb -h | --help
+    ttweb -v | --version
+    repl            Start Ghost Lisp REPL
+    -h --help       Show this screen.
+    -v --version    Show version
+
+    If you found a bug, see https://github.com/duoduo70/Tiny-Tiny-Web/ to report.
+    If you don't know how to use this program, see:
+        https://duoduo70.github.io/Tiny-Tiny-Web/,
+        https://github.com/duoduo70/Tiny-Tiny-Web/blob/master/docs/index.md,
+        Or <source-dir>/docs/ (According to GPLv3 license, you should be able to find it.)

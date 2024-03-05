@@ -106,7 +106,7 @@ pub(super) fn tokenize(expr: String) -> Vec<String> {
         if let Some(a) = line.find(';') {
             new_expr += &line[..a]
         } else {
-            new_expr += line
+            new_expr += &(" ".to_owned() + line) // 加空格是为了防止例如 (+\n1 1) 被解析成 (+1 1)
         }
     }
     new_expr
@@ -329,9 +329,18 @@ pub fn parse_eval(
 
 pub fn slurp_expr() -> String {
     let mut expr = String::new();
-    std::io::stdin()
+    loop {
+        std::io::stdin()
         .read_line(&mut expr)
         .expect("Failed to read line");
+
+        // 允许使用反斜杠来续行
+        if expr.ends_with("\\\n") {
+            expr.remove(expr.len() - 2);
+        } else {
+            break;
+        }
+    }
     expr
 }
 

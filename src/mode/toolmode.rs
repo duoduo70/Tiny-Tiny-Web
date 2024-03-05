@@ -49,26 +49,7 @@ fn parse(fst: String, args: Vec<String>) {
         "-h" | "--help" => {
             #[cfg(feature = "no-glisp")]
             println!("Warning: Cannot use glisp and repl because it is no-glisp version.");
-            println!(
-                r"Usage:
-    ttweb
-    ttweb repl [-d | --debug]
-    ttweb -h | --help
-    ttweb -v | --version"
-            );
-            println!(
-                r"Options:
-    repl            Start Ghost Lisp REPL
-    -h --help       Show this screen.
-    -v --version    Show version
-
-    If you found a bug, see https://github.com/duoduo70/Tiny-Tiny-Web/ to report.
-    If you don't know how to use this program, see:
-        https://duoduo70.github.io/Tiny-Tiny-Web/,
-        https://github.com/duoduo70/Tiny-Tiny-Web/blob/master/docs/index.md,
-        Or <source-dir>/docs/ (According to GPLv3 license, you should be able to find it.)
-            "
-            );
+            println!(include_str!("../../docs/HELP")); // 内置帮助
             exit(0);
         }
         _ => {
