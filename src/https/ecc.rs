@@ -1,3 +1,7 @@
+/* ecc.rs
+ * No Copyright 2024 Plasma
+ * CC0 LICENSE
+ */
 #![allow(
     dead_code,
     mutable_transmutes,

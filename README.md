@@ -81,8 +81,27 @@ Hello, World!
 You can use `cargo doc` to build project document (Unlike the user document, it makes you to understand the code of this project and it contains the development specifications of this project)  
 你可以使用 `cargo doc` 命令来构建项目文档（和用户文档不同的是，它让你理解本项目的代码以及它包含了本项目的开发规范）
 
+### Benchmark / 性能测试
+Test environment: ArchLinux 2024/3/6, Linux 6.7.1-zen1-1-zen, AMD R5 4500U, Mem DDR3 1333mhz.  
+In Benchmark's 1k concurrent test, Apache Httpd is 28483 RPS and ttweb (box-mode) is 42782 RPS. This test result shows that the performance is relatively excellent in the usage scenarios of this project.
+
+测试环境：ArchLinux 2024/3/6 ，Linux 6.7.1-zen1-1-zen ，AMD R5 4500U ，Mem DDR3 1333mhz。  
+在 Benchmark 的 1k 并发测试中，Apache Httpd 为 28483 RPS，ttweb (box-mode) 为 42782 RPS 。该测试结果说明在本项目的使用场景中性能表现较为优秀。
+
+### Operating System Support / 操作系统支持
+
+Since I use Linux daily, this project is mainly developed based on Linux.  
+In Windows, due to the particularity of its thread implementation, box-mode cannot be used normally. But if you understand high-concurrency programming under Windows, you can contribute to this project.  
+It should compile to all platforms that include the Rust standard library, but box mode may not work properly.  
+I wrote a Rust translation layer for the PlantOS micro operating system, which should allow this program to run on any i386 device. For details, see [ttweb documentation on PlantOS](https://github.com/duoduo70/Tiny-Tiny- webpage/blob/master/docs/plantos.md)
+
+由于我日常使用 Linux ，所以本项目主要基于 Linux 开发。  
+在 Windows 中，由于其线程实现的特殊性，box-mode 无法正常使用。但如果你了解 Windows 下的高并发编程，可以为本项目做出贡献。  
+它应该可以被编译到所有包含 Rust 标准库的平台上，但 box-mode 可能无法正常使用。  
+我为 PlantOS 微型操作系统编写了 Rust 转译层，这使得本程序应该可以跑在任意 i386 设备上，具体请参见 [PlantOS 上的 ttweb 文档](https://github.com/duoduo70/Tiny-Tiny-Web/blob/master/docs/plantos.md)
+
 ### Thanks / 致谢
-Thanks to Acbox for helping me translate and proofread the English document.
-感谢 [Acbox](https://github.com/sheepbox8646) 帮我翻译和校对了英文版文档。
+Thanks to Acbox for helping me translate and proofread a (part of) the English document.  
+感谢 [Acbox](https://github.com/sheepbox8646) 帮我翻译和校对了（部分）英文版文档。
 
 Enjoy.
