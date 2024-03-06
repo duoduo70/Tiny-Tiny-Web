@@ -93,7 +93,7 @@ In Benchmark's 1k concurrent test, Apache Httpd is 28483 RPS and ttweb (box-mode
 Since I use Linux daily, this project is mainly developed based on Linux.  
 In Windows, due to the particularity of its thread implementation, box-mode cannot be used normally. But if you understand high-concurrency programming under Windows, you can contribute to this project.  
 It should compile to all platforms that include the Rust standard library, but box mode may not work properly.  
-I wrote a Rust translation layer for the PlantOS micro operating system, which should allow this program to run on any i386 device. For details, see [ttweb documentation on PlantOS](https://github.com/duoduo70/Tiny-Tiny- webpage/blob/master/docs/plantos.md)
+I wrote a Rust translation layer for the PlantOS micro operating system, which should allow this program to run on any i386 device. For details, see [ttweb documentation on PlantOS](https://github.com/duoduo70/Tiny-Tiny-Web/blob/master/docs/plantos.md)
 
 由于我日常使用 Linux ，所以本项目主要基于 Linux 开发。  
 在 Windows 中，由于其线程实现的特殊性，box-mode 无法正常使用。但如果你了解 Windows 下的高并发编程，可以为本项目做出贡献。  

@@ -5,6 +5,8 @@
  * along with this program;
  * if not, see <https://www.gnu.org/licenses/>.
  */
+
+// 会改的，但不是现在
 crate::macros::create_static_string_list!(
     LOG,
     "Tiny-Tiny-Web Started (Ver.",
