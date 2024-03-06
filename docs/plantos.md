@@ -21,3 +21,5 @@
 所以，我曾经称 PRTL (PlantOS Rust Translation Layer，PlantOS Rust 转译层) 为“飞线”或“插线板”。但无论如何，仅仅是通过这些“飞线”代码，一个现代的、功能完备的 webserver 可以被编译到了一个本体不到 1MB 的操作系统上。HTTPS 相关代码已经写了大部分，我已经实现了 X25519 和 secp256r1 算法，这将最新的标准引入了 ttweb ，而我们的项目仍然保持一贯的极其简洁的零依赖——事实上，这是一个很大的挑战，大多数 webserver 都使用了各种庞大的依赖软件，或者根本不实现 HTTPS ，让 Nginx 来实现这一部分——但我们不可能在这么局促的硬盘空间内使用这种方法，复杂的依赖也不符合我“让用户明白自己的电脑里在跑着什么东西”的理念。
 
 无论如何，ttweb on PlantOS 暂且还是一个理想——诚然 PRTL 已经可以用于正常编写程序，但对于充分利用标准库的 ttweb ，仍然需要一段时间才能将其移植。
+
+参见 [PTRL Project](https://github.com/duoduo70/PlantOS-Rust-SDK-Full/tree/master)
