@@ -95,7 +95,7 @@ pub fn method_set(args: MethodArgs) {
                 unsafe {
                     SSL_PRIVATE_KEY = Some(std::sync::Arc::new(
                         crate::drop::base64::decode_unchecked(head3)[4..36].to_vec(),
-                    )) // TODO: Error log
+                    )); // TODO: Error log
                 };
                 return;
             } else if head2 == "xrps-counter-cache-size" {

@@ -263,7 +263,19 @@ fn result_https_request(
                             data.as_mut_ptr(),
                             sign.as_mut_ptr(),
                         );
-                        sign.to_vec()
+
+                        let r = sign[0..32].to_vec();
+                        let s = sign[32..].to_vec();
+                        // r.reverse();
+                        // s.reverse();
+
+                        let mut sign_der = vec![];
+                        sign_der.extend([0x30, 4 + 64, 0x02, 32]);
+                        sign_der.extend(r);
+                        sign_der.extend([0x02, 32]);
+                        sign_der.extend(s);
+
+                        sign_der
                     };
 
                     let serverkeyexchange = HandshakeMessage {

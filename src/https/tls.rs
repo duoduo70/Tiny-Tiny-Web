@@ -648,8 +648,8 @@ impl HandshakeServerKeyExchange {
         vec.push(self.public_key.len() as u8);
         vec.extend(self.public_key);
         // 0403: secp256r1 曲线 配合 SHA256 哈希算法
-        // 0040: 64 字节
-        vec.extend([0x04, 0x03, 0x00, 0x40]);
+        // 0046: 70 字节 (64 + 6)
+        vec.extend([0x04, 0x03, 0x00, 0x46]);
         vec.extend(self.sign);
         vec
     }
@@ -717,6 +717,7 @@ impl HandshakeMessage {
                 let mut vec = vec![];
                 vec.push(0x0c);
                 let bytes = a.bytes();
+                println!("{:#x?}", bytes);
                 vec.extend(&(bytes.len() as u32).to_be_bytes()[1..]);
                 vec.extend(bytes);
                 vec

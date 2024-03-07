@@ -68,9 +68,9 @@ static mut curve_n: [uint64_t; 4] = [
 /// FIXME: 更改种子，并且随机数内部状态结构体应该是全局的
 /// 这个函数只是临时的
 unsafe extern "C" fn getRandomNumber(p_vli: *mut uint64_t) -> libc::c_int {
-    let mut bytes = [0; 32];
+    let mut bytes: [u8 ;8] = [0;8];
     random::random_init(time::Time::nsec().unwrap().into()).fill_bytes(&mut bytes);
-    p_vli.copy_from(bytes.as_mut_ptr() as *const uint64_t, 4);
+    *p_vli = u64::from_be_bytes(bytes);
     1
 }
 unsafe extern "C" fn vli_clear(mut p_vli: *mut uint64_t) {
