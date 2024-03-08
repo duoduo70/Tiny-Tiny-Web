@@ -23,97 +23,38 @@ pub struct MethodArgs<'a> {
 pub fn parse_line(line: String, config: &mut Config, file: &str, line_number: i32) {
     #[allow(clippy::single_char_pattern)]
     let mut line_splitted = line.split(" ");
-    if let Some(head) = line_splitted.next() {
-        if head == "+" {
-            method_add(MethodArgs {
+    macro_rules! method_args {
+        () => {
+            MethodArgs {
                 config,
                 line_splitted: &mut line_splitted,
                 file,
                 line_number,
-            });
-            return;
-        }
-        if head == "-" {
-            method_remove(MethodArgs {
-                config,
-                line_splitted: &mut line_splitted,
-                file,
-                line_number,
-            });
-            return;
-        }
-        if head == "$" {
-            method_set(MethodArgs {
-                config,
-                line_splitted: &mut line_splitted,
-                file,
-                line_number,
-            });
-            return;
-        }
-        if head == "#" {
-            return;
-        }
-        if head == "compile" {
-            method_compile(MethodArgs {
-                config,
-                line_splitted: &mut line_splitted,
-                file,
-                line_number,
-            });
-            return;
-        }
-        if head == "inject" {
-            method_inject(MethodArgs {
-                config,
-                line_splitted: &mut line_splitted,
-                file,
-                line_number,
-            });
-            return;
-        }
-        if head == "@" {
-            method_import(MethodArgs {
-                config,
-                line_splitted: &mut line_splitted,
-                file,
-                line_number,
-            });
-            return;
-        }
-        #[cfg(not(feature = "no-glisp"))]
-        if head == "@gl" {
-            method_import_gl(MethodArgs {
-                config,
-                line_splitted: &mut line_splitted,
-                file,
-                line_number,
-            });
-            return;
-        }
-        #[cfg(not(feature = "no-glisp"))]
-        if head == "@pipe" {
-            method_import_pipe(MethodArgs {
-                config,
-                line_splitted: &mut line_splitted,
-                file,
-                line_number,
-            });
-            return;
-        }
-        if head == ">" {
-            method_log(MethodArgs {
-                config,
-                line_splitted: &mut line_splitted,
-                file,
-                line_number,
-            });
-            return;
-        }
+            }
+        };
     }
-
-    if line.trim() != "" {
-        syntax_error(file, line_number, LOG[16]);
+    if let Some(head) = line_splitted.next() {
+        match head {
+            "+" => method_add(method_args!()),
+            "-" => method_remove(method_args!()),
+            "$" => method_set(method_args!()),
+            "#" => (),
+            "compile" => method_compile(method_args!()),
+            "inject" => method_inject(method_args!()),
+            "@" => {
+                method_import(method_args!());
+            }
+            #[cfg(not(feature = "no-glisp"))]
+            "@gl" => method_import_gl(method_args!()),
+            #[cfg(not(feature = "no-glisp"))]
+            "@pipe" => method_import_pipe(method_args!()),
+            ">" => method_log(method_args!()),
+            _ => {
+                if line.trim() != "" {
+                    syntax_error(file, line_number, LOG[16]);
+                }
+            }
+        }
     }
 }
 
