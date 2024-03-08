@@ -186,7 +186,7 @@ pub fn func_loop(
     env: &mut Environment,
     config: Config,
 ) -> Result<Expression, GError> {
-    args_len_min!("loop", args, 2);
+    args_len_min!("loop", args, 1);
 
     let mut i = 0;
     loop {

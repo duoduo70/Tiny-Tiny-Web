@@ -2,7 +2,7 @@
   "name": "ghost-lisp",
   "displayName": "Ghost Lisp",
   "description": "Support for Ghost Lisp",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "publisher": "Plasma",
   "engines": {
     "vscode": "^1.86.0"
@@ -12,7 +12,9 @@
     "Programming Languages",
     "Snippets"
   ],
-  "repository": {"url": "https://github.com/duoduo70/Tiny-Tiny-Web/"},
+  "repository": {
+    "url": "https://github.com/duoduo70/Tiny-Tiny-Web/"
+  },
   "main": "./src/extension.js",
   "contributes": {
     "commands": [
@@ -20,6 +22,48 @@
         "command": "ttwebrepl.start",
         "title": "Start new Tiny-Tiny-Web REPL window",
         "category": "Ghost Lisp"
+      },
+      {
+        "command": "ttwebrepldebug.start",
+        "title": "Start new Tiny-Tiny-Web REPL (debug mode) window",
+        "category": "Ghost Lisp"
+      },
+      {
+        "command": "ttwebtestfile.start",
+        "title": "Test a GLisp file",
+        "category": "Ghost Lisp"
+      },
+      {
+        "command": "ttwebtestfiledebug.start",
+        "title": "Test a GLisp file (debug mode)",
+        "category": "Ghost Lisp"
+      },
+      {
+        "command": "ttweb.jumpToNextBracket",
+        "title": "Jump To Next Bracket",
+        "category": "Ghost Lisp"
+      }
+    ],
+    "keybindings": [
+      {
+          "command": "ttwebrepl.start",
+          "key": "F4",
+          "when": "editorTextFocus"
+      },
+      {
+        "command": "ttwebrepldebug.start",
+        "key": "Shift+F4",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "ttwebtestfile.start",
+        "key": "F5",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "ttwebtestfiledebug.start",
+        "key": "Shift+F5",
+        "when": "editorTextFocus"
       }
     ],
     "languages": [
@@ -50,6 +94,7 @@
     ]
   },
   "dependencies": {
-    "@vscode/vsce": "^2.24.0"
+    "@vscode/vsce": "^2.24.0",
+    "os": "^0.1.2"
   }
 }

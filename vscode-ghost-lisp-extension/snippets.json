@@ -5,7 +5,7 @@
   },
   "if": {
     "prefix": ["if"],
-    "body": ["(if\n    $0\n)"]
+    "body": ["(if $0\n    $1\n    $2)"]
   },
   "set": {
     "prefix": ["set"],
@@ -21,7 +21,7 @@
   },
   "loop": {
     "prefix": ["loop"],
-    "body": ["(loop (do\n    $0))"]
+    "body": ["(loop\n    $0)"]
   },
   "return": {
     "prefix": ["return"],

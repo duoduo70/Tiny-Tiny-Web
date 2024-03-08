@@ -75,6 +75,9 @@ Start the program, and open `http://127.0.0.1:22397/` in your browser, you shoul
 Hello, World!
 ```
 
+You can install "Ghost Lisp" VSCode extension in VSCode extension market to program with GLisp easily.  
+你可以在 VSCode 扩展商店 下载 "Ghost Lisp" 扩展来让编写 Glisp 程序更简单。
+
 ### Document / 文档
 [User document / 用户文档](https://github.com/duoduo70/Tiny-Tiny-Web/blob/master/docs/index.md)
 

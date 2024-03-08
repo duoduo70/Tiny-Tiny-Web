@@ -18,6 +18,8 @@ cp ./docs/index.md ./build/doc.md &&
 cp ./LICENSE ./build/LICENSE &&
 
 echo -------------------- Build VSCode Extension ----------------------
+cp ./build/ttweb ./vscode-ghost-lisp-extension/ &&
+cp ./build/ttweb.exe ./vscode-ghost-lisp-extension/ &&
 cd ./vscode-ghost-lisp-extension &&
 npx vsce package &&
 cp ./ghost-lisp-* ../build/ &&
