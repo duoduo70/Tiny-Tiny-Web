@@ -15,6 +15,7 @@
   "repository": {
     "url": "https://github.com/duoduo70/Tiny-Tiny-Web/"
   },
+  "icon": "icon.png",
   "main": "./src/extension.js",
   "contributes": {
     "commands": [

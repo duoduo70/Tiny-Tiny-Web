@@ -23,3 +23,7 @@
 !vscode-ghost-lisp-extension/package.json
 !vscode-ghost-lisp-extension/README.md
 !vscode-ghost-lisp-extension/snippets.json
+!vscode-ghost-lisp-extension/LICENSE.md
+!vscode-ghost-lisp-extension/ttweb
+!vscode-ghost-lisp-extension/ttweb.exe
+!vscode-ghost-lisp-extension/icon.png
