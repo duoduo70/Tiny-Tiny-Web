@@ -7,11 +7,12 @@
   "engines": {
     "vscode": "^1.86.0"
   },
-  "license":"GPL-3.0-only",
+  "license": "GPL-3.0-only",
   "categories": [
     "Programming Languages",
     "Snippets"
   ],
+  "repository": {"url": "https://github.com/duoduo70/Tiny-Tiny-Web/"},
   "main": "./src/extension.js",
   "contributes": {
     "commands": [
@@ -21,22 +22,34 @@
         "category": "Ghost Lisp"
       }
     ],
-    "languages": [{
-      "id": "glisp",
-      "aliases": ["Ghost Lisp", "glisp"],
-      "extensions": [".gl"],
-      "configuration": "./language-configuration.json"
-    }],
-    "grammars": [{
-      "language": "glisp",
-      "scopeName": "source.gl",
-      "path": "./syntaxes/glisp.tmLanguage.json"
-    }],
+    "languages": [
+      {
+        "id": "glisp",
+        "aliases": [
+          "Ghost Lisp",
+          "glisp"
+        ],
+        "extensions": [
+          ".gl"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "glisp",
+        "scopeName": "source.gl",
+        "path": "./syntaxes/glisp.tmLanguage.json"
+      }
+    ],
     "snippets": [
       {
-          "language": "glisp",
-          "path": "./snippets.json"
+        "language": "glisp",
+        "path": "./snippets.json"
       }
-  ]
+    ]
+  },
+  "dependencies": {
+    "@vscode/vsce": "^2.24.0"
   }
 }

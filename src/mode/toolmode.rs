@@ -23,7 +23,7 @@ fn parse(fst: String, args: Vec<String>) {
     match fst.as_str() {
         #[cfg(not(feature = "no-glisp"))]
         "repl" => {
-            if !args.is_empty() && (args[2] == "-d" || args[2] == "--debug") {
+            if args.get(2).is_some() && (args[2] == "-d" || args[2] == "--debug") {
                 run_repl(true);
             } else {
                 run_repl(false);

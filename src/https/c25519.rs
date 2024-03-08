@@ -34,7 +34,7 @@ pub type uint16_t = libc::c_ushort;
 pub type uint32_t = libc::c_uint;
 pub type uint64_t = libc::c_ulonglong;
 #[inline]
-unsafe fn f25519_copy(mut x: *mut uint8_t, mut a: *const uint8_t) {
+unsafe fn f25519_copy(x: *mut uint8_t, a: *const uint8_t) {
     memcpy(
         x as *mut libc::c_void,
         a as *const libc::c_void,
@@ -75,7 +75,7 @@ static mut f25519_one: [uint8_t; 32] = [
     0,
     0,
 ];
-unsafe fn f25519_load(mut x: *mut uint8_t, mut c: uint32_t) {
+unsafe fn f25519_load(x: *mut uint8_t, mut c: uint32_t) {
     let mut i: isize = 0;
     i = 0;
     while i < core::mem::size_of::<uint32_t>() as isize {
@@ -88,13 +88,13 @@ unsafe fn f25519_load(mut x: *mut uint8_t, mut c: uint32_t) {
         i += 1;
     }
 }
-unsafe fn f25519_normalize(mut x: *mut uint8_t) {
+unsafe fn f25519_normalize(x: *mut uint8_t) {
     let mut minusp: [uint8_t; 32] = [0; 32];
     let mut c: uint16_t = 0;
     let mut i: libc::c_int = 0;
     c = ((*x.offset(31 as libc::c_int as isize) as libc::c_int >> 7 as libc::c_int)
         * 19 as libc::c_int) as uint16_t;
-    let ref mut fresh0 = *x.offset(31 as libc::c_int as isize);
+    let fresh0 = &mut (*x.offset(31 as libc::c_int as isize));
     *fresh0 = (*fresh0 as libc::c_int & 127 as libc::c_int) as uint8_t;
     i = 0 as libc::c_int;
     while i < 32 as libc::c_int {
@@ -121,7 +121,7 @@ unsafe fn f25519_normalize(mut x: *mut uint8_t) {
         (c as libc::c_int >> 15 as libc::c_int & 1 as libc::c_int) as uint8_t,
     );
 }
-unsafe fn f25519_eq(mut x: *const uint8_t, mut y: *const uint8_t) -> uint8_t {
+unsafe fn f25519_eq(x: *const uint8_t, y: *const uint8_t) -> uint8_t {
     let mut sum: uint8_t = 0 as libc::c_int as uint8_t;
     let mut i: libc::c_int = 0;
     i = 0 as libc::c_int;
@@ -138,10 +138,10 @@ unsafe fn f25519_eq(mut x: *const uint8_t, mut y: *const uint8_t) -> uint8_t {
     ((sum as libc::c_int ^ 1 as libc::c_int) & 1 as libc::c_int) as uint8_t
 }
 unsafe fn f25519_select(
-    mut dst: *mut uint8_t,
-    mut zero: *const uint8_t,
-    mut one: *const uint8_t,
-    mut condition: uint8_t,
+    dst: *mut uint8_t,
+    zero: *const uint8_t,
+    one: *const uint8_t,
+    condition: uint8_t,
 ) {
     let mask: uint8_t = -(condition as libc::c_int) as uint8_t;
     let mut i: libc::c_int = 0;
@@ -155,7 +155,7 @@ unsafe fn f25519_select(
         i += 1;
     }
 }
-unsafe fn f25519_add(mut r: *mut uint8_t, mut a: *const uint8_t, mut b: *const uint8_t) {
+unsafe fn f25519_add(r: *mut uint8_t, a: *const uint8_t, b: *const uint8_t) {
     let mut c: uint16_t = 0 as libc::c_int as uint16_t;
     let mut i: libc::c_int = 0;
     i = 0 as libc::c_int;
@@ -167,7 +167,7 @@ unsafe fn f25519_add(mut r: *mut uint8_t, mut a: *const uint8_t, mut b: *const u
         *r.offset(i as isize) = c as uint8_t;
         i += 1;
     }
-    let ref mut fresh1 = *r.offset(31 as libc::c_int as isize);
+    let fresh1 = &mut (*r.offset(31 as libc::c_int as isize));
     *fresh1 = (*fresh1 as libc::c_int & 127 as libc::c_int) as uint8_t;
     c = ((c as libc::c_int >> 7 as libc::c_int) * 19 as libc::c_int) as uint16_t;
     i = 0 as libc::c_int;
@@ -178,7 +178,7 @@ unsafe fn f25519_add(mut r: *mut uint8_t, mut a: *const uint8_t, mut b: *const u
         i += 1;
     }
 }
-unsafe fn f25519_sub(mut r: *mut uint8_t, mut a: *const uint8_t, mut b: *const uint8_t) {
+unsafe fn f25519_sub(r: *mut uint8_t, a: *const uint8_t, b: *const uint8_t) {
     let mut c: uint32_t = 0 as libc::c_int as uint32_t;
     let mut i: libc::c_int = 0;
     c = 218 as libc::c_int as uint32_t;
@@ -208,7 +208,7 @@ unsafe fn f25519_sub(mut r: *mut uint8_t, mut a: *const uint8_t, mut b: *const u
         i += 1;
     }
 }
-unsafe fn f25519_neg(mut r: *mut uint8_t, mut a: *const uint8_t) {
+unsafe fn f25519_neg(r: *mut uint8_t, a: *const uint8_t) {
     let mut c: uint32_t = 0 as libc::c_int as uint32_t;
     let mut i: libc::c_int = 0;
     c = 218 as libc::c_int as uint32_t;
@@ -234,7 +234,7 @@ unsafe fn f25519_neg(mut r: *mut uint8_t, mut a: *const uint8_t) {
         i += 1;
     }
 }
-unsafe fn f25519_mul__distinct(mut r: *mut uint8_t, mut a: *const uint8_t, mut b: *const uint8_t) {
+unsafe fn f25519_mul__distinct(r: *mut uint8_t, a: *const uint8_t, b: *const uint8_t) {
     let mut c: uint32_t = 0 as libc::c_int as uint32_t;
     let mut i: libc::c_int = 0;
     i = 0 as libc::c_int;
@@ -260,7 +260,7 @@ unsafe fn f25519_mul__distinct(mut r: *mut uint8_t, mut a: *const uint8_t, mut b
         *r.offset(i as isize) = c as uint8_t;
         i += 1;
     }
-    let ref mut fresh2 = *r.offset(31 as libc::c_int as isize);
+    let fresh2 = &mut (*r.offset(31 as libc::c_int as isize));
     *fresh2 = (*fresh2 as libc::c_int & 127 as libc::c_int) as uint8_t;
     c = (c >> 7 as libc::c_int).wrapping_mul(19 as libc::c_int as libc::c_uint);
     i = 0 as libc::c_int;
@@ -272,7 +272,7 @@ unsafe fn f25519_mul__distinct(mut r: *mut uint8_t, mut a: *const uint8_t, mut b
         i += 1;
     }
 }
-unsafe fn f25519_mul_c(mut r: *mut uint8_t, mut a: *const uint8_t, mut b: uint32_t) {
+unsafe fn f25519_mul_c(r: *mut uint8_t, a: *const uint8_t, b: uint32_t) {
     let mut c: uint32_t = 0 as libc::c_int as uint32_t;
     let mut i: libc::c_int = 0;
     i = 0 as libc::c_int;
@@ -283,7 +283,7 @@ unsafe fn f25519_mul_c(mut r: *mut uint8_t, mut a: *const uint8_t, mut b: uint32
         *r.offset(i as isize) = c as uint8_t;
         i += 1;
     }
-    let ref mut fresh3 = *r.offset(31 as libc::c_int as isize);
+    let fresh3 = &mut (*r.offset(31 as libc::c_int as isize));
     *fresh3 = (*fresh3 as libc::c_int & 127 as libc::c_int) as uint8_t;
     c >>= 7 as libc::c_int;
     c = (c as libc::c_uint).wrapping_mul(19 as libc::c_int as libc::c_uint) as uint32_t as uint32_t;
@@ -296,7 +296,7 @@ unsafe fn f25519_mul_c(mut r: *mut uint8_t, mut a: *const uint8_t, mut b: uint32
         i += 1;
     }
 }
-unsafe fn f25519_inv__distinct(mut r: *mut uint8_t, mut x: *const uint8_t) {
+unsafe fn f25519_inv__distinct(r: *mut uint8_t, x: *const uint8_t) {
     let mut s: [uint8_t; 32] = [0; 32];
     let mut i: libc::c_int = 0;
     f25519_mul__distinct(s.as_mut_ptr(), x, x);
@@ -316,7 +316,7 @@ unsafe fn f25519_inv__distinct(mut r: *mut uint8_t, mut x: *const uint8_t) {
     f25519_mul__distinct(s.as_mut_ptr(), r, r);
     f25519_mul__distinct(r, s.as_mut_ptr(), x);
 }
-unsafe fn exp2523(mut r: *mut uint8_t, mut x: *const uint8_t, mut s: *mut uint8_t) {
+unsafe fn exp2523(r: *mut uint8_t, x: *const uint8_t, s: *mut uint8_t) {
     let mut i: libc::c_int = 0;
     f25519_mul__distinct(r, x, x);
     f25519_mul__distinct(s, r, x);
@@ -330,7 +330,7 @@ unsafe fn exp2523(mut r: *mut uint8_t, mut x: *const uint8_t, mut s: *mut uint8_
     f25519_mul__distinct(s, r, r);
     f25519_mul__distinct(r, s, x);
 }
-unsafe fn f25519_sqrt(mut r: *mut uint8_t, mut a: *const uint8_t) {
+unsafe fn f25519_sqrt(r: *mut uint8_t, a: *const uint8_t) {
     let mut v: [uint8_t; 32] = [0; 32];
     let mut i: [uint8_t; 32] = [0; 32];
     let mut x: [uint8_t; 32] = [0; 32];
@@ -345,12 +345,12 @@ unsafe fn f25519_sqrt(mut r: *mut uint8_t, mut a: *const uint8_t) {
     f25519_mul__distinct(r, x.as_mut_ptr(), i.as_mut_ptr());
 }
 #[inline]
-unsafe fn c25519_prepare(mut key: *mut uint8_t) {
-    let ref mut fresh4 = *key.offset(0 as libc::c_int as isize);
+unsafe fn c25519_prepare(key: *mut uint8_t) {
+    let fresh4 = &mut (*key.offset(0 as libc::c_int as isize));
     *fresh4 = (*fresh4 as libc::c_int & 0xf8 as libc::c_int) as uint8_t;
-    let ref mut fresh5 = *key.offset(31 as libc::c_int as isize);
+    let fresh5 = &mut (*key.offset(31 as libc::c_int as isize));
     *fresh5 = (*fresh5 as libc::c_int & 0x7f as libc::c_int) as uint8_t;
-    let ref mut fresh6 = *key.offset(31 as libc::c_int as isize);
+    let fresh6 = &mut (*key.offset(31 as libc::c_int as isize));
     *fresh6 = (*fresh6 as libc::c_int | 0x40 as libc::c_int) as uint8_t;
 }
 static mut c25519_base_x: [uint8_t; 32] = [
@@ -388,10 +388,10 @@ static mut c25519_base_x: [uint8_t; 32] = [
     0,
 ];
 unsafe fn xc_double(
-    mut x3: *mut uint8_t,
-    mut z3: *mut uint8_t,
-    mut x1: *const uint8_t,
-    mut z1: *const uint8_t,
+    x3: *mut uint8_t,
+    z3: *mut uint8_t,
+    x1: *const uint8_t,
+    z1: *const uint8_t,
 ) {
     let mut x1sq: [uint8_t; 32] = [0; 32];
     let mut z1sq: [uint8_t; 32] = [0; 32];
@@ -413,14 +413,14 @@ unsafe fn xc_double(
     f25519_mul_c(z3, x1sq.as_mut_ptr(), 4 as libc::c_int as uint32_t);
 }
 unsafe fn xc_diffadd(
-    mut x5: *mut uint8_t,
-    mut z5: *mut uint8_t,
-    mut x1: *const uint8_t,
-    mut z1: *const uint8_t,
-    mut x2: *const uint8_t,
-    mut z2: *const uint8_t,
-    mut x3: *const uint8_t,
-    mut z3: *const uint8_t,
+    x5: *mut uint8_t,
+    z5: *mut uint8_t,
+    x1: *const uint8_t,
+    z1: *const uint8_t,
+    x2: *const uint8_t,
+    z2: *const uint8_t,
+    x3: *const uint8_t,
+    z3: *const uint8_t,
 ) {
     let mut da: [uint8_t; 32] = [0; 32];
     let mut cb: [uint8_t; 32] = [0; 32];
@@ -439,7 +439,7 @@ unsafe fn xc_diffadd(
     f25519_mul__distinct(b.as_mut_ptr(), a.as_mut_ptr(), a.as_mut_ptr());
     f25519_mul__distinct(z5, x1, b.as_mut_ptr());
 }
-unsafe fn c25519_smult(mut result: *mut uint8_t, mut q: *const uint8_t, mut e: *const uint8_t) {
+unsafe fn c25519_smult(result: *mut uint8_t, q: *const uint8_t, e: *const uint8_t) {
     let mut xm: [uint8_t; 32] = [0; 32];
     let mut zm: [uint8_t; 32] = [
         1 as libc::c_int as uint8_t,
@@ -608,12 +608,12 @@ unsafe fn c25519_smult(mut result: *mut uint8_t, mut q: *const uint8_t, mut e: *
     f25519_mul__distinct(result, zm1.as_mut_ptr(), xm.as_mut_ptr());
     f25519_normalize(result);
 }
-unsafe fn compact_wipe(mut data: *mut libc::c_void, mut length: size_t) -> *mut libc::c_void {
+unsafe fn compact_wipe(data: *mut libc::c_void, mut length: size_t) -> *mut libc::c_void {
     let mut p: *mut libc::c_uchar = data as *mut libc::c_uchar;
     loop {
         let fresh7 = length;
         length = length.wrapping_sub(1);
-        if !(fresh7 != 0) {
+        if fresh7 == 0 {
             break;
         }
         let fresh8 = p;
@@ -623,9 +623,9 @@ unsafe fn compact_wipe(mut data: *mut libc::c_void, mut length: size_t) -> *mut 
     data
 }
 pub unsafe fn compact_x25519_keygen(
-    mut private_key: *mut uint8_t,
-    mut public_key: *mut uint8_t,
-    mut random_seed: *mut uint8_t,
+    private_key: *mut uint8_t,
+    public_key: *mut uint8_t,
+    random_seed: *mut uint8_t,
 ) {
     memcpy(
         private_key as *mut libc::c_void,
@@ -644,9 +644,9 @@ pub unsafe fn compact_x25519_keygen(
     );
 }
 pub unsafe fn compact_x25519_shared(
-    mut shared_secret: *mut uint8_t,
-    mut my_private_key: *const uint8_t,
-    mut their_public_key: *const uint8_t,
+    shared_secret: *mut uint8_t,
+    my_private_key: *const uint8_t,
+    their_public_key: *const uint8_t,
 ) {
     let mut clamped_private_key: [uint8_t; 32] = [0; 32];
     memcpy(
@@ -683,7 +683,8 @@ struct sha512_state {
 }
 #[no_mangle]
 static mut sha512_initial_state: sha512_state = {
-    let mut init = sha512_state {
+    
+    sha512_state {
         h: [
             0x6a09e667f3bcc908 as libc::c_longlong as uint64_t,
             0xbb67ae8584caa73b as libc::c_ulonglong as uint64_t,
@@ -694,8 +695,7 @@ static mut sha512_initial_state: sha512_state = {
             0x1f83d9abfb41bd6b as libc::c_longlong as uint64_t,
             0x5be0cd19137e2179 as libc::c_longlong as uint64_t,
         ],
-    };
-    init
+    }
 };
 static mut round_k: [uint64_t; 80] = [
     0x428a2f98d728ae22 as libc::c_longlong as uint64_t,
@@ -845,11 +845,11 @@ unsafe extern "C" fn store64(mut x: *mut uint8_t, mut v: uint64_t) {
     *fresh15 = v as uint8_t;
 }
 #[inline]
-unsafe extern "C" fn rot64(mut x: uint64_t, mut bits: libc::c_int) -> uint64_t {
-    x >> bits | x << 64 as libc::c_int - bits
+unsafe extern "C" fn rot64(x: uint64_t, bits: libc::c_int) -> uint64_t {
+    x >> bits | x << (64 as libc::c_int - bits)
 }
 #[no_mangle]
-unsafe extern "C" fn sha512_block(mut s: *mut sha512_state, mut blk: *const uint8_t) {
+unsafe extern "C" fn sha512_block(s: *mut sha512_state, mut blk: *const uint8_t) {
     let mut w: [uint64_t; 16] = [0; 16];
     let mut a: uint64_t = 0;
     let mut b: uint64_t = 0;
@@ -877,9 +877,9 @@ unsafe extern "C" fn sha512_block(mut s: *mut sha512_state, mut blk: *const uint
     i = 0 as libc::c_int;
     while i < 80 as libc::c_int {
         let wi: uint64_t = w[(i & 15 as libc::c_int) as usize];
-        let wi15: uint64_t = w[(i + 1 as libc::c_int & 15 as libc::c_int) as usize];
-        let wi2: uint64_t = w[(i + 14 as libc::c_int & 15 as libc::c_int) as usize];
-        let wi7: uint64_t = w[(i + 9 as libc::c_int & 15 as libc::c_int) as usize];
+        let wi15: uint64_t = w[((i + 1 as libc::c_int) & 15 as libc::c_int) as usize];
+        let wi2: uint64_t = w[((i + 14 as libc::c_int) & 15 as libc::c_int) as usize];
+        let wi7: uint64_t = w[((i + 9 as libc::c_int) & 15 as libc::c_int) as usize];
         let s0: uint64_t = rot64(wi15, 1 as libc::c_int)
             ^ rot64(wi15, 8 as libc::c_int)
             ^ wi15 >> 7 as libc::c_int;
@@ -909,28 +909,28 @@ unsafe extern "C" fn sha512_block(mut s: *mut sha512_state, mut blk: *const uint
             wi.wrapping_add(s0).wrapping_add(wi7).wrapping_add(s1);
         i += 1;
     }
-    let ref mut fresh16 = (*s).h[0 as libc::c_int as usize];
+    let fresh16 = &mut (*s).h[0 as libc::c_int as usize];
     *fresh16 = (*fresh16 as libc::c_ulong).wrapping_add(a as u32) as uint64_t as uint64_t;
-    let ref mut fresh17 = (*s).h[1 as libc::c_int as usize];
+    let fresh17 = &mut (*s).h[1 as libc::c_int as usize];
     *fresh17 = (*fresh17 as libc::c_ulong).wrapping_add(b as u32) as uint64_t as uint64_t;
-    let ref mut fresh18 = (*s).h[2 as libc::c_int as usize];
+    let fresh18 = &mut (*s).h[2 as libc::c_int as usize];
     *fresh18 = (*fresh18 as libc::c_ulong).wrapping_add(c as u32) as uint64_t as uint64_t;
-    let ref mut fresh19 = (*s).h[3 as libc::c_int as usize];
+    let fresh19 = &mut (*s).h[3 as libc::c_int as usize];
     *fresh19 = (*fresh19 as libc::c_ulong).wrapping_add(d as u32) as uint64_t as uint64_t;
-    let ref mut fresh20 = (*s).h[4 as libc::c_int as usize];
+    let fresh20 = &mut (*s).h[4 as libc::c_int as usize];
     *fresh20 = (*fresh20 as libc::c_ulong).wrapping_add(e as u32) as uint64_t as uint64_t;
-    let ref mut fresh21 = (*s).h[5 as libc::c_int as usize];
+    let fresh21 = &mut (*s).h[5 as libc::c_int as usize];
     *fresh21 = (*fresh21 as libc::c_ulong).wrapping_add(f as u32) as uint64_t as uint64_t;
-    let ref mut fresh22 = (*s).h[6 as libc::c_int as usize];
+    let fresh22 = &mut (*s).h[6 as libc::c_int as usize];
     *fresh22 = (*fresh22 as libc::c_ulong).wrapping_add(g as u32) as uint64_t as uint64_t;
-    let ref mut fresh23 = (*s).h[7 as libc::c_int as usize];
+    let fresh23 = &mut (*s).h[7 as libc::c_int as usize];
     *fresh23 = (*fresh23 as libc::c_ulong).wrapping_add(h as u32) as uint64_t as uint64_t;
 }
 #[no_mangle]
 unsafe extern "C" fn sha512_final(
-    mut s: *mut sha512_state,
-    mut blk: *const uint8_t,
-    mut total_size: size_t,
+    s: *mut sha512_state,
+    blk: *const uint8_t,
+    total_size: size_t,
 ) {
     let mut temp: [uint8_t; 128] = [
         0 as libc::c_int as uint8_t,
@@ -1089,7 +1089,7 @@ unsafe extern "C" fn sha512_final(
 }
 #[no_mangle]
 unsafe extern "C" fn sha512_get(
-    mut s: *const sha512_state,
+    s: *const sha512_state,
     mut hash: *mut uint8_t,
     mut offset: libc::c_uint,
     mut len: libc::c_uint,
@@ -1110,7 +1110,7 @@ unsafe extern "C" fn sha512_get(
             c = len;
         }
         let fresh24 = i;
-        i = i + 1;
+        i += 1;
         store64(tmp.as_mut_ptr(), (*s).h[fresh24 as usize]);
         memcpy(
             hash as *mut libc::c_void,
@@ -1122,7 +1122,7 @@ unsafe extern "C" fn sha512_get(
     }
     while len >= 8 as libc::c_int as libc::c_uint {
         let fresh25 = i;
-        i = i + 1;
+        i += 1;
         store64(hash, (*s).h[fresh25 as usize]);
         hash = hash.offset(8 as libc::c_int as isize);
         len = len.wrapping_sub(8 as libc::c_int as libc::c_uint);
@@ -1139,14 +1139,14 @@ unsafe extern "C" fn sha512_get(
 }
 
 #[inline]
-unsafe extern "C" fn fprime_copy(mut x: *mut uint8_t, mut a: *const uint8_t) {
+unsafe extern "C" fn fprime_copy(x: *mut uint8_t, a: *const uint8_t) {
     memcpy(
         x as *mut libc::c_void,
         a as *const libc::c_void,
         32 as libc::c_int as libc::c_ulong,
     );
 }
-unsafe extern "C" fn raw_add(mut x: *mut uint8_t, mut p: *const uint8_t) {
+unsafe extern "C" fn raw_add(x: *mut uint8_t, p: *const uint8_t) {
     let mut c: uint16_t = 0 as libc::c_int as uint16_t;
     let mut i: libc::c_int = 0;
     i = 0 as libc::c_int;
@@ -1159,7 +1159,7 @@ unsafe extern "C" fn raw_add(mut x: *mut uint8_t, mut p: *const uint8_t) {
         i += 1;
     }
 }
-unsafe extern "C" fn raw_try_sub(mut x: *mut uint8_t, mut p: *const uint8_t) {
+unsafe extern "C" fn raw_try_sub(x: *mut uint8_t, p: *const uint8_t) {
     let mut minusp: [uint8_t; 32] = [0; 32];
     let mut c: uint16_t = 0 as libc::c_int as uint16_t;
     let mut i: libc::c_int = 0;
@@ -1174,7 +1174,7 @@ unsafe extern "C" fn raw_try_sub(mut x: *mut uint8_t, mut p: *const uint8_t) {
     }
     fprime_select(x, minusp.as_mut_ptr(), x, c as u8);
 }
-unsafe extern "C" fn prime_msb(mut p: *const uint8_t) -> libc::c_int {
+unsafe extern "C" fn prime_msb(p: *const uint8_t) -> libc::c_int {
     let mut i: libc::c_int = 0;
     let mut x: uint8_t = 0;
     i = 32 as libc::c_int - 1 as libc::c_int;
@@ -1192,7 +1192,7 @@ unsafe extern "C" fn prime_msb(mut p: *const uint8_t) -> libc::c_int {
     }
     i - 1 as libc::c_int
 }
-unsafe extern "C" fn shift_n_bits(mut x: *mut uint8_t, mut n: libc::c_int) {
+unsafe extern "C" fn shift_n_bits(x: *mut uint8_t, n: libc::c_int) {
     let mut c: uint16_t = 0 as libc::c_int as uint16_t;
     let mut i: libc::c_int = 0;
     i = 0 as libc::c_int;
@@ -1205,7 +1205,7 @@ unsafe extern "C" fn shift_n_bits(mut x: *mut uint8_t, mut n: libc::c_int) {
     }
 }
 #[inline]
-unsafe extern "C" fn min_int(mut a: libc::c_int, mut b: libc::c_int) -> libc::c_int {
+unsafe extern "C" fn min_int(a: libc::c_int, b: libc::c_int) -> libc::c_int {
     if a < b {
         a
     } else {
@@ -1214,10 +1214,10 @@ unsafe extern "C" fn min_int(mut a: libc::c_int, mut b: libc::c_int) -> libc::c_
 }
 #[no_mangle]
 unsafe extern "C" fn fprime_from_bytes(
-    mut n: *mut uint8_t,
-    mut x: *const uint8_t,
-    mut len: size_t,
-    mut modulus: *const uint8_t,
+    n: *mut uint8_t,
+    x: *const uint8_t,
+    len: size_t,
+    modulus: *const uint8_t,
 ) {
     let preload_total: libc::c_int = min_int(
         prime_msb(modulus) - 1 as libc::c_int,
@@ -1243,13 +1243,12 @@ unsafe extern "C" fn fprime_from_bytes(
     }
     if preload_bits != 0 {
         shift_n_bits(n, preload_bits);
-        let ref mut fresh0 = *n.offset(0 as libc::c_int as isize);
+        let fresh0 = &mut (*n.offset(0 as libc::c_int as isize));
         *fresh0 = (*fresh0 as libc::c_int
             | *x.offset(
                 len.wrapping_sub(preload_bytes as libc::c_ulong)
                     .wrapping_sub(1 as libc::c_int as libc::c_ulong) as isize,
-            ) as libc::c_int
-                >> 8 as libc::c_int - preload_bits) as uint8_t;
+            ) as libc::c_int >> (8 as libc::c_int - preload_bits)) as uint8_t;
     }
     i = rbits - 1 as libc::c_int;
     while i >= 0 as libc::c_int {
@@ -1257,17 +1256,17 @@ unsafe extern "C" fn fprime_from_bytes(
             >> (i & 7 as libc::c_int)
             & 1 as libc::c_int) as uint8_t;
         shift_n_bits(n, 1 as libc::c_int);
-        let ref mut fresh1 = *n.offset(0 as libc::c_int as isize);
+        let fresh1 = &mut (*n.offset(0 as libc::c_int as isize));
         *fresh1 = (*fresh1 as libc::c_int | bit as libc::c_int) as uint8_t;
         raw_try_sub(n, modulus);
         i -= 1;
     }
 }
 unsafe extern "C" fn fprime_select(
-    mut dst: *mut uint8_t,
-    mut zero: *const uint8_t,
-    mut one: *const uint8_t,
-    mut condition: uint8_t,
+    dst: *mut uint8_t,
+    zero: *const uint8_t,
+    one: *const uint8_t,
+    condition: uint8_t,
 ) {
     let mask: uint8_t = -(condition as libc::c_int) as uint8_t;
     let mut i: libc::c_int = 0;
@@ -1283,19 +1282,19 @@ unsafe extern "C" fn fprime_select(
 }
 #[no_mangle]
 unsafe extern "C" fn fprime_add(
-    mut r: *mut uint8_t,
-    mut a: *const uint8_t,
-    mut modulus: *const uint8_t,
+    r: *mut uint8_t,
+    a: *const uint8_t,
+    modulus: *const uint8_t,
 ) {
     raw_add(r, a);
     raw_try_sub(r, modulus);
 }
 #[no_mangle]
 unsafe extern "C" fn fprime_mul(
-    mut r: *mut uint8_t,
-    mut a: *const uint8_t,
-    mut b: *const uint8_t,
-    mut modulus: *const uint8_t,
+    r: *mut uint8_t,
+    a: *const uint8_t,
+    b: *const uint8_t,
+    modulus: *const uint8_t,
 ) {
     let mut i: libc::c_int = 0;
     memset(
@@ -1327,7 +1326,7 @@ struct ed25519_pt {
     pub z: [uint8_t; 32],
 }
 #[inline]
-unsafe extern "C" fn ed25519_copy(mut dst: *mut ed25519_pt, mut src: *const ed25519_pt) {
+unsafe extern "C" fn ed25519_copy(dst: *mut ed25519_pt, src: *const ed25519_pt) {
     memcpy(
         dst as *mut libc::c_void,
         src as *const libc::c_void,
@@ -1336,7 +1335,8 @@ unsafe extern "C" fn ed25519_copy(mut dst: *mut ed25519_pt, mut src: *const ed25
 }
 #[no_mangle]
 static mut ed25519_base: ed25519_pt = {
-    let mut init = ed25519_pt {
+    
+    ed25519_pt {
         x: [
             0x1a as libc::c_int as uint8_t,
             0xd5 as libc::c_int as uint8_t,
@@ -1473,12 +1473,12 @@ static mut ed25519_base: ed25519_pt = {
             0,
             0,
         ],
-    };
-    init
+    }
 };
 #[no_mangle]
 static mut ed25519_neutral: ed25519_pt = {
-    let mut init = ed25519_pt {
+    
+    ed25519_pt {
         x: [
             0 as libc::c_int as uint8_t,
             0,
@@ -1615,14 +1615,13 @@ static mut ed25519_neutral: ed25519_pt = {
             0,
             0,
         ],
-    };
-    init
+    }
 };
 #[no_mangle]
 unsafe extern "C" fn ed25519_project(
-    mut p: *mut ed25519_pt,
-    mut x: *const uint8_t,
-    mut y: *const uint8_t,
+    p: *mut ed25519_pt,
+    x: *const uint8_t,
+    y: *const uint8_t,
 ) {
     f25519_copy(((*p).x).as_mut_ptr(), x);
     f25519_copy(((*p).y).as_mut_ptr(), y);
@@ -1631,9 +1630,9 @@ unsafe extern "C" fn ed25519_project(
 }
 #[no_mangle]
 unsafe extern "C" fn ed25519_unproject(
-    mut x: *mut uint8_t,
-    mut y: *mut uint8_t,
-    mut p: *const ed25519_pt,
+    x: *mut uint8_t,
+    y: *mut uint8_t,
+    p: *const ed25519_pt,
 ) {
     let mut z1: [uint8_t; 32] = [0; 32];
     f25519_inv__distinct(z1.as_mut_ptr(), ((*p).z).as_ptr());
@@ -1678,9 +1677,9 @@ static mut ed25519_d: [uint8_t; 32] = [
 ];
 #[no_mangle]
 unsafe extern "C" fn ed25519_pack(
-    mut c: *mut uint8_t,
-    mut x: *const uint8_t,
-    mut y: *const uint8_t,
+    c: *mut uint8_t,
+    x: *const uint8_t,
+    y: *const uint8_t,
 ) {
     let mut tmp: [uint8_t; 32] = [0; 32];
     let mut parity: uint8_t = 0;
@@ -1690,14 +1689,14 @@ unsafe extern "C" fn ed25519_pack(
         << 7 as libc::c_int) as uint8_t;
     f25519_copy(c, y);
     f25519_normalize(c);
-    let ref mut fresh0 = *c.offset(31 as libc::c_int as isize);
+    let fresh0 = &mut (*c.offset(31 as libc::c_int as isize));
     *fresh0 = (*fresh0 as libc::c_int | parity as libc::c_int) as uint8_t;
 }
 #[no_mangle]
 unsafe extern "C" fn ed25519_try_unpack(
-    mut x: *mut uint8_t,
-    mut y: *mut uint8_t,
-    mut comp: *const uint8_t,
+    x: *mut uint8_t,
+    y: *mut uint8_t,
+    comp: *const uint8_t,
 ) -> uint8_t {
     let parity: libc::c_int =
         *comp.offset(31 as libc::c_int as isize) as libc::c_int >> 7 as libc::c_int;
@@ -1705,7 +1704,7 @@ unsafe extern "C" fn ed25519_try_unpack(
     let mut b: [uint8_t; 32] = [0; 32];
     let mut c: [uint8_t; 32] = [0; 32];
     f25519_copy(y, comp);
-    let ref mut fresh1 = *y.offset(31 as libc::c_int as isize);
+    let fresh1 = &mut (*y.offset(31 as libc::c_int as isize));
     *fresh1 = (*fresh1 as libc::c_int & 127 as libc::c_int) as uint8_t;
     f25519_mul__distinct(c.as_mut_ptr(), y, y);
     f25519_mul__distinct(b.as_mut_ptr(), c.as_mut_ptr(), ed25519_d.as_ptr());
@@ -1763,9 +1762,9 @@ static mut ed25519_k: [uint8_t; 32] = [
 ];
 #[no_mangle]
 unsafe extern "C" fn ed25519_add(
-    mut r: *mut ed25519_pt,
-    mut p1: *const ed25519_pt,
-    mut p2: *const ed25519_pt,
+    r: *mut ed25519_pt,
+    p1: *const ed25519_pt,
+    p2: *const ed25519_pt,
 ) {
     let mut a: [uint8_t; 32] = [0; 32];
     let mut b: [uint8_t; 32] = [0; 32];
@@ -1795,7 +1794,7 @@ unsafe extern "C" fn ed25519_add(
     f25519_mul__distinct(((*r).z).as_mut_ptr(), f.as_mut_ptr(), g.as_mut_ptr());
 }
 #[no_mangle]
-unsafe extern "C" fn ed25519_double(mut r: *mut ed25519_pt, mut p: *const ed25519_pt) {
+unsafe extern "C" fn ed25519_double(r: *mut ed25519_pt, p: *const ed25519_pt) {
     let mut a: [uint8_t; 32] = [0; 32];
     let mut b: [uint8_t; 32] = [0; 32];
     let mut c: [uint8_t; 32] = [0; 32];
@@ -1822,9 +1821,9 @@ unsafe extern "C" fn ed25519_double(mut r: *mut ed25519_pt, mut p: *const ed2551
 }
 #[no_mangle]
 unsafe extern "C" fn ed25519_smult(
-    mut r_out: *mut ed25519_pt,
-    mut p: *const ed25519_pt,
-    mut e: *const uint8_t,
+    r_out: *mut ed25519_pt,
+    p: *const ed25519_pt,
+    e: *const uint8_t,
 ) {
     let mut r: ed25519_pt = ed25519_pt {
         x: [0; 32],
@@ -1915,7 +1914,7 @@ unsafe fn pp(packed: *mut uint8_t, p: *const ed25519_pt) {
     ed25519_pack(packed, x.as_mut_ptr(), y.as_mut_ptr());
 }
 unsafe fn sm_pack(r: *mut uint8_t, k: *const uint8_t) {
-    let mut p: ed25519_pt = ed25519_pt {
+    let p: ed25519_pt = ed25519_pt {
         x: [0; 32],
         y: [0; 32],
         t: [0; 32],

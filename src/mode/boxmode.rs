@@ -65,7 +65,20 @@ pub fn start(config: Config) -> ! {
         new_stamp_timeout: Time::msec().result_timeerr_default(),
     };
     unsafe { THREADS_BOX = Some(Arc::new(Mutex::new(VecDeque::new()))) };
-
+    macro_rules! clear_threads_cache {
+        () => {
+            let func = move || {
+                let mut i = 0;
+                while i != (counters.box_num_per_thread as f32 * box_num_per_thread_mag) as u32 {
+                    handle_connection_s(unsafe { &THREADS_BOX.clone().unwrap() }, unsafe {
+                        &GLOBAL_ROUTER_CONFIG.as_ref().unwrap().clone()
+                    });
+                    i += 1;
+                }
+            };
+            threadpool.add(threads_num.try_into().unwrap(), func);
+        };
+    }
     for stream in listener.incoming() {
         match stream {
             Ok(stream) => {
@@ -78,18 +91,7 @@ pub fn start(config: Config) -> ! {
                 log!(Debug, format!("{}{:#?}\n", LOG[3], stream));
                 if is_nst_gt_ost_timeout(&counters.old_stamp_timeout, &counters.new_stamp_timeout) {
                     if_new_tick_start(&mut counters, xrps_predict_mag);
-                    let func = move || {
-                        let mut i = 0;
-                        while i
-                            != (counters.box_num_per_thread as f32 * box_num_per_thread_mag) as u32
-                        {
-                            handle_connection_s(unsafe { &THREADS_BOX.clone().unwrap() }, unsafe {
-                                &GLOBAL_ROUTER_CONFIG.as_ref().unwrap().clone()
-                            });
-                            i += 1;
-                        }
-                    };
-                    threadpool.add(threads_num.try_into().unwrap(), func);
+                    clear_threads_cache!();
                     counters.old_stamp_timeout = counters.new_stamp_timeout;
                 }
             }
@@ -99,18 +101,7 @@ pub fn start(config: Config) -> ! {
                 if counters.flag_new_box_num
                     || is_nst_gt_ost_timeout(&counters.old_stamp, &counters.new_stamp)
                 {
-                    let func = move || {
-                        let mut i = 0;
-                        while i
-                            != (counters.box_num_per_thread as f32 * box_num_per_thread_mag) as u32
-                        {
-                            handle_connection_s(unsafe { &THREADS_BOX.clone().unwrap() }, unsafe {
-                                &GLOBAL_ROUTER_CONFIG.as_ref().unwrap().clone()
-                            });
-                            i += 1;
-                        }
-                    };
-                    threadpool.add(threads_num.try_into().unwrap(), func);
+                    clear_threads_cache!();
                     counters.box_num_per_thread =
                         (threads_num as f32 * box_num_per_thread_init_mag) as u32;
                 }

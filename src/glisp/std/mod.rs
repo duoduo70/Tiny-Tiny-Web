@@ -33,16 +33,14 @@ pub fn eval_built_in_form(
     config: Config,
 ) -> Option<Result<Expression, GError>> {
     if let Some(stack) = unsafe { STACK.as_ref() } {
-        let stack = std::rc::Rc::clone(&stack);
+        let stack = std::rc::Rc::clone(stack);
         stack.as_ref().borrow_mut().push(exp.to_string());
         if GLISP_DEBUG.load(std::sync::atomic::Ordering::Relaxed) {
             log!(
                 Info,
                 format!(
                     "[glisp-debugger] [stack] {} {}",
-                    std::iter::repeat("--")
-                        .take(stack.as_ref().borrow().len() - 1)
-                        .collect::<String>(),
+                    "--".repeat(stack.as_ref().borrow().len() - 1),
                     exp
                 )
             );
@@ -107,7 +105,7 @@ pub fn eval_built_in_form(
     }?;
     if ret.is_ok() {
         if let Some(stack) = unsafe { STACK.as_ref() } {
-            let stack = std::rc::Rc::clone(&stack);
+            let stack = std::rc::Rc::clone(stack);
             stack.as_ref().borrow_mut().pop();
         }
     }
