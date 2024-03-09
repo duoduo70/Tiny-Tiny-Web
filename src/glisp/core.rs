@@ -113,10 +113,20 @@ pub(super) fn tokenize(expr: String) -> Vec<String> {
     let mut vec: Vec<String> = vec![];
     let mut allow_whitespace = false;
     let mut temp_field = String::with_capacity(16);
+    let mut escape_flag = false;
     for ch in new_expr.chars() {
         if ch == '\"' {
+            if escape_flag {
+                temp_field.push(ch);
+                escape_flag = false;
+                continue;
+            }
             allow_whitespace = !allow_whitespace;
             temp_field.push(ch);
+            continue;
+        }
+        if ch == '\\' {
+            escape_flag = true;
             continue;
         }
         if ch.is_whitespace() {
@@ -145,7 +155,6 @@ pub(super) fn tokenize(expr: String) -> Vec<String> {
             temp_field.push(ch);
         }
     }
-    println!("{:?}", vec);
     vec
 }
 
