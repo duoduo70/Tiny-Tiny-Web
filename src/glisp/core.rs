@@ -109,12 +109,34 @@ pub(super) fn tokenize(expr: String) -> Vec<String> {
             new_expr += &(" ".to_owned() + line) // 加空格是为了防止例如 (+\n1 1) 被解析成 (+1 1)
         }
     }
-    new_expr
+    
+    new_expr = new_expr
         .replace('(', " ( ")
-        .replace(')', " ) ")
-        .split_whitespace()
-        .map(|x| x.to_string())
-        .collect()
+        .replace(')', " ) ");
+
+    let mut vec: Vec<String> = vec![];
+    let mut allow_whitespace = false;
+    let mut temp_field = String::with_capacity(16);
+    for ch in new_expr.chars() {
+        if ch == '\"' {
+            allow_whitespace = !allow_whitespace;
+            temp_field.push(ch);
+            continue;
+        }
+        if ch.is_whitespace() {
+            if allow_whitespace {
+                temp_field.push(ch)
+            } else if !temp_field.is_empty() {
+                vec.push(temp_field.clone());
+                temp_field.clear();
+            }
+            continue;
+        }
+        if ch != ' ' {
+            temp_field.push(ch);
+        }
+    }
+    vec
 }
 
 pub(super) fn parse(tokens: &[String]) -> Result<(Expression, &[String]), GError> {

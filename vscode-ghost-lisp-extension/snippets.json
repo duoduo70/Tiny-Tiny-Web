@@ -5,7 +5,7 @@
   },
   "if": {
     "prefix": ["if"],
-    "body": ["(if $0\n    $1\n    $2)"]
+    "body": ["(if $1\n    $2\n    $3)"]
   },
   "set": {
     "prefix": ["set"],
@@ -206,5 +206,13 @@
   "input": {
     "prefix": ["input"],
     "body": ["(input $0)"]
+  },
+  "increase": {
+    "prefix": ["increase"],
+    "body": ["(set $0 (+ $0 1))"]
+  },
+  "decrease": {
+    "prefix": ["decrease"],
+    "body": ["(set $0 (- $0 1))"]
   }
 }

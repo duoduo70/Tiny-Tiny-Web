@@ -1,7 +1,11 @@
 # Change Log
 
 ## v1.0.1
-Add static highlight and snippets. 
+Added static highlight and snippets. 
 
 ## v1.0.2
-Add debugger and REPL support
+Added debugger and REPL support
+
+## v1.0.3
+Added snippets: "increase", "decrease"
+Fixed a bug.

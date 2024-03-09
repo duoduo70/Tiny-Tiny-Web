@@ -2,7 +2,7 @@
   "name": "ghost-lisp",
   "displayName": "Ghost Lisp",
   "description": "Support for Ghost Lisp",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "publisher": "Plasma",
   "engines": {
     "vscode": "^1.86.0"
@@ -59,12 +59,12 @@
       {
         "command": "ttwebtestfile.start",
         "key": "F5",
-        "when": "editorTextFocus"
+        "when": "editorLangId == 'glisp'"
       },
       {
         "command": "ttwebtestfiledebug.start",
         "key": "Shift+F5",
-        "when": "editorTextFocus"
+        "when": "editorLangId == 'glisp'"
       }
     ],
     "languages": [

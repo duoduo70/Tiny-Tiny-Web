@@ -22,7 +22,8 @@ cp ./build/ttweb ./vscode-ghost-lisp-extension/ &&
 cp ./build/ttweb.exe ./vscode-ghost-lisp-extension/ &&
 cd ./vscode-ghost-lisp-extension &&
 npx vsce package &&
-cp ./ghost-lisp-* ../build/ &&
+cp *.vsix ../build/ &&
+rm *.vsix
 cd ..
 
 zip ./build/glisp-example.zip ./build/config/* &&
