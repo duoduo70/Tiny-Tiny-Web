@@ -109,10 +109,6 @@ pub(super) fn tokenize(expr: String) -> Vec<String> {
             new_expr += &(" ".to_owned() + line) // 加空格是为了防止例如 (+\n1 1) 被解析成 (+1 1)
         }
     }
-    
-    new_expr = new_expr
-        .replace('(', " ( ")
-        .replace(')', " ) ");
 
     let mut vec: Vec<String> = vec![];
     let mut allow_whitespace = false;
@@ -132,10 +128,24 @@ pub(super) fn tokenize(expr: String) -> Vec<String> {
             }
             continue;
         }
+        if ch == '(' || ch == ')' {
+            if allow_whitespace {
+                temp_field.push(ch);
+                continue;
+            } else {
+                if !temp_field.is_empty() {
+                    vec.push(temp_field.clone());
+                    temp_field.clear();
+                }
+                vec.push(ch.to_string());
+                continue;
+            }
+        }
         if ch != ' ' {
             temp_field.push(ch);
         }
     }
+    println!("{:?}", vec);
     vec
 }
 
