@@ -8,9 +8,13 @@ This version may not approperiately be with the latest version (In other words, 
 
 本文档所述内容可能不适合最新版本或对于最新版本而言不全面。
 
-This version is based on version 2.0.0-beta10
+This version is based on version 2.0.0-beta13
 
-当前文档基于版本 2.0.0-beta10。
+当前文档基于版本 2.0.0-beta13。
+
+% NEED ENGLISH %
+
+即便该文档支持的版本与最新版本相同，也可能有些来不及更新的部分，因为本项目正在快速发展，以及所有文档均由我一人编写。
 
 For the language of twice-development - Ghost Lisp, we call it Glisp for short.
 
@@ -647,7 +651,7 @@ pub fn eval_built_in_form(
 这个程序的作用是读取所有 `markdown/*.md` 文件，将其编译到 `temp/*.md.html`。
 
 ## 如何上手 Glisp
-或许你被上面的示例震惊了（如果你是编程新手），但是我们可以先试着编写一些简单的 Glisp 配置。
+或许你被上面的示例吓到了（如果你是编程新手），但是我们可以先试着编写一些简单的 Glisp 配置。
 虽然我暂且无力提供一个完善的文档，但我们可以讨论下如何上手它。
 
 “列表”是 Glisp 中最基本的类型，列表有可能被求值，也有可能不被求值，为了保证它永远不被求值，你可能需要用:
@@ -742,6 +746,29 @@ Lisp 的其它基本函数则没有遭到这种过大的“魔改”。
 
 就这样，只有 20 行代码，我们就实现了一个基本的图床功能。
 
+### fly/snatch 编程
+fly/snatch 是一种特殊的编程范式，它虽然较为丑陋，但比传统的实现同样功能的范式更简单易懂。它正在快速发展中，但基本的 fly/snatch 等函数已经固定。  
+简单的说，我们可以把一些变量“泄漏”到父环境（用一些别的语言常用的说法是“父命名空间”）。我们也可以把一些变量抓取进本命名空间（然后父命名空间里的就会被删除）。
+事实上，这是一个很高效的算法，因为它并不涉及克隆，在内部它所做的仅仅是删除几个字节然后添加几个字节（一些与指针有关的操作）。
+
+
+以下示例将展示 fly/snatch 的基本功能：
+```scheme
+(do
+    (space
+        (set a "It is from subenv!")
+        (fly a))
+    (log a) ; 输出：It is from subenv!
+    (drop a); 让我们释放a,然后进行下一个示例。实际上这里不需要这行，但我只是顺便介绍 drop 的功能
+    ; 如果你在这时再打印 a ，它会告诉你 a 不存在
+    (set a "It is from parent env!") ; 我们重新创建 a 
+    (space
+        (snatch a)
+        (log a)) ; 输出：It is from parent env!
+    (log a)) ; a 不存在，因为它被那个子空间“夺走”了
+```
+
+
 ## 附录
 
 ### 集成开发环境 (IDE) 支持
@@ -749,9 +776,10 @@ Lisp 的其它基本函数则没有遭到这种过大的“魔改”。
 参见 [源代码仓库](https://github.com/duoduo70/Tiny-Tiny-Web/tree/master/vscode-ghost-lisp-extension) (同样，最好是你当前使用的程序版本的存储库拷贝，因为最新的代码可能不兼容旧的主程序)  
 我们打开一个 .gl 文件，然后输入：`do` 并回车，它会为我们自动生成代码片段。
 
-因为该插件正在早期开发阶段，故需要你自己打包。你需要安装 `nodejs` 和它的包 `vsce`。
-然后在插件项目的根目录下使用命令：`vsce package`。  
-现在，你应该能在 VSCode 中导入该插件。
+你现在可以直接在插件市场搜索 "Ghost Lisp" 并安装它。
+
+在一个 glisp 文件内，按 F5 ，你就能运行它。按 Shift+F5 ，你可以用 Debug 模式运行。
+按 F4, 可以打开 REPL ，按 Shift+F4 ，可以用 Debug 模式打开 REPL。
 
 ### 关于命令行参数与 GLISP-REPL
 你可以通过 `ttweb --help` 来查看命令行参数，其中最重要的是 GLISP-REPL 。
