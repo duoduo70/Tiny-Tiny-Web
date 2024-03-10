@@ -2,7 +2,7 @@
   "name": "ghost-lisp",
   "displayName": "Ghost Lisp",
   "description": "Support for Ghost Lisp",
-  "version": "1.0.3",
+  "version": "1.0.5",
   "publisher": "Plasma",
   "engines": {
     "vscode": "^1.86.0"

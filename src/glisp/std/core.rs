@@ -215,7 +215,7 @@ pub fn func_do(
 ) -> Result<Expression, GError> {
     args_len_min!("do", args, 1);
 
-    let ret: &mut Expression = &mut Expression::List(vec![]);
+    let ret: &mut Expression = &mut Expression::Bool(false);
     for e in args {
         *ret = eval(e, env, config.clone())?;
     }
@@ -269,4 +269,77 @@ pub fn func_repl(
     }
 
     Ok(Expression::Bool(false))
+}
+
+pub fn func_fly(
+    args: &[Expression],
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
+    args_len_min!("fly", args, 1);
+    args_len_max!("fly", args, 2);
+    let symbol = match &args[0] {
+        Expression::Symbol(symbol) => symbol.to_string(),
+        Expression::List(_) => return Err(GError::Reason("fly: WIP feature: the type of the first arg is a list".to_owned())),
+        _ => return Err(GError::Reason("fly: the type of the first arg is not supported".to_owned()))
+    };
+
+    let mut times: u32 = 1;
+    if args.len() == 2 {
+        times = check_type_onlyone!("fly", &args[1], env, Number, config)? as u32;
+    }
+    let exp = env.data.remove(&symbol).ok_or(GError::Reason("fly: unknown symbol in the environment".to_owned()))?;
+
+    let mut env = env.outer.ok_or(GError::Reason("fly: the environment is not so many layers".to_owned()))?;
+    
+    while times > 1 {
+        env = env.outer.ok_or(GError::Reason("fly: the environment is not so many layers".to_owned()))?;
+        times -= 1;
+    }
+
+    unsafe {
+    let env = 
+        env as *const Environment as *mut Environment; // 我知道我在干什么。这里使用它非常安全。
+        (*env).data.insert(symbol, exp);
+    }
+
+    Ok(Expression::Bool(true))
+}
+
+pub fn func_drop(
+    args: &[Expression],
+    env: &mut Environment,
+    _config: Config,
+) -> Result<Expression, GError> {
+    args_len_min!("drop", args, 1);
+    args_len_max!("drop", args, 1);
+    let symbol = match &args[0] {
+        Expression::Symbol(symbol) => symbol.to_string(),
+        Expression::List(_) => return Err(GError::Reason("drop: WIP feature: the type of the first arg is a list".to_owned())),
+        _ => return Err(GError::Reason("drop: the type of the first arg is not supported".to_owned()))
+    };
+
+    env.data.remove(&symbol);
+
+    Ok(Expression::Bool(true))
+}
+
+pub fn func_space(
+    args: &[Expression],
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
+    args_len_min!("space", args, 1);
+
+    let mut new_env = Environment {
+        data: std::collections::HashMap::new(),
+        outer: Some(env)
+    };
+
+    let ret: &mut Expression = &mut Expression::Bool(false);
+    for e in args {
+        *ret = eval(e, &mut new_env, config.clone())?
+    }
+
+    Ok(ret.clone())
 }

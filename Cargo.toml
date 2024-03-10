@@ -1,6 +1,6 @@
 [package]
 name = "ttweb"
-version = "2.0.0-beta11"
+version = "2.0.0-beta12"
 edition = "2021"
 license = "GPL-3"
 
