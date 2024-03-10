@@ -102,6 +102,7 @@ pub fn eval_built_in_form(
             "fly" => Some(func_fly(other_args, env, config)),
             "drop" => Some(func_drop(other_args, env, config)),
             "space" => Some(func_space(other_args, env, config)),
+            "snatch" => Some(func_snatch(other_args, env, config)),
             _ => None,
         },
         _ => None,

@@ -226,5 +226,9 @@
   "space": {
     "prefix": ["space"],
     "body": ["(space\n    $0)"]
+  },
+  "snatch": {
+    "prefix": ["snatch"],
+    "body": ["(snatch $0)"]
   }
 }

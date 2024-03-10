@@ -38,7 +38,7 @@ impl Display for Expression {
             ),
             Expression::Bool(a) => write!(f, "{}", a),
             Expression::Lambda(a) => {
-                write!(f, "lambda: {{ params: {} , body: {} }}", &a.params, &a.body)
+                write!(f, "{}", get_lambda_sign(a))
             }
             Expression::String(a) => write!(f, "\"{}\"", a),
             Expression::Func(_) => write!(f, "function()"),
@@ -454,4 +454,22 @@ fn env_get(key: &str, env: &Environment) -> Option<Expression> {
             None => None,
         },
     }
+}
+
+impl std::fmt::Debug for Expression {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Symbol(arg0) => f.debug_tuple("Symbol").field(arg0).finish(),
+            Self::Number(arg0) => f.debug_tuple("Number").field(arg0).finish(),
+            Self::List(arg0) => f.debug_tuple("List").field(arg0).finish(),
+            Self::Func(arg0) => f.debug_tuple("Func").field(arg0).finish(),
+            Self::Bool(arg0) => f.debug_tuple("Bool").field(arg0).finish(),
+            Self::Lambda(arg0) => f.debug_tuple("Lambda").field(&get_lambda_sign(arg0)).finish(),
+            Self::String(arg0) => f.debug_tuple("String").field(arg0).finish(),
+        }
+    }
+}
+
+fn get_lambda_sign(lambda: &Lambda) -> String {
+    "lambda: (".to_owned() + &lambda.params.to_string() + ")"
 }

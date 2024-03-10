@@ -47,7 +47,7 @@
 		"entities": {
 			"patterns": [{
 				"name": "entity.name.type",
-				"match": "(?<=\\()\\b(log|str|do|return|continue|pass|lambda|\\:debug|fly|space)\\b"
+				"match": "(?<=\\()\\b(log|str|do|return|continue|pass|lambda|\\:debug|fly|space|snatch)\\b"
 			},
 			{
 				"name": "entity.name.function",

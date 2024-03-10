@@ -343,3 +343,38 @@ pub fn func_space(
 
     Ok(ret.clone())
 }
+
+pub fn func_snatch(
+    args: &[Expression],
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
+    args_len_min!("snatch", args, 1);
+    args_len_max!("snatch", args, 2);
+    let symbol = match &args[0] {
+        Expression::Symbol(symbol) => symbol.to_string(),
+        Expression::List(_) => return Err(GError::Reason("snatch: WIP feature: the type of the first arg is a list".to_owned())),
+        a => return Err(GError::Reason("snatch: the type of the first arg is not supported: ".to_owned() + &a.to_string()))
+    };
+
+    let mut times: u32 = 1;
+    if args.len() == 2 {
+        times = check_type_onlyone!("snatch", &args[1], env, Number, config)? as u32;
+    }
+
+    let mut outer_env = env.outer.ok_or(GError::Reason("snatch: the environment is not so many layers".to_owned()))?;
+    
+    while times > 1 {
+        outer_env = outer_env.outer.ok_or(GError::Reason("snatch: the environment is not so many layers".to_owned()))?;
+        times -= 1;
+    }
+
+    let exp = unsafe {
+    let outer_env = 
+        outer_env as *const Environment as *mut Environment; // 我知道我在干什么。这里使用它非常安全。
+        (*outer_env).data.remove(&symbol)
+    }.ok_or(GError::Reason("snatch: can not find the symbol: ".to_owned() + &symbol))?;
+    env.data.insert(symbol, exp);
+
+    Ok(Expression::Bool(true))
+}
