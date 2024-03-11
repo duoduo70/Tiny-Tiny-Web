@@ -1,3 +1,33 @@
+# 2.0.0-beta10
+```lisp
+(do
+    (log (input (str "You\bcan\binput\bsomething:"))) ; 可以输入一些内容
+    (repl :debug)) ; 打开 REPL
+```
+# 2.0.0-beta11
+```lisp
+(log "Hello, World!") ; 新的解释器，比以前更快，比以前更好扩展
+```
+# 2.0.0-beta12
+```lisp
+(do
+    (space
+        (set a "test")
+        (fly a))
+    (log a) ; OK，a 飞出来了
+    (drop a)
+    (log a)) ; Error，a 已经被删除了
+```
+# 2.0.0-beta13
+```lisp
+(do
+    (let a "test")
+    (log a) ; OK
+    (space
+        (snatch a)
+        (log a) ; OK
+    (log a))) ; Error，snatch语句夺走了 a
+```
 # 2.0.0-beta14
 ```lisp
 (do
