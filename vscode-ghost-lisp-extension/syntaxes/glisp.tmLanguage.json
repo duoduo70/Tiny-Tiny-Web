@@ -22,6 +22,9 @@
 		},
 		{
 			"include": "#javascript"
+		},
+		{
+			"include": "#markdown"
 		}
 	],
 	"repository": {
@@ -86,6 +89,18 @@
 			},{
 				"name":"keyword.operator",
 				"match": "\\b(this|class|function|in|instanceof|of|new|typeof|get|set|\\*\\=|\\/\\=|\\%\\=|\\<\\<\\=|\\>\\>\\=|\\>\\>\\>\\=|\\&\\=|\\^\\=|\\|\\=|\\!|\\+|\\-|\\*|\\/|\\%|\\=\\=|\\=\\=\\=|\\!\\=|\\!\\=\\=|\\>\\=|\\<\\=|\\=\\>|\\>|\\<|\\:|\\?|\\&\\&|\\|\\||\\&|\\~|\\^|\\>\\>|\\>\\>\\>|\\<\\<|\\||\\+\\+|\\-\\-|\\.\\.\\.)\\b"
+			}]
+		},
+		"markdown": {
+			"begin": "[\\b(markdown|md)\\b]\\b{",
+			"end": "}",
+			"name": "source.md",
+			"patterns": [{
+				"name": "entity.name.section",
+				"match": "(?<=#).*$"
+			},{
+				"name": "comment",
+				"match": "(#|\\*|\\_|\\$)"
 			}]
 		}
 	},

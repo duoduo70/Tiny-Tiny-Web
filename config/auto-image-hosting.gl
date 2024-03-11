@@ -26,3 +26,6 @@
             (serve pure-str (str.+ "image-hosting/" pure-str) (search-in-mime-list
                 (slice pure-str (+ (rfind pure-str ".") 1) (- (length pure-str) 1))))
             (log (str.+ host pure-str)))))
+[md]{
+    #abc
+}

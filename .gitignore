@@ -4,6 +4,7 @@
 !.gitignore
 !Cargo.toml
 !README.md
+!changelog.md
 !LICENSE
 !docs
 !docs/**
