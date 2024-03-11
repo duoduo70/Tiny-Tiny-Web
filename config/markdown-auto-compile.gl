@@ -5,10 +5,16 @@
 ;;; along with this program;
 ;;; if not, see <https://www.gnu.org/licenses/>.
 ;;;
+
+;;; 本脚本实现了 John Gruber 的原版 Markdown
+;;; 同时也实现了部分 Markdown Extra 的功能
+
 (do
-    (set markdown-parse-line (lambda (str) (do
+    ;; 本函数是紧凑写法
+    ;; 本函数用以编译一行 markdown 到 html
+    (set markdown-parse-line (lambda (str) (do              ; 在这里，有理由使用紧凑写法（将 (lambda ... 后置），这会让我们少一个 tab
         (set str-length (length str))
-            (if (str.= (slice str 0 0) "#") 
+            (if (str.= (slice str 0 0) "#")                 ; 在这个子算法中，我们将 markdown 的标题写法转换成 html 的
                 (if (str.= (slice str 1 1) "#") 
                     (if (str.= (slice str 2 2) "#") 
                         (if (str.= (slice str 3 3) "#") 
@@ -21,84 +27,94 @@
                 (if 
                     (str.= 
                         (slice str (- str-length 2) (- str-length 1)) 
-                        (str "\b\b")) 
+                        (str "\b\b"))                       ; 这里的 str 基本上是一个兼容性函数，我在这里保留它，是为了说明这种语法
+                                                            ; 它可以在不使用空格和引号的情况下用转义字符表示它们
+                                                            ; 在早期的解析器中，迫不得已的临时使用这种奇怪的语法
+                                                            ; 在某些特殊的用途中，这个函数仍然有用，于是就被保留了下来
                     (set str (str.+ str (str "<br\b/>"))) (pass)))
-        (set str-length (length str))
-        (set strong-flag false)
-        (set italic-flag false)
-        (set str (str.+ str "\n"))
-        (set i 0)
+        (set str-length (length str))                       ; 我们当前字符串的长度（已经将标题转换成 html 写法之后的）
+        (set strong-flag false)                             ; 这个 flag 用以指示接下来的字符是否是粗体
+        (set italic-flag false)                             ; 同理，但指示斜体
+        (set str (str.+ str "\n"))                          ; 我们在行尾添加换行符，这是因为我们传入的字符串是不带换行符的
+        (set i 0)                                           ; 字符串中字符的序号
         (loop
-        (if (>= i str-length) (return) (pass))
-        (set str-field (slice str i (+ i 1)))
-        (if (str.= str-field "**")
-            (if strong-flag (if italic-flag (pass) (do
-                (set strong-flag false)
-                (set str (remove str i (+ i 1)))
-                (set str (insert str i "</strong>"))
-                (set str-length (+ str-length 7))
-                (set i (+ i 8)))) 
-            (do
-                (set strong-flag true)
-                (set str (remove str i (+ i 1)))
-                (set str (insert str i "<strong>"))
-                (set str-length (+ str-length 6))
-                (set i (+ i 7))))
-        (pass))
-        (if (str.= str-field "__")
-            (if strong-flag (if italic-flag (pass) (do
-                (set strong-flag false)
-                (set str (remove str i (+ i 1)))
-                (set str (insert str i "</strong>"))
-                (set str-length (+ str-length 7))
-                (set i (+ i 8)))) 
-            (do
-                (set strong-flag true)
-                (set str (remove str i (+ i 1)))
-                (set str (insert str i "<strong>"))
-                (set str-length (+ str-length 6))
-                (set i (+ i 7))))
-        (pass))
-        (if (str.= (slice str i i) "*")
-            (if italic-flag (do
-                (set italic-flag false)
-                (set str (remove str i))
-                (set str (insert str i "</em>"))
-                (set str-length (+ str-length 4))
-                (set i (+ i 3))) 
-            (do
-                (set italic-flag true)
-                (set str (remove str i))
-                (set str (insert str i "<em>"))
-                (set str-length (+ str-length 3))
-                (set i (+ i 2))))
-        (pass))
-        (if (str.= (slice str i i) "_")
-            (if italic-flag (do
-                (set italic-flag false)
-                (set str (remove str i))
-                (set str (insert str i "</em>"))
-                (set str-length (+ str-length 4))
-                (set i (+ i 3))) 
-            (do
-                (set italic-flag true)
-                (set str (remove str i))
-                (set str (insert str i "<em>"))
-                (set str-length (+ str-length 3))
-                (set i (+ i 2))))
-        (pass))
-        (set i (+ i 1)))
+            (if (>= i str-length) (return) (pass))          ; 如果我们已经遍历完了整个字符串，则可以返回了
+            (set str-field (slice str i (+ i 1)))           ; 每次遍历两个字符，因为 markdown 中各种语法基本都是两个字符
+            (if (str.= str-field "**")                      ; 粗体
+                (if strong-flag (if italic-flag (pass) (do  ; 如果斜体 flag 为 true ，我们暂时什么也不要做
+                                                            ;   为什么呢？比如我们有 ** ，我们的 i 在第二个星号上
+                                                            ;   而我们已经知道第一个星号代表斜体开始
+                                                            ;   这就说明要么语法有误，要么我们要等到下一次循环才知道是否有三个星号（斜体+粗体）
+                    (set strong-flag false)                 ; 否则，我们便可以根据 strong-flag 知道应该开始粗体或结束粗体
+                    (set str (remove str i (+ i 1)))
+                    (set str (insert str i "</strong>"))    ; 如果是结束粗体，我们便插入这个 html 标签
+                    (set str-length (+ str-length 7))       ; 由于 str-length 是对于原始字符串来说的，循环也是根据原始字符串的下标
+                                                            ; 我们要修改 str-length 和 i 的值来正确建立原始字符串到编译后的字符串的映射，以确保循环正确运行
+                    (set i (+ i 8)))) 
+                (do
+                    (set strong-flag true)
+                    (set str (remove str i (+ i 1)))
+                    (set str (insert str i "<strong>"))
+                    (set str-length (+ str-length 6))
+                    (set i (+ i 7))))
+            (pass))
+            (if (str.= str-field "__")                      ; John Gruber 的原版 Markdown 中有这个写法，即便今天很少使用。它是粗体的另一种写法
+                (if strong-flag (if italic-flag (pass) (do
+                    (set strong-flag false)
+                    (set str (remove str i (+ i 1)))
+                    (set str (insert str i "</strong>"))
+                    (set str-length (+ str-length 7))
+                    (set i (+ i 8)))) 
+                (do
+                    (set strong-flag true)
+                    (set str (remove str i (+ i 1)))
+                    (set str (insert str i "<strong>"))
+                    (set str-length (+ str-length 6))
+                    (set i (+ i 7))))
+            (pass))
+            (if (str.= (slice str-field 0 0) "*")           ; 斜体
+                (if italic-flag (do
+                    (set italic-flag false)
+                    (set str (remove str i))
+                    (set str (insert str i "</em>"))
+                    (set str-length (+ str-length 4))
+                    (set i (+ i 3))) 
+                (do
+                    (set italic-flag true)
+                    (set str (remove str i))
+                    (set str (insert str i "<em>"))
+                    (set str-length (+ str-length 3))
+                    (set i (+ i 2))))
+            (pass))
+            (if (str.= (slice str-field 0 0) "_")           ; John Gruber 的原版 Markdown 中有这个写法，即便今天很少使用。它是斜体的另一种写法
+                (if italic-flag (do
+                    (set italic-flag false)
+                    (set str (remove str i))
+                    (set str (insert str i "</em>"))
+                    (set str-length (+ str-length 4))
+                    (set i (+ i 3))) 
+                (do
+                    (set italic-flag true)
+                    (set str (remove str i))
+                    (set str (insert str i "<em>"))
+                    (set str-length (+ str-length 3))
+                    (set i (+ i 2))))
+            (pass))
+            (set i (+ i 1)))
         str)))
 
-    (set markdown-parse (lambda (str) (do
-        (set flag_part false)
-        (set flag_part_start true)
-        (set flag_linelist false)
-        (set flag-codeblock false)
-        (set flag-dontparse false)
+    ;; 这个函数使用松散型写法
+    ;; 它主要用以实现那些行无关的 Markdown Extra 的功能
+    ;; 这个函数有待重构，所以对它的评注点到为止
+    (set markdown-parse (lambda (str) (do   ; 即便如此，这里还是使用紧凑写法，因为该函数很长，多一个缩进很难受
+        (set flag_part false)               ; 这表示一行文本是否处在这个段落中
+        (set flag_part_start true)          ; 就算第一行顶格写，一样要处理成一个段落，这个flag用以表示是否为第一段
+        (set flag_linelist false)           ; 这表示一行文本是否处于一个列表（一种markdown语法）中
+        (set flag-codeblock false)          ; 这表示一行文本是否处于一个代码块中
+        (set flag-dontparse false)          ; 这表示一行文本是否不应该被解析，例如我们在 markdown 中嵌入 html 和 css
 
-        (set head 0)
-        (set ret "")
+        (set head 0)                        ; head 实际上表示每行字符串
+        (set ret "")                        ; ret 表示返回的字符串
         (loop
             (if (= 0 (length str)) 
                 (return)
@@ -225,6 +241,6 @@
     (set get-pure-str (lambda (str)
         (slice str 1 (- (length str) 2))))
 
-    (for-each (read-dir "markdown")
+    (for-each (read-dir "markdown") ; 这表示遍历一个文件夹下的每个文件
         (write-file (str.+ (str.+ "temp/" (get-pure-str $$)) ".html")
                     (str (markdown-parse (lines (read-file (str.+ "markdown/" (get-pure-str $$)))))))))
