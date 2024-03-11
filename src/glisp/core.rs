@@ -100,37 +100,74 @@ pub(super) fn func_lambda(args: &[Expression]) -> Result<Expression, GError> {
 }
 
 pub(super) fn tokenize(expr: String) -> Vec<String> {
-    let lines = expr.lines();
-    let mut new_expr = String::new();
-    for line in lines {
-        if let Some(a) = line.find(';') {
-            new_expr += &line[..a]
-        } else {
-            new_expr += &(" ".to_owned() + line) // 加空格是为了防止例如 (+\n1 1) 被解析成 (+1 1)
-        }
-    }
-
     let mut vec: Vec<String> = vec![];
-    let mut allow_whitespace = false;
+    let mut str_flag = false;
     let mut temp_field = String::with_capacity(16);
     let mut escape_flag = false;
-    for ch in new_expr.chars() {
+    let mut pure_str_pair_stack = 0;
+    let mut commet_flag = false;
+    let mut lint_stack = 0;
+    for ch in expr.chars() {
+        if commet_flag {
+            continue;
+        }
+        if lint_stack != 0 {
+            if ch == '[' {
+                lint_stack += 1;
+            }
+            if ch == ']' {
+                lint_stack -= 1;
+            }
+            continue;
+        }
+
+        if ch == '[' {
+            if pure_str_pair_stack == 0 && !commet_flag && !str_flag {
+                lint_stack += 1;
+                continue;
+            }
+        }
+
+        if !str_flag && ch == '{' {
+            temp_field.push('"');
+            pure_str_pair_stack += 1;
+            continue;
+        }
+        if ch == '}' {
+            if pure_str_pair_stack > 1 {
+                temp_field.push(ch);
+                pure_str_pair_stack -= 1;
+                continue;
+            }
+            if pure_str_pair_stack == 1 {
+                temp_field.push('"');
+                pure_str_pair_stack -= 1;
+                continue;
+            }
+        }
+        if pure_str_pair_stack != 0 {
+            temp_field.push(ch);
+            continue;
+        }
         if ch == '\"' {
             if escape_flag {
                 temp_field.push(ch);
                 escape_flag = false;
                 continue;
             }
-            allow_whitespace = !allow_whitespace;
+            str_flag = !str_flag;
             temp_field.push(ch);
             continue;
+        }
+        if !str_flag && pure_str_pair_stack == 0 && ch == ';' {
+            commet_flag = true;
         }
         if ch == '\\' {
             escape_flag = true;
             continue;
         }
         if ch.is_whitespace() {
-            if allow_whitespace {
+            if str_flag {
                 temp_field.push(ch)
             } else if !temp_field.is_empty() {
                 vec.push(temp_field.clone());
@@ -139,7 +176,7 @@ pub(super) fn tokenize(expr: String) -> Vec<String> {
             continue;
         }
         if ch == '(' || ch == ')' {
-            if allow_whitespace {
+            if str_flag {
                 temp_field.push(ch);
                 continue;
             } else {
@@ -464,7 +501,10 @@ impl std::fmt::Debug for Expression {
             Self::List(arg0) => f.debug_tuple("List").field(arg0).finish(),
             Self::Func(arg0) => f.debug_tuple("Func").field(arg0).finish(),
             Self::Bool(arg0) => f.debug_tuple("Bool").field(arg0).finish(),
-            Self::Lambda(arg0) => f.debug_tuple("Lambda").field(&get_lambda_sign(arg0)).finish(),
+            Self::Lambda(arg0) => f
+                .debug_tuple("Lambda")
+                .field(&get_lambda_sign(arg0))
+                .finish(),
             Self::String(arg0) => f.debug_tuple("String").field(arg0).finish(),
         }
     }
