@@ -107,109 +107,119 @@
             (set str (cdr str))
             (if 
                 (and (> (length head) 2) (str.= (slice head 0 2) "```"))
-                (do (if (= (length head) 3) (if flag-codeblock                         ; 开头或结尾
-                        (do
+                (do
+                    (if (= (length head) 3)
+                        (if flag-codeblock                         ; 开头或结尾
+                            (do
+                                (set flag-codeblock true)
+                                (set ret (str.+ ret  (str "</code></pre>\n")))
+                                (if flag_part (do
+                                    (set ret (str.+ ret  (str "</p>\n")))
+                                    (set falg_part false))
+                                (pass)))
+                            (do
+                                (set flag-codeblock false)
+                                (if flag_part 
+                                    (do
+                                        (set ret (str.+ ret  (str "</p>\n")))
+                                        (set falg_part false)) 
+                                    (pass))
+                                (set ret (str.+ ret  (str "<pre><code>\n")))))
+                        (do                                                ; 必定是开头
                             (set flag-codeblock true)
-                            (set ret (str.+ ret  (str "</code></pre>\n")))
-                            (if flag_part (do
-                                (set ret (str.+ ret  (str "</p>\n")))
-                                (set falg_part false))
-                            (pass)))
-                        (do
-                            (set flag-codeblock false)
-                            (if flag_part (do
-                                (set ret (str.+ ret  (str "</p>\n")))
-                                (set falg_part false)) 
-                            (pass))
-                            (set ret (str.+ ret  (str "<pre><code>\n")))))
-                    (do                                                ; 必定是开头
-                        (set flag-codeblock true)
-                        (if flag_part (do
-                                (set ret 
-                                (str.+ ret  (str "</p>\n")))
-                                (set falg_part false))
-                            (pass))
-                        (set ret
-                            (str.+ (str.+ (str.+ ret (str "<pre><code\bclass=\'language-"))
-                                                 (slice head 3 (- (length head) 1)))
-                                          (str "\'>\n")))))
+                            (if flag_part
+                                (do
+                                    (set ret 
+                                        (str.+ ret  (str "</p>\n")))
+                                    (set falg_part false))
+                                (pass))
+                            (set ret
+                                (str.+ (str.+ (str.+ ret (str "<pre><code\bclass=\'language-"))
+                                            (slice head 3 (- (length head) 1)))
+                                    (str "\'>\n")))))
                 (continue))
             (pass))
 
             (if 
                 (and (> (length head) 6) (str.= (slice head 0 6) "<style>"))
                 (do
-                    (if flag_part (do
-                                (set ret 
-                                (str.+ ret  (str "</p>\n")))
-                                (set falg_part false))
+                    (if flag_part
+                        (do
+                            (set ret 
+                            (str.+ ret  (str "</p>\n")))
+                            (set falg_part false))
                         (pass))
                     (set ret (str.+ ret  (str "<style>\n")))
                     (set flag-dontparse true)
                     (continue))
-            (pass))
+                (pass))
             (if 
                 (and (> (length head) 7) (str.= (slice head 0 7) "</style>"))
                 (do
                     (set flag-dontparse false)
                     (set ret (str.+ ret  (str "</style>\n")))
-                    (continue)
-                )
-            (pass))
+                    (continue))
+                (pass))
             (if 
-                (= (length head) 0) 
+                (= (length head) 0)
                 (do
-                    (if flag_linelist (do
-                        (set flag_linelist false)
-                        (set ret (str.+ ret "</ul>"))
-                        (if flag_part (set flag_part false) 0))
-                    (pass))
+                    (if flag_linelist 
+                        (do
+                            (set flag_linelist false)
+                            (set ret (str.+ ret "</ul>"))
+                            (if flag_part (set flag_part false) (pass)))
+                        (pass))
                 (if 
                     (and (= flag_part false) (= flag-dontparse false))
                     (do 
                         (set ret (str.+ ret 
                             (if flag_part_start 
                                 (do 
-                                    (set flag_part_start false) "<p>\n" ) "</p><p>\n")))
-                                    (set flag_part true)
-                                    (continue))
-                                (pass)))
-            (pass))
+                                    (set flag_part_start false)
+                                    "<p>\n")
+                                "</p><p>\n")))
+                        (set flag_part true)
+                        (continue))
+                    (pass)))
+                (pass))
 
-            (if 
-                    (= flag_part true) 
-                    (set flag_part false) 0)
+            (if (= flag_part true) 
+                (set flag_part false)
+                (pass))
 
-            (if (and (> (length head) 1) (and (str.= (slice head 0 0) "-") (str.!= (slice head 1 1) "-"))) (do
-                (if flag_linelist 
-                    (set ret (str.+ ret "</li><li>"))
+            (if (and (> (length head) 1) (and (str.= (slice head 0 0) "-") (str.!= (slice head 1 1) "-")))
+                (do
+                    (if flag_linelist 
+                        (set ret (str.+ ret "</li><li>"))
                         (do 
                             (set flag_linelist true)
                             (set ret (str.+ ret "<ul><li>"))))
-                (set head (remove head 0)))
-            (pass))
-            (if 
-                (str.= head "---") 
+                    (set head (remove head 0)))
+                (pass))
+            (if (str.= head "---") 
                 (do
-                    (if flag_part (do
-                                (set ret (str.+ ret  (str "</p>\n"))))
+                    (if flag_part
+                        (set ret (str.+ ret  (str "</p>\n")))
                         (pass))
                     (set ret (str.+ ret  (str "<hr\b/>\n")))
-                    (if flag_part (do
-                                (set ret (str.+ ret  (str "<p>\n"))))
+                    (if flag_part
+                        (set ret (str.+ ret  (str "<p>\n")))
                         (pass))
                     (continue))
-            (pass))
+                (pass))
             (if (or (= (length head) 0) (= flag-dontparse true))
                 (set ret (str.+ ret head))
                 (set ret (str.+ ret (markdown-parse-line head)))))
         ; LOOP END
 
-        (if flag_part_start (pass) (set ret (str.+ ret "</p>")))
+        (if flag_part_start 
+            (pass) 
+            (set ret (str.+ ret "</p>")))
         (set ret-length (length ret))
         (if (str.= (slice ret (- ret-length 9) (- ret-length 1)) "<p>\n</p>") 
             (set ret (remove ret (- ret-length 9) (- ret-length 1)))
             (pass))
+
         ret)))
 
     (set get-pure-str (lambda (str)
