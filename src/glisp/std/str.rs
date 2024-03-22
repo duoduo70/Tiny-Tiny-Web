@@ -25,6 +25,20 @@ pub fn func_length(
     }
 }
 
+pub fn func_pure_length(
+    args: &[Expression],
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
+    args_len_min!("pure-length", args, 1);
+    args_len_max!("pure-length", args, 1);
+    let arg_res = check_type_onlyone!("pure-length", &args[0], env, String, config.clone());
+    match arg_res {
+        Ok(str) => Ok(Expression::Number(str.bytes().count() as f64)),
+        _ => Err(GError::Reason("pure-length: need a string".to_owned()))
+    }
+}
+
 pub fn func_str_eq(
     args: &[Expression],
     env: &mut Environment,
@@ -166,12 +180,16 @@ pub fn func_insert(
 ) -> Result<Expression, GError> {
     args_len_min!("insert", args, 3);
     args_len_max!("insert", args, 3);
-    let mut str1 = check_type_onlyone!("insert", &args[0], env, String, config.clone())?;
+
+    let str1 = check_type_onlyone!("insert", &args[0], env, String, config.clone())?;
+
+    let mut str1 = str1.chars().collect::<Vec<_>>();
+
     let num = check_type_onlyone!("insert", &args[1], env, Number, config.clone())?;
     let str2 = check_type_onlyone!("insert", &args[2], env, String, config)?;
-    str1.insert_str(num as usize, &str2);
+    str1.splice(num as usize .. num as usize, str2.chars().collect::<Vec<_>>());
 
-    Ok(Expression::String(str1))
+    Ok(Expression::String(str1.into_iter().collect()))
 }
 
 pub fn func_begin(
@@ -209,16 +227,17 @@ pub fn func_remove(
 ) -> Result<Expression, GError> {
     args_len_min!("remove", args, 2);
     args_len_max!("remove", args, 3);
-    let mut str1 = check_type_onlyone!("remove", &args[0], env, String, config.clone())?;
+    let str1 = check_type_onlyone!("remove", &args[0], env, String, config.clone())?;
     let num1 = check_type_onlyone!("remove", &args[1], env, Number, config.clone())? as usize;
+    let mut str1 = str1.chars().collect::<Vec<_>>();
 
     if args.len() == 2 {
         str1.remove(num1);
-        Ok(Expression::String(str1))
+        Ok(Expression::String(str1.into_iter().collect()))
     } else {
         let num2 = check_type_onlyone!("remove", &args[2], env, Number, config)? as usize;
         str1.drain(num1..num2 + 1);
-        Ok(Expression::String(str1))
+        Ok(Expression::String(str1.into_iter().collect()))
     }
 }
 
@@ -268,7 +287,7 @@ pub fn func_slice(
         return Err(GError::Reason(format!(
             "str.slice: index {} out of {}",
             num2,
-            str1.len()
+            chars.clone().count()
         )));
     }
     Ok(Expression::String(

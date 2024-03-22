@@ -1,4 +1,4 @@
-;;; Tiny Tiny Web
+;;; Tiny Tiny Web / GMark
 ;;; Copyright (C) 2024 Plasma (https://github.com/duoduo70/Tiny-Tiny-Web/).
 ;;;
 ;;; You should have received a copy of the GNU General Public License
@@ -6,8 +6,11 @@
 ;;; if not, see <https://www.gnu.org/licenses/>.
 ;;;
 
-;;; 本脚本完整实现了 John Gruber 的原版 Markdown
-;;; 同时也实现了部分 Markdown Extra 的功能
+;;; 本脚本旨在让 Web1.0 (Non-Javascript) 网站的编写支持 Markdown
+;;; 它会把 `markdown/` 文件夹内的所有文件编译到 `temp/` 文件夹
+
+;;; 本脚本部分实现了 John Gruber 和 Aaron Swartz 的原版 Markdown
+;;; 同时也部分实现了 Markdown Extra 的功能
 
 (do
     ;; 本函数是紧凑写法
@@ -33,7 +36,10 @@
         (set str-length (length str))                       ; 我们当前字符串的长度（已经将标题转换成 html 写法之后的）
         (set strong-flag false)                             ; 这个 flag 用以指示接下来的字符是否是粗体
         (set italic-flag false)                             ; 同理，但指示斜体
-        (set str (str.+ str "\n"))                          ; 我们在行尾添加换行符，这是因为我们传入的字符串是不带换行符的
+        (set inline-codeblock-flag false)                   ; 这表示一段内联代码块
+        (set link-flag-stack 0)                             ; 这表示一段链接，它有四个阶段："[", "]", "(", ")"
+        (set link-text "")
+        (set str (str.+ str "<wbr />"))                     ; 强制换行转为这种“推荐换行”
         (set i 0)                                           ; 字符串中字符的序号
         (loop
             (if (>= i str-length) (return) (pass))          ; 如果我们已经遍历完了整个字符串，则可以返回了
@@ -98,6 +104,19 @@
                     (set str-length (+ str-length 3))
                     (set i (+ i 2))))
             (pass))
+            (if (str.= (slice str-field 0 0) "`")           ; 行内代码块
+                (if inline-codeblock-flag
+                    (do
+                        (set str (remove str i))
+                        (set str (insert str i "</code>"))
+                        (set str-length (+ str-length 6))
+                        (set inline-codeblock-flag false))
+                    (do
+                        (set str (remove str i))
+                        (set str (insert str i "<code>"))
+                        (set str-length (+ str-length 5))
+                        (set inline-codeblock-flag true)))
+                (pass))
             (set i (+ i 1)))
         str)))
 
@@ -222,7 +241,7 @@
                 (pass))
 
             (if
-                (and (> (length head) 2) (and (!= (to-num (slice head 0 0)) false) (str.!= (slice head 1 1) ".")))
+                (and (> (length head) 2) (and (!= (to-num (slice head 0 0)) false) (str.= (slice head 1 1) ".")))
                 (do
                     (if flag_linelist_withnum
                         (set ret (str.+ ret "</li><li>"))
@@ -232,8 +251,9 @@
                     (set head (remove head 0 1)))
                 (pass))
             (if
-                (and (> (length head) 3) (and (!= (to-num (slice head 0 1)) false) (str.!= (slice head 2 2) ".")))
+                (and (> (length head) 3) (and (!= (to-num (slice head 0 1)) false) (str.= (slice head 2 2) ".")))
                 (do
+                    (log "222")
                     (if flag_linelist_withnum
                         (set ret (str.+ ret "</li><li>"))
                         (do 

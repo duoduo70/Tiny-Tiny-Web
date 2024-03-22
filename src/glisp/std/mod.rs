@@ -105,6 +105,7 @@ pub fn eval_built_in_form(
             "snatch" => Some(func_snatch(other_args, env, config)),
             "format" => Some(func_format(other_args, env, config)),
             "to-num" => Some(func_to_num(other_args, env, config)),
+            "pure-length" => Some(func_pure_length(other_args, env, config)),
             _ => None,
         },
         _ => None,

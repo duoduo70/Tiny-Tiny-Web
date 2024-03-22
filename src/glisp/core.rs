@@ -213,6 +213,21 @@ pub(super) fn tokenize(expr: String) -> Vec<String> {
 
         escape_flag = false;
     }
+
+    if crate::config::GLISP_DEBUG.load(std::sync::atomic::Ordering::Relaxed) {
+        use crate::macros::*;
+        use crate::drop::log::LogLevel::*;
+        log!(
+            Info,
+            format!(
+                "[glisp-debugger] [lexer] DUMP-START\n
+                {:?}\n
+                [glisp-debugger] [lexer] DUMP-END",
+                vec
+            )
+        );
+    }
+
     vec
 }
 
