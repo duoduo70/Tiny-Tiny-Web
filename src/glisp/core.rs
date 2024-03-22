@@ -99,16 +99,36 @@ pub(super) fn func_lambda(args: &[Expression]) -> Result<Expression, GError> {
     }))
 }
 
+// TODO: 正常代码按ascii遍历，注释和代码块按unicode遍历: 
 pub(super) fn tokenize(expr: String) -> Vec<String> {
-    let mut vec: Vec<String> = vec![];
+    let mut vec: Vec<String> = Vec::with_capacity(expr.len() >> 3);
+    let mut temp_field = String::with_capacity(24);
     let mut str_flag = false;
-    let mut temp_field = String::with_capacity(16);
     let mut escape_flag = false;
     let mut pure_str_pair_stack = 0;
     let mut commet_flag = false;
     let mut lint_stack = 0;
     for ch in expr.chars() {
+        if str_flag && escape_flag {
+            if ch == '\\' {
+                temp_field.push(ch);
+            } else if ch == 'n' {
+                temp_field.push('\n');
+            } else if ch == '"' {
+                temp_field.push(ch);
+            } else {
+                use crate::macros::*;
+                use crate::drop::log::LogLevel::*;
+                log!(Warn, format!("[ghost-lisp] Void escape charater: \"{}\"", ch))
+            }
+            escape_flag = false;
+            continue;
+        }
+
         if commet_flag {
+            if ch == '\n' {
+                commet_flag = false;
+            }
             continue;
         }
         if lint_stack != 0 {
@@ -121,15 +141,17 @@ pub(super) fn tokenize(expr: String) -> Vec<String> {
             continue;
         }
 
-        if ch == '[' {
-            if pure_str_pair_stack == 0 && !commet_flag && !str_flag {
+        if ch == '[' && pure_str_pair_stack == 0 && !commet_flag && !str_flag{
                 lint_stack += 1;
                 continue;
-            }
         }
 
         if !str_flag && ch == '{' {
-            temp_field.push('"');
+            if pure_str_pair_stack == 0 {
+                temp_field.push('"');
+            } else {
+                temp_field.push(ch);
+            }
             pure_str_pair_stack += 1;
             continue;
         }
@@ -150,17 +172,13 @@ pub(super) fn tokenize(expr: String) -> Vec<String> {
             continue;
         }
         if ch == '\"' {
-            if escape_flag {
-                temp_field.push(ch);
-                escape_flag = false;
-                continue;
-            }
             str_flag = !str_flag;
             temp_field.push(ch);
             continue;
         }
         if !str_flag && pure_str_pair_stack == 0 && ch == ';' {
             commet_flag = true;
+            continue;
         }
         if ch == '\\' {
             escape_flag = true;
@@ -188,9 +206,12 @@ pub(super) fn tokenize(expr: String) -> Vec<String> {
                 continue;
             }
         }
+
         if ch != ' ' {
             temp_field.push(ch);
         }
+
+        escape_flag = false;
     }
     vec
 }
@@ -280,6 +301,23 @@ pub fn default_env<'a>() -> Environment<'a> {
             }
             let is_ok = floats.first().unwrap().eq(floats.get(1).unwrap());
             Ok(Expression::Bool(is_ok))
+        }),
+    );
+    
+    data.insert(
+        "!=".to_string(),
+        Expression::Func(|args: &[Expression]| -> Result<Expression, GError> {
+            let floats = parse_list_of_floats(args)?;
+            // 要想比较，需要有两个值
+            if floats.len() != 2 {
+                return Err(GError::Reason("expected two number".to_string()));
+            }
+            // 将第 0 个元素和第 1 个元素进行比较
+            if floats.first().is_none() || floats.get(1).is_none() {
+                return Err(GError::Reason("expected number".to_string()));
+            }
+            let is_ok = floats.first().unwrap().eq(floats.get(1).unwrap());
+            Ok(Expression::Bool(!is_ok))
         }),
     );
 
@@ -483,7 +521,7 @@ fn parse_list_of_symbol_strings(params: Rc<Expression>) -> Result<Vec<String>, G
         .collect()
 }
 
-fn env_get(key: &str, env: &Environment) -> Option<Expression> {
+pub(super) fn env_get(key: &str, env: &Environment) -> Option<Expression> {
     match env.data.get(key) {
         Some(exp) => Some(exp.clone()),
         None => match env.outer {
@@ -511,5 +549,5 @@ impl std::fmt::Debug for Expression {
 }
 
 fn get_lambda_sign(lambda: &Lambda) -> String {
-    "lambda: (".to_owned() + &lambda.params.to_string() + ")"
+    "lambda: ".to_owned() + &lambda.params.to_string()
 }

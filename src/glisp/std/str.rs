@@ -296,17 +296,19 @@ pub fn func_str(
     ))
 }
 
-pub fn func_str_plus(
+pub fn func_str_concat(
     args: &[Expression],
     env: &mut Environment,
     config: Config,
 ) -> Result<Expression, GError> {
     args_len_min!("str.+", args, 2);
-    args_len_max!("str.+", args, 2);
-    let str1 = check_type_onlyone!("str.+", &args[0], env, String, config.clone())?;
-    let str2 = check_type_onlyone!("str.+", &args[1], env, String, config)?;
+    let mut string = String::new();
 
-    Ok(Expression::String(str1 + &str2))
+    for e in args {
+        string += &check_type_onlyone!("str.+", e, env, String, config.clone())?;
+    }
+
+    Ok(Expression::String(string))
 }
 
 pub fn func_lines(
@@ -323,4 +325,35 @@ pub fn func_lines(
             .map(|a| Expression::String(a.to_owned()))
             .collect::<Vec<_>>(),
     ))
+}
+
+pub fn func_format(
+    args: &[Expression],
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
+    args_len_min!("format", args, 2);
+    let mut str1 = check_type_onlyone!("lines", &args[0], env, String, config.clone())?;
+
+    for e in args[1..args.len()].iter() {
+        let e = check_type_onlyone!("lines", e, env, String, config.clone())?;
+        str1 = str1.replacen("$$", &e, 1);
+    }
+
+    Ok(Expression::String(str1))
+}
+
+pub fn func_to_num(
+    args: &[Expression],
+    env: &mut Environment,
+    config: Config,
+) -> Result<Expression, GError> {
+    args_len_min!("to-num", args, 1);
+    let str1 = check_type_onlyone!("to-num", &args[0], env, String, config.clone())?;
+
+    if let Ok(num) = str1.parse::<f64>() {
+        return Ok(Expression::Number(num))
+    }
+
+    Ok(Expression::Bool(false))
 }

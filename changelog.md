@@ -47,3 +47,45 @@
 代码块功能（准确的说法是“原始字符串”）是已经可以正常使用的，它会被正常解析为字符串。
 
 lint 也可以给各种辅助工具做提示，它会被解释器忽略。
+# 2.0.0-beta15
+旧写法：
+```scheme
+(do
+    (set cps.+ (lambda (f)
+        (eval
+            (str.+ "(lambda (n m) (do
+                        " (str.+ f "
+                        (+ n m)))")))))
+    (log
+        (meta
+            ((cps.+ {(log "Hello, CPS!")}) 1 1))))
+```
+新写法 1 ：
+```scheme
+(do
+    (set cps.+ (lambda (f)
+        (eval
+            (str.+ "(lambda (n m) (do
+                        " f "
+                        (+ n m)))"))))
+    (log
+        (meta
+            ((cps.+ {(log "Hello, CPS!")}) 1 1))))
+```
+新写法 2 ：
+```scheme
+(do
+    (set cps.+ (lambda (f)
+        (eval
+            (format {
+                (lambda (n m) (do
+                    $$
+                    (+ n m)))
+                }
+                f))))
+    (log
+        (meta
+            ((cps.+ {(log "Hello, CPS!")}) 1 1))))
+```
+
+另外，优化了解释器（现在），修复了 bug 。

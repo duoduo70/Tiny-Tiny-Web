@@ -6,7 +6,7 @@
 ;;; if not, see <https://www.gnu.org/licenses/>.
 ;;;
 
-;;; 本脚本实现了 John Gruber 的原版 Markdown
+;;; 本脚本完整实现了 John Gruber 的原版 Markdown
 ;;; 同时也实现了部分 Markdown Extra 的功能
 
 (do
@@ -14,24 +14,22 @@
     ;; 本函数用以编译一行 markdown 到 html
     (set markdown-parse-line (lambda (str) (do              ; 在这里，有理由使用紧凑写法（将 (lambda ... 后置），这会让我们少一个 tab
         (set str-length (length str))
-            (if (str.= (slice str 0 0) "#")                 ; 在这个子算法中，我们将 markdown 的标题写法转换成 html 的
-                (if (str.= (slice str 1 1) "#") 
-                    (if (str.= (slice str 2 2) "#") 
-                        (if (str.= (slice str 3 3) "#") 
-                            (if (str.= (slice str 4 4) "#") 
-                                (set str (str.+ (insert (remove str 0 5) 0 "<h5>") "</h5>"))
-                                (set str (str.+ (insert (remove str 0 4) 0 "<h4>") "</h4>")))
-                            (set str (str.+ (insert (remove str 0 3) 0 "<h3>") "</h3>")))
-                        (set str (str.+ (insert (remove str 0 2) 0 "<h2>") "</h2>")))
-                    (set str (str.+ (insert (remove str 0 1) 0 "<h1>") "</h1>")))
-                (if 
-                    (str.= 
-                        (slice str (- str-length 2) (- str-length 1)) 
-                        (str "\b\b"))                       ; 这里的 str 基本上是一个兼容性函数，我在这里保留它，是为了说明这种语法
-                                                            ; 它可以在不使用空格和引号的情况下用转义字符表示它们
-                                                            ; 在早期的解析器中，迫不得已的临时使用这种奇怪的语法
-                                                            ; 在某些特殊的用途中，这个函数仍然有用，于是就被保留了下来
-                    (set str (str.+ str (str "<br\b/>"))) (pass)))
+        (if (str.= (slice str 0 0) "#")                     ; 在这个子算法中，我们将 markdown 的标题写法转换成 html 的
+            (if (str.= (slice str 1 1) "#") 
+                (if (str.= (slice str 2 2) "#") 
+                    (if (str.= (slice str 3 3) "#") 
+                        (if (str.= (slice str 4 4) "#") 
+                            (set str (str.+ (insert (remove str 0 5) 0 "<h5>") "</h5>"))
+                            (set str (str.+ (insert (remove str 0 4) 0 "<h4>") "</h4>")))
+                        (set str (str.+ (insert (remove str 0 3) 0 "<h3>") "</h3>")))
+                    (set str (str.+ (insert (remove str 0 2) 0 "<h2>") "</h2>")))
+                (set str (str.+ (insert (remove str 0 1) 0 "<h1>") "</h1>")))
+            (if 
+                (str.= 
+                    (slice str (- str-length 2) (- str-length 1)) 
+                    "  ")
+                (set str (str.+ str "<br />"))
+                (pass)))
         (set str-length (length str))                       ; 我们当前字符串的长度（已经将标题转换成 html 写法之后的）
         (set strong-flag false)                             ; 这个 flag 用以指示接下来的字符是否是粗体
         (set italic-flag false)                             ; 同理，但指示斜体
@@ -105,58 +103,71 @@
 
     ;; 这个函数使用松散型写法
     ;; 它主要用以实现那些行无关的 Markdown Extra 的功能
-    ;; 这个函数有待重构，所以对它的评注点到为止
-    (set markdown-parse (lambda (str) (do   ; 即便如此，这里还是使用紧凑写法，因为该函数很长，多一个缩进很难受
-        (set flag_part false)               ; 这表示一行文本是否处在这个段落中
-        (set flag_part_start true)          ; 就算第一行顶格写，一样要处理成一个段落，这个flag用以表示是否为第一段
-        (set flag_linelist false)           ; 这表示一行文本是否处于一个列表（一种markdown语法）中
-        (set flag-codeblock false)          ; 这表示一行文本是否处于一个代码块中
-        (set flag-dontparse false)          ; 这表示一行文本是否不应该被解析，例如我们在 markdown 中嵌入 html 和 css
+    (set markdown-parse (lambda (str) (do                   ; 即便如此，这里还是使用紧凑写法，因为该函数很长，多一个缩进很难受
+        (set flag_part false)                               ; 这表示一行文本是否处在这个段落中
+        (set flag_part_start true)                          ; 就算第一行顶格写，一样要处理成一个段落，这个flag用以表示是否为第一段
+        (set flag_linelist false)                           ; 这表示一行文本是否处于一个列表（一种markdown语法）中
+        (set flag_linelist_withnum false)                   ; 同理，这是带序号的变体
+        (set flag-codeblock false)                          ; 这表示一行文本是否处于一个代码块中
+        (set flag-dontparse false)                          ; 这表示一行文本是否不应该被解析，例如我们在 markdown 中嵌入 html 和 css
+        (set flag-quote false)                              ; 这表示一行文本是否处于一个引用（一种markdown语法）中
 
-        (set head 0)                        ; head 实际上表示每行字符串
-        (set ret "")                        ; ret 表示返回的字符串
-        (loop
-            (if (= 0 (length str)) 
+        (set head 0)                                        ; head 实际上表示每行字符串
+        (set ret "")                                        ; ret 表示返回的字符串
+        (loop                                               ; 我们现在开始按行循环
+            (if (= 0 (length str))
                 (return)
                 (pass))
-            (set head (car str))
-            (set str (cdr str))
-            (if 
+            (set head (car str))                            ; 一行字符串用这个变量来表示
+            (set str (cdr str))                             ; 剩下的行
+            (if (and (> (length head) 0) (str.= (slice head 0 0) ">"))
+                (if flag-quote
+                    (set head (remove head 0))
+                    (do
+                        (set flag-quote true)
+                        (set ret (str.+ ret "<blockquote>"))
+                        (set head (remove head 0))))
+                (if flag-quote
+                    (do
+                        (set flag-quote false)
+                        (set ret (str.+ ret "</blockquote>")))
+                    (pass)))
+            (if                                             ; 它用来判断该行是否是代码块的开始标志
                 (and (> (length head) 2) (str.= (slice head 0 2) "```"))
                 (do
                     (if (= (length head) 3)
-                        (if flag-codeblock                         ; 开头或结尾
+                        (if flag-codeblock                  ; 代码块的开头或结尾
                             (do
                                 (set flag-codeblock true)
-                                (set ret (str.+ ret  (str "</code></pre>\n")))
+                                (set ret (str.+ ret  "</code></pre>\n"))
                                 (if flag_part (do
-                                    (set ret (str.+ ret  (str "</p>\n")))
+                                    (set ret (str.+ ret  "</p>\n"))
                                     (set falg_part false))
                                 (pass)))
                             (do
                                 (set flag-codeblock false)
                                 (if flag_part 
                                     (do
-                                        (set ret (str.+ ret  (str "</p>\n")))
+                                        (set ret (str.+ ret  "</p>\n"))
                                         (set falg_part false)) 
                                     (pass))
-                                (set ret (str.+ ret  (str "<pre><code>\n")))))
-                        (do                                                ; 必定是开头
+                                (set ret (str.+ ret  "<pre><code>\n"))))
+                        (do                                 ; 必定是代码块的开头
                             (set flag-codeblock true)
                             (if flag_part
                                 (do
                                     (set ret 
-                                        (str.+ ret  (str "</p>\n")))
+                                        (str.+ ret  "</p>\n"))
                                     (set falg_part false))
                                 (pass))
                             (set ret
-                                (str.+ (str.+ (str.+ ret (str "<pre><code\bclass=\'language-"))
+                                (str.+ (str.+ (str.+ ret "<pre><code class=\"language-")
                                             (slice head 3 (- (length head) 1)))
-                                    (str "\'>\n")))))
+                                    "\">\n"))))
                 (continue))
             (pass))
 
-            (if 
+            (if                                             ; CSS 文本按原样保留
                 (and (> (length head) 6) (str.= (slice head 0 6) "<style>"))
                 (do
                     (if flag_part
@@ -176,16 +187,23 @@
                     (set ret (str.+ ret  (str "</style>\n")))
                     (continue))
                 (pass))
-            (if 
+            
+            (if                                             ; 如果是空行
                 (= (length head) 0)
                 (do
-                    (if flag_linelist 
+                    (if flag_linelist                       ; 如果还处在解析列表的过程中，我们便不再继续解析为列表
                         (do
                             (set flag_linelist false)
-                            (set ret (str.+ ret "</ul>"))
+                            (set ret (str.+ ret "</li></ul>"))
                             (if flag_part (set flag_part false) (pass)))
                         (pass))
-                (if 
+                    (if flag_linelist_withnum               ; 如果还处在解析列表的过程中，我们便不再继续解析为列表
+                        (do
+                            (set flag_linelist_withnum false)
+                            (set ret (str.+ ret "</li></ol>"))
+                            (if flag_part (set flag_part false) (pass)))
+                        (pass))
+                (if                                         ; 如果没有解析豁免，则认为这是一个分段点
                     (and (= flag_part false) (= flag-dontparse false))
                     (do 
                         (set ret (str.+ ret 
@@ -199,11 +217,32 @@
                     (pass)))
                 (pass))
 
-            (if (= flag_part true) 
+            (if (= flag_part true)
                 (set flag_part false)
                 (pass))
 
-            (if (and (> (length head) 1) (and (str.= (slice head 0 0) "-") (str.!= (slice head 1 1) "-")))
+            (if
+                (and (> (length head) 2) (and (!= (to-num (slice head 0 0)) false) (str.!= (slice head 1 1) ".")))
+                (do
+                    (if flag_linelist_withnum
+                        (set ret (str.+ ret "</li><li>"))
+                        (do 
+                            (set flag_linelist_withnum true)
+                            (set ret (str.+ ret "<ol><li>"))))
+                    (set head (remove head 0 1)))
+                (pass))
+            (if
+                (and (> (length head) 3) (and (!= (to-num (slice head 0 1)) false) (str.!= (slice head 2 2) ".")))
+                (do
+                    (if flag_linelist_withnum
+                        (set ret (str.+ ret "</li><li>"))
+                        (do 
+                            (set flag_linelist_withnum true)
+                            (set ret (str.+ ret "<ol><li>"))))
+                    (set head (remove head 0 2)))
+                (pass))
+            (if
+                (and (> (length head) 1) (and (str.= (slice head 0 0) "-") (str.!= (slice head 1 1) "-")))
                 (do
                     (if flag_linelist 
                         (set ret (str.+ ret "</li><li>"))
@@ -215,11 +254,11 @@
             (if (str.= head "---") 
                 (do
                     (if flag_part
-                        (set ret (str.+ ret  (str "</p>\n")))
+                        (set ret (str.+ ret  "</p>\n"))
                         (pass))
-                    (set ret (str.+ ret  (str "<hr\b/>\n")))
+                    (set ret (str.+ ret  "<hr />\n"))
                     (if flag_part
-                        (set ret (str.+ ret  (str "<p>\n")))
+                        (set ret (str.+ ret  "<p>\n"))
                         (pass))
                     (continue))
                 (pass))

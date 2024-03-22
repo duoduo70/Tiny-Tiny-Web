@@ -230,5 +230,9 @@
   "snatch": {
     "prefix": ["snatch"],
     "body": ["(snatch $0)"]
+  },
+  "to-num": {
+    "prefix": ["tonum"],
+    "body": ["(to-num $0)"]
   }
 }
