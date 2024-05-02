@@ -80,6 +80,7 @@ Hello, World!
 
 # Add a listener location
 # 添加一个监听地址
+# 如果你希望在公网由 IPv4 访问服务器，或许需要监听 0.0.0.0
 $ +addr 127.0.0.1:80
 $ +addr [fe80::1]:80
 
