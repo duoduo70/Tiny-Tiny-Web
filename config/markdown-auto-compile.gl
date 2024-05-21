@@ -12,10 +12,12 @@
 ;;; 本脚本部分实现了 John Gruber 和 Aaron Swartz 的原版 Markdown
 ;;; 同时也部分实现了 Markdown Extra 的功能
 
+;; TODO: 重构它，它的写法太旧了
+
 (do
     ;; 本函数是紧凑写法
     ;; 本函数用以编译一行 markdown 到 html
-    (set markdown-parse-line (lambda (str) (do              ; 在这里，有理由使用紧凑写法（将 (lambda ... 后置），这会让我们少一个 tab
+    (set markdown-parse-line (lambda (str) (do              ; 在这里，有理由使用紧凑写法（将 `(lambda ...` 后置），这会让我们少一个 tab
         (set str-length (length str))
         (if (str.= (slice str 0 0) "#")                     ; 在这个子算法中，我们将 markdown 的标题写法转换成 html 的
             (if (str.= (slice str 1 1) "#") 
@@ -130,6 +132,8 @@
         (set flag-codeblock false)                          ; 这表示一行文本是否处于一个代码块中
         (set flag-dontparse false)                          ; 这表示一行文本是否不应该被解析，例如我们在 markdown 中嵌入 html 和 css
         (set flag-quote false)                              ; 这表示一行文本是否处于一个引用（一种markdown语法）中
+        (set flag-codeblock-dotlang false)                  ; 这表示 codeblock 是否是 dotlang（一种图表语言） ，会被特殊处理
+        (set graph-counter 0)
 
         (set head 0)                                        ; head 实际上表示每行字符串
         (set ret "")                                        ; ret 表示返回的字符串
@@ -158,31 +162,51 @@
                         (if flag-codeblock                  ; 代码块的开头或结尾
                             (do
                                 (set flag-codeblock true)
-                                (set ret (str.+ ret  "</code></pre>\n"))
-                                (if flag_part (do
-                                    (set ret (str.+ ret  "</p>\n"))
-                                    (set falg_part false))
-                                (pass)))
+                                (if flag-codeblock-dotlang
+                                    (do
+                                        (set ret
+                                            (str.+ ret
+                                                (str.+ "`).then((element) => {document.getElementById('gmark-graphviz-" (meta graph-counter))
+                                                "').replaceWith(element);}).catch((error) => {console.error(error);});</script>"))
+                                        (set flag-codeblock-dotlang false))
+                                    (do
+                                        (set ret (str.+ ret  "</code></pre>\n"))
+                                        (if flag_part
+                                            (set ret (str.+ ret  "</p>\n"))
+                                            (pass))))
+                                    (set flag_part false)
+                                    (set flag-dontparse false))
                             (do
                                 (set flag-codeblock false)
                                 (if flag_part 
                                     (do
                                         (set ret (str.+ ret  "</p>\n"))
-                                        (set falg_part false)) 
+                                        (set flag_part false)) 
                                     (pass))
-                                (set ret (str.+ ret  "<pre><code>\n"))))
+                                (set ret (str.+ ret  "<pre><code>\n"))
+                                (set flag-dontparse true)))
                         (do                                 ; 必定是代码块的开头
-                            (set flag-codeblock true)
+                            
                             (if flag_part
                                 (do
                                     (set ret 
                                         (str.+ ret  "</p>\n"))
-                                    (set falg_part false))
+                                    (set flag_part false))
                                 (pass))
-                            (set ret
-                                (str.+ (str.+ (str.+ ret "<pre><code class=\"language-")
-                                            (slice head 3 (- (length head) 1)))
-                                    "\">\n"))))
+                            (if (str.= (slice head 3 (- (length head) 1)) "{dot}")
+                                (do
+                                    (set graph-counter (+ graph-counter 1))
+                                    (set ret
+                                        (str.+ ret
+                                            (str.+ "<div id=\"gmark-graphviz-" (meta graph-counter))
+                                            "\"></div><script>var viz = new Viz();viz.renderSVGElement(`"))
+                                    (set flag-codeblock-dotlang true))
+                                (set ret
+                                    (str.+ (str.+ (str.+ ret "<pre><code class=\"language-")
+                                                (slice head 3 (- (length head) 1)))
+                                        "\">\n")))
+                            (set flag-codeblock true)
+                            (set flag-dontparse true)))
                 (continue))
             (pass))
 
@@ -193,7 +217,7 @@
                         (do
                             (set ret 
                             (str.+ ret  (str "</p>\n")))
-                            (set falg_part false))
+                            (set flag_part false))
                         (pass))
                     (set ret (str.+ ret  (str "<style>\n")))
                     (set flag-dontparse true)

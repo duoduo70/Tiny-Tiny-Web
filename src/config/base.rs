@@ -279,6 +279,7 @@ fn method_inject_haserr(args: &mut MethodArgs) -> Result<(), ()> {
     } else {
         return Err(());
     };
+
     let filename = &conf_serve_value.file_path;
     if !Path::new(&("temp/".to_string() + filename)).is_file() {
         return Err(());
@@ -289,6 +290,7 @@ fn method_inject_haserr(args: &mut MethodArgs) -> Result<(), ()> {
     } else {
         return Err(());
     };
+
     let mut linenumbers: Vec<(u32, u32)> = vec![];
     for e in lines {
         if let Ok(line) = e {

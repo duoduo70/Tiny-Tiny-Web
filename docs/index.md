@@ -8,9 +8,9 @@ This version may not approperiately be with the latest version (In other words, 
 
 本文档所述内容可能不适合最新版本或对于最新版本而言不全面。
 
-This version is based on version 2.0.0-beta13
+This version is based on version 2.0.0-beta17
 
-当前文档基于版本 2.0.0-beta13。
+当前文档基于版本 2.0.0-beta17。
 
 % NEED ENGLISH %
 
@@ -105,7 +105,11 @@ compile contents.html
 
 # Inject a file (Use a.txt, b.txt, c.txt to replace `$_gcflag`s in contents.html)
 # 注入一个文件（用 a.txt, b.txt, c.txt 中的内容替换 contents.html 中的 $_gcflag 占位符）
-inject contents.html a.txt b.txt c.txt
+# 请遵从如下格式：
+#   compile template.html
+#   + template.html /
+#   inject / ../temp/a.md.html
+inject contents a.txt b.txt c.txt
 
 # Even though TTWeb has not support HTTPS, we has coded many, and reserved:
 # 虽然本项目还没有准备好支持 HTTPS ，但是已经预先编写了很多代码 ，并且预留了：

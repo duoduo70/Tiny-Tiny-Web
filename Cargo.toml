@@ -1,6 +1,6 @@
 [package]
 name = "ttweb"
-version = "2.0.0-beta16"
+version = "2.0.0-beta17"
 edition = "2021"
 license = "GPL-3"
 
@@ -12,3 +12,4 @@ lto = true
 [features]
 nightly = []
 no-glisp = []
+chinese = []

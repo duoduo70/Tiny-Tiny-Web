@@ -107,4 +107,11 @@ I wrote a Rust translation layer for the PlantOS micro operating system, which s
 Thanks to Acbox for helping me translate and proofread a (part of) the English document.  
 感谢 [Acbox](https://github.com/sheepbox8646) 帮我翻译和校对了（部分）英文版文档。
 
+### (DONT NEED ENGLISH) / 后日谈
+
+(DONT NEED ENGLISH)
+
+今天写下了 ttweb 本体的可能是最后一次正式更新，增加了部分中文支持——我已无力让其完美——以后最多是加一点 GMark 功能。GMark 加了动态生成 Viz-js 2.x 矢量图的支持——以后的 Blog 大概会画很多很复杂的图，算是未雨绸缪了——将来的很长一段时间估计都不会怎么编程了，而是去做一些你们绝对看不懂的领域——我大概会在 https://neospeaking.blogspot.com/ 上更新博客，自娱自乐。从此以后更新随缘。TODO 还是那么多，却没有人来完成它们——我已经没了当初那种动力——哈，多少的童年往事，只不过愿打愿挨。我曾和一个人说过，我们终将要分别——那是半年前——他当时几乎是眼含热泪的对我说，盼望那分别能来的迟些——可最后是他主动离开的。仅仅一年，我和曾经相谈甚欢的所有人都早已行同陌路了。当然，或许是我自作多情了——但是，如果你看到这里，那大概就不是这样的了。从此以后，我便彻底孤身一人了，我是属于上一个时代的，我会脱离新时代的一切—— ttweb 最初那幼稚的宏大设想也是想让我能够在这历史的浪潮中独善其身，至少不要受未来无数 1GB 存储占用的软件和 100+Mbps 的带宽占用的网站所困扰。我成功了，ttweb 已经做到了很多，更重要的是在开发它的过程中我收获了很多，于是它的“历史使命”就完成了。今天的风很温暖，融化了灰青色的 Plasma ，让我们相忘于这风中吧。  
+2024 年 5 月 22 日 深夜
+
 Enjoy.
