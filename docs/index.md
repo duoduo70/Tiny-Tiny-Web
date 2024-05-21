@@ -52,6 +52,10 @@ $ +addr 127.0.0.1:22397
 + index.html /
 ```
 
+% NEED ENGLISH %
+
+注意：这个配置不支持从公网访问服务器，如果你希望从公网访问服务器，应该监听公网 IP 或 0.0.0.0 。
+
 Create `index.html` in `export`, and input following codes:
 
 然后，在 export 文件下创建 index.html 文件，在里面写入如下内容：
@@ -80,6 +84,8 @@ Hello, World!
 
 # Add a listener location
 # 添加一个监听地址
+# 如果你希望在公网由 IPv4 访问服务器，或许需要监听 0.0.0.0
+# 对于 IPv6 ，只需监听公网 IP 即可
 $ +addr 127.0.0.1:80
 $ +addr [fe80::1]:80
 
