@@ -199,7 +199,7 @@
                                     (set ret
                                         (str.+ ret
                                             (str.+ "<div id=\"gmark-graphviz-" (meta graph-counter))
-                                            "\"></div><script>var viz = new Viz();viz.renderSVGElement(`"))
+                                            "\"></div><script>let viz = new Viz();viz.renderSVGElement(`"))
                                     (set flag-codeblock-dotlang true))
                                 (set ret
                                     (str.+ (str.+ (str.+ ret "<pre><code class=\"language-")
